@@ -1,10 +1,8 @@
 import asyncio
 import collections
 import random
-from typing import AsyncGenerator, Dict, List, Union
+from typing import AsyncGenerator, Dict, List
 
-from fastapi.responses import JSONResponse
-from pydantic import BaseModel
 from core import Task, bittensor_overrides as bto
 import bittensor as bt
 from validation.models import UIDRecord, axon_uid
@@ -13,6 +11,9 @@ from core import tasks, constants as core_cst
 from validation.proxy.utils import query_utils
 from models import base_models, utility_models
 from validation.db.db_management import db_manager
+from vali_new.core import constants as cst
+from vali_new.core.utils import redis_utils
+## NEEDS MOVING TO SOME CONFIG
 
 # LLM VOLUMES ARE IN TOKENS,
 # IMAGE VOLUMES ARE IN STEP
@@ -30,12 +31,6 @@ TASK_TO_VOLUME_TO_REQUESTS_CONVERSION: Dict[Task, float] = {
     Task.avatar: 10,
     Task.clip_image_embeddings: 1,
 }
-
-
-async def _async_chain(first_chunk, async_gen):
-    yield first_chunk
-    async for item in async_gen:
-        yield item
 
 
 class UidManager:
@@ -125,7 +120,6 @@ class UidManager:
         delay_between_requests = (core_cst.SCORING_PERIOD_TIME * 0.98) // (number_of_requests)
 
         i = 0
-        tasks_in_progress = []
         while uid_record.synthetic_requests_still_to_make > 0:
             # Random perturbation to make sure we dont burst
             if i == 0:
@@ -133,97 +127,12 @@ class UidManager:
             else:
                 await asyncio.sleep(delay_between_requests * (random.random() * 0.05 + 0.95))
 
-            if i % 100 == 0 and (i > 0 or self.is_testnet):
-                bt.logging.debug(
-                    f"synthetic requests still to make: {uid_record.synthetic_requests_still_to_make} on iteration {i} for uid {uid_record.axon_uid} and task {task}"
-                )
+            # TODO: Review if this is the best way to add tasks to some sort of queue in redis
+            # Im sure there's a much better way
+            synthetic_query_to_add = {"task": task, "uid": uid}
+            redis_utils.add_json_to_list_in_redis(cst.SYNTHETIC_QUERIES_TO_MAKE_KEY, synthetic_query_to_add)
             if uid_record.consumed_volume >= volume_to_score:
                 break
-
-            synthetic_data = await self.synthetic_data_manager.fetch_synthetic_data_for_task(task)
-
-            synthetic_synapse = tasks.TASKS_TO_SYNAPSE[task](**synthetic_data)
-            stream = isinstance(synthetic_synapse, bt.StreamingSynapse)
-            outgoing_model = getattr(base_models, synthetic_synapse.__class__.__name__ + core_cst.OUTGOING)
-
-            if not stream:
-                uid_queue.move_to_end(uid)
-                tasks_in_progress.append(
-                    asyncio.create_task(
-                        query_utils.query_miner_no_stream(
-                            uid_record, synthetic_synapse, outgoing_model, task, self.dendrite, synthetic_query=True
-                        )
-                    )
-                )
-            else:
-                uid_queue.move_to_end(uid)
-                generator = query_utils.query_miner_stream(
-                    uid_record, synthetic_synapse, outgoing_model, task, self.dendrite, synthetic_query=True
-                )
-                # We need to iterate through the generator to consume it - so the request finishes
-                tasks_in_progress.append(asyncio.create_task(self._consume_generator(generator)))
-
-            # Need to make this here so its lowered regardless of the result of the above
-            uid_record.synthetic_requests_still_to_make -= 1
-
-            i += 1
-
-        # NOTE: Do we want to do this semi regularly, to not exceed bandwidth perhaps?
-        await asyncio.gather(*tasks_in_progress)
-        bt.logging.info(f"Done synthetic querying for task: {task} and uid: {uid} and volume: {volume}")
-
-    async def make_organic_query(
-        self, task: Task, stream: bool, synapse: bt.Synapse, outgoing_model: BaseModel
-    ) -> Union[utility_models.QueryResult, AsyncGenerator]:  # noqa: F821
-        if task not in self.task_to_uid_queue:
-            task_q_to_log = {k.value: len(v.uid_map) for k, v in self.task_to_uid_queue.items()}
-            return JSONResponse(
-                content={
-                    "error": f"Task {task} not in task_to_uid_queue {task_q_to_log}. This should not happen. Type task: {type(task)}. It should be an enum"
-                },
-                status_code=500,
-            )
-        queue = self.task_to_uid_queue[task]
-        latest_uid = queue.get_uid_and_move_to_back()
-        if latest_uid is None:
-            return JSONResponse(content={"error": f"No UIDs available for this task {task}"}, status_code=500)
-        uid_record = self.uid_records_for_tasks[task][latest_uid]
-        attempts = 0
-
-        if not stream:
-            while attempts < 3:
-                query_result: utility_models.QueryResult = await query_utils.query_miner_no_stream(
-                    uid_record,
-                    synapse,
-                    outgoing_model,
-                    task,
-                    dendrite=self.dendrite,
-                    synthetic_query=False,
-                )
-                if query_result is None or not query_result.success:
-                    attempts += 1
-                else:
-                    break
-        else:
-            while attempts < 3:
-                generator = query_utils.query_miner_stream(
-                    uid_record, synapse, outgoing_model, task, self.dendrite, synthetic_query=False
-                )
-                try:
-                    first_chunk = await generator.__anext__()
-                    if first_chunk is None:
-                        bt.logging.info("First chunk is none")
-                        return JSONResponse(
-                            content={"error": f"No UIDs available for this task {task}"}, status_code=500
-                        )
-                    query_result = _async_chain(first_chunk, generator)
-                    break
-                except StopAsyncIteration:
-                    attempts += 1
-
-        if attempts == 3:
-            return JSONResponse(content={"error": "Could not process request, mi apologies"}, status_code=500)
-        return query_result
 
     @staticmethod
     def _get_percentage_of_tasks_to_score() -> float:
