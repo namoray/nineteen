@@ -13,7 +13,6 @@ from core import tasks, constants as core_cst
 from validation.proxy.utils import query_utils
 from models import base_models, utility_models
 from validation.db.db_management import db_manager
-from redis.asyncio import Redis
 
 # LLM VOLUMES ARE IN TOKENS,
 # IMAGE VOLUMES ARE IN STEP
@@ -48,7 +47,6 @@ class UidManager:
         uid_to_uid_info: Dict[axon_uid, utility_models.UIDinfo],
         synthetic_data_manager: synthetic_generations.SyntheticDataManager,
         is_testnet: bool,
-        redis_db: Redis,
     ) -> None:
         self.capacities_for_tasks = capacities_for_tasks
         self.dendrite = dendrite
@@ -59,8 +57,6 @@ class UidManager:
         self.synthetic_scoring_tasks: List[asyncio.Task] = []
         self.task_to_uid_queue: Dict[Task, query_utils.UIDQueue] = {}
         self.synthetic_data_manager = synthetic_data_manager
-
-        self.redis_db = redis_db
 
         self.is_testnet = is_testnet
 
@@ -100,11 +96,6 @@ class UidManager:
 
     async def collect_synthetic_scoring_results(self) -> None:
         await asyncio.gather(*self.synthetic_scoring_tasks)
-
-    async def post_synthetic_task_to_redis(self) -> None:
-        # ADD to redis, in some way...
-        # await self.redis_db.push
-        return
 
     async def handle_task_scoring_for_uid(
         self, task: Task, uid: axon_uid, volume: float, axon: bt.chain_data.AxonInfo
@@ -154,11 +145,6 @@ class UidManager:
             synthetic_synapse = tasks.TASKS_TO_SYNAPSE[task](**synthetic_data)
             stream = isinstance(synthetic_synapse, bt.StreamingSynapse)
             outgoing_model = getattr(base_models, synthetic_synapse.__class__.__name__ + core_cst.OUTGOING)
-
-            self.post_synthetic_task_to_redis(
-                uid_record.axon_uid, task, synthetic_synapse, outgoing_model, synthetic_query=True
-            )
-            continue
 
             if not stream:
                 uid_queue.move_to_end(uid)

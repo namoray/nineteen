@@ -87,7 +87,7 @@ class SyntheticDataManager:
                 await self._update_synthetic_data_for_task(task)
                 await asyncio.sleep(3)
 
-    async def fetch_synthetic_data_for_task(self, task: Task) -> Dict[str, Any]:
+    async def wfetch_synthetic_data_for_task(self, task: Task) -> Dict[str, Any]:
         while task not in self.task_to_stored_synthetic_data:
             bt.logging.warning(f"Synthetic data not found for task {task} yet, waiting...")
             await asyncio.sleep(10)

@@ -6,7 +6,7 @@ from typing import Dict, Tuple
 from typing import List
 from typing import Optional
 from typing import Set
-
+from validation.uid_manager import UidManager
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
@@ -223,6 +223,15 @@ class CoreValidator:
             # Wait for initial syncing of metagraph
             await self.resync_metagraph()
             self.scorer.start_scoring_results_if_not_already()
+
+            self.uid_manager = UidManager(
+                self.capacities_for_tasks,
+                dendrite=self.dendrite,
+                uid_to_uid_info=self.uid_to_uid_info,
+                validator_hotkey=self.keypair.ss58_address,
+                synthetic_data_manager=self.synthetic_data_manager,
+                is_testnet=self.is_testnet,
+            )
 
             await asyncio.sleep(SCORING_PERIOD_TIME)
             iteration += 1
