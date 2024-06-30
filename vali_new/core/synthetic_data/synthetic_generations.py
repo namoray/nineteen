@@ -33,11 +33,6 @@ def load_postie_to_pil(image_path: str) -> Image:
 my_boy_postie = load_postie_to_pil("validation/synthetic_data/postie.png")
 
 
-def _get_random_letters(length: int) -> str:
-    letters = string.ascii_letters
-    return "".join(random.choice(letters) for i in range(length))
-
-
 def _get_random_avatar_text_prompt() -> dc.TextPrompt:
     nouns = ['king', 'man', 'woman', 'joker', 'queen', 'child', 'doctor', 'teacher', 'soldier', 'merchant']  # fmt: off
     locations = ['forest', 'castle', 'city', 'village', 'desert', 'oceanside', 'mountain', 'garden', 'library', 'market']  # fmt: off
@@ -96,30 +91,6 @@ class SyntheticDataManager:
             for task in tasks.Task:
                 await self._update_synthetic_data_for_task(task)
                 await asyncio.sleep(3)
-
-    async def fetch_synthetic_data_for_task(self, task: Task) -> Dict[str, Any]:
-        while task not in self.task_to_stored_synthetic_data:
-            bt.logging.warning(f"Synthetic data not found for task {task} yet, waiting...")
-            await asyncio.sleep(10)
-
-        synth_data = self.task_to_stored_synthetic_data[task]
-        task_config = tasks.get_task_config(task)
-        if task_config.task_type == tasks.TaskType.IMAGE:
-            synth_data[SEED] = random.randint(1, 1_000_000_000)
-            text_prompts = synth_data[TEXT_PROMPTS]
-            text = text_prompts[0]["text"]
-            new_text = text + _get_random_letters(4)
-            new_text = new_text[:76]
-            synth_data[TEXT_PROMPTS][0]["text"] = new_text
-        elif task_config.task_type == tasks.TaskType.TEXT:
-            synth_data[SEED] = random.randint(1, 1_000_000_000)
-            synth_data[TEMPERATURE] = round(random.uniform(0, 1), 2)
-        elif task_config.task_type == tasks.TaskType.CLIP:
-            synth_model = base_models.ClipEmbeddingsIncoming(**synth_data)
-            synth_model_altered = validation_utils.alter_clip_body(synth_model)
-            synth_data = synth_model_altered.dict()
-
-        return synth_data
 
     async def store_synthetic_data_in_redis(self, task: Task, synthetic_data: BaseModel) -> None:
         synthetic_data_json = await redis_utils.load_json_from_redis(redis_db, cst.SYNTHETIC_DATA_KEY)
