@@ -73,8 +73,8 @@ class CoreValidator:
         self.axon_indexes: list[int] = []
         self.incentives: list[float] = []
 
-        self.uid_to_uid_info: Dict[int, utility_models.UIDinfo] = {}
-        self.previous_uid_infos: deque[List[utility_models.UIDinfo]] = deque([], maxlen=MAX_PERIODS_TO_LOOK_FOR_SCORE)
+        self.uid_to_uid_info: Dict[int, utility_models.HotkeyInfo] = {}
+        self.previous_uid_infos: deque[List[utility_models.HotkeyInfo]] = deque([], maxlen=MAX_PERIODS_TO_LOOK_FOR_SCORE)
 
         self.low_incentive_uids: Set[int] = set()
 
@@ -205,7 +205,7 @@ class CoreValidator:
 
             for i in self.axon_indexes:
                 uid = self.uids[i]
-                self.uid_to_uid_info[uid] = utility_models.UIDinfo(
+                self.uid_to_uid_info[uid] = utility_models.HotkeyInfo(
                     uid=uid,
                     axon=axons[i],
                     hotkey=hotkeys[i],

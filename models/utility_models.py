@@ -6,7 +6,7 @@ from pydantic import BaseModel
 import bittensor as bt
 
 from core import Task
-from validation.models import axon_uid
+from validation.models import AxonUID
 
 class QueryResult(BaseModel):
     formatted_response: Any
@@ -43,11 +43,11 @@ class Message(BaseModel):
         extra = "allow"
 
 
-class UIDinfo(BaseModel):
+class HotkeyInfo(BaseModel):
     class Config:
         arbitrary_types_allowed = True
 
-    uid: axon_uid
+    uid: AxonUID
     hotkey: str
     axon: bt.chain_data.AxonInfo
 

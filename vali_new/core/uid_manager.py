@@ -5,7 +5,7 @@ from typing import AsyncGenerator, Dict, List
 
 from core import Task
 import bittensor as bt
-from validation.models import UIDRecord, axon_uid
+from validation.models import UIDRecord, AxonUID
 from core import tasks, constants as core_cst
 from validation.proxy.utils import query_utils
 from validation.db.db_management import db_manager
@@ -35,7 +35,7 @@ TASK_TO_VOLUME_TO_REQUESTS_CONVERSION: Dict[Task, float] = {
 class UidManager:
     def __init__(
         self,
-        capacities_for_tasks: Dict[Task, Dict[axon_uid, float]],
+        capacities_for_tasks: Dict[Task, Dict[AxonUID, float]],
         validator_hotkey: str,
         is_testnet: bool,
         redis_db: Redis,
@@ -44,7 +44,7 @@ class UidManager:
         self.validator_hotkey = validator_hotkey
         self.redis_db = redis_db
 
-        self.uid_records_for_tasks: Dict[Task, Dict[axon_uid, UIDRecord]] = collections.defaultdict(dict)
+        self.uid_records_for_tasks: Dict[Task, Dict[AxonUID, UIDRecord]] = collections.defaultdict(dict)
         self.synthetic_scoring_tasks: List[asyncio.Task] = []
         self.task_to_uid_queue: Dict[Task, query_utils.UIDQueue] = {}
 
@@ -86,7 +86,7 @@ class UidManager:
     async def collect_synthetic_scoring_results(self) -> None:
         await asyncio.gather(*self.synthetic_scoring_tasks)
 
-    async def handle_task_scoring_for_uid(self, task: Task, uid: axon_uid, volume: float) -> None:
+    async def handle_task_scoring_for_uid(self, task: Task, uid: AxonUID, volume: float) -> None:
         volume_to_score = volume * self._get_percentage_of_tasks_to_score()
 
         if task not in TASK_TO_VOLUME_TO_REQUESTS_CONVERSION:

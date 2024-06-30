@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from core import Task, bittensor_overrides as bto
 import bittensor as bt
-from validation.models import UIDRecord, axon_uid
+from validation.models import UIDRecord, AxonUID
 from validation.synthetic_data import synthetic_generations
 from core import tasks, constants as core_cst
 from validation.proxy.utils import query_utils
@@ -42,10 +42,10 @@ async def _async_chain(first_chunk, async_gen):
 class UidManager:
     def __init__(
         self,
-        capacities_for_tasks: Dict[Task, Dict[axon_uid, float]],
+        capacities_for_tasks: Dict[Task, Dict[AxonUID, float]],
         dendrite: bt.dendrite,
         validator_hotkey: str,
-        uid_to_uid_info: Dict[axon_uid, utility_models.UIDinfo],
+        uid_to_uid_info: Dict[AxonUID, utility_models.HotkeyInfo],
         synthetic_data_manager: synthetic_generations.SyntheticDataManager,
         is_testnet: bool,
         redis_db: Redis,
@@ -53,9 +53,9 @@ class UidManager:
         self.capacities_for_tasks = capacities_for_tasks
         self.dendrite = dendrite
         self.validator_hotkey = validator_hotkey
-        self.uid_to_axon: Dict[axon_uid, bto.axon] = {info.uid: info.axon for info in uid_to_uid_info.values()}
+        self.uid_to_axon: Dict[AxonUID, bto.axon] = {info.uid: info.axon for info in uid_to_uid_info.values()}
 
-        self.uid_records_for_tasks: Dict[Task, Dict[axon_uid, UIDRecord]] = collections.defaultdict(dict)
+        self.uid_records_for_tasks: Dict[Task, Dict[AxonUID, UIDRecord]] = collections.defaultdict(dict)
         self.synthetic_scoring_tasks: List[asyncio.Task] = []
         self.task_to_uid_queue: Dict[Task, query_utils.UIDQueue] = {}
         self.synthetic_data_manager = synthetic_data_manager
@@ -107,7 +107,7 @@ class UidManager:
         return
 
     async def handle_task_scoring_for_uid(
-        self, task: Task, uid: axon_uid, volume: float, axon: bt.chain_data.AxonInfo
+        self, task: Task, uid: AxonUID, volume: float, axon: bt.chain_data.AxonInfo
     ) -> None:
         volume_to_score = volume * self._get_percentage_of_tasks_to_score()
 

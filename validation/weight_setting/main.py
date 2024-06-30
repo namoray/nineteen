@@ -7,7 +7,7 @@ import bittensor as bt
 import torch
 from core import Task
 from models import utility_models
-from validation.models import axon_uid
+from validation.models import AxonUID
 from validation.weight_setting import calculations
 
 VERSION_KEY = 40_004
@@ -26,8 +26,8 @@ class WeightSetter:
         metagraph: bt.metagraph,
         wallet: bt.wallet,
         netuid: int,
-        capacities_for_tasks: Dict[Task, Dict[axon_uid, float]],
-        uid_to_uid_info: Dict[axon_uid, utility_models.UIDinfo],
+        capacities_for_tasks: Dict[Task, Dict[AxonUID, float]],
+        uid_to_uid_info: Dict[AxonUID, utility_models.HotkeyInfo],
         task_weights: Dict[Task, float],
     ) -> None:
         total_hotkey_scores = await calculations.calculate_scores_for_settings_weights(
@@ -47,8 +47,8 @@ class WeightSetter:
         metagraph: bt.metagraph,
         netuid: int,
         total_hotkey_scores: Dict[str, float],
-        uid_to_uid_info: Dict[axon_uid, utility_models.UIDinfo],
-    ) -> Union[Tuple[Dict[str, float], List[axon_uid]], Tuple[None, None]]:
+        uid_to_uid_info: Dict[AxonUID, utility_models.HotkeyInfo],
+    ) -> Union[Tuple[Dict[str, float], List[AxonUID]], Tuple[None, None]]:
         hotkey_to_uid = {uid_info.hotkey: uid_info.uid for uid_info in uid_to_uid_info.values()}
         weights_tensor = torch.zeros_like(metagraph.S, dtype=torch.float32)
         for hotkey, score in total_hotkey_scores.items():

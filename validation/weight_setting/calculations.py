@@ -5,7 +5,7 @@ from core import Task
 from models import utility_models
 from validation.db.db_management import db_manager
 from validation.models import PeriodScore
-from validation.models import axon_uid
+from validation.models import AxonUID
 from validation.models import RewardData
 
 PERIOD_SCORE_TIME_DECAYING_FACTOR = 0.5
@@ -68,8 +68,8 @@ def _calculate_hotkey_effective_volume_for_task(
 
 
 async def calculate_scores_for_settings_weights(
-    capacities_for_tasks: Dict[Task, Dict[axon_uid, float]],
-    uid_to_uid_info: Dict[axon_uid, utility_models.UIDinfo],
+    capacities_for_tasks: Dict[Task, Dict[AxonUID, float]],
+    uid_to_uid_info: Dict[AxonUID, utility_models.HotkeyInfo],
     task_weights: Dict[Task, float],
 ) -> Dict[str, float]:
     total_hotkey_scores: Dict[str, float] = {}

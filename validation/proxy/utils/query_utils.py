@@ -6,7 +6,7 @@ from core import Task
 from models import base_models, utility_models
 import bittensor as bt
 from validation.proxy.utils import constants as cst
-from validation.models import UIDRecord, axon_uid
+from validation.models import UIDRecord, AxonUID
 from core import bittensor_overrides as bto
 from collections import OrderedDict
 from validation.scoring import scoring_utils
@@ -17,23 +17,23 @@ class UIDQueue:
     def __init__(self):
         self.uid_map: OrderedDict[str, None] = OrderedDict()
 
-    def add_uid(self, uid: axon_uid) -> None:
+    def add_uid(self, uid: AxonUID) -> None:
         if uid not in self.uid_map:
             self.uid_map[uid] = None
 
-    def get_uid_and_move_to_back(self) -> Optional[axon_uid]:
+    def get_uid_and_move_to_back(self) -> Optional[AxonUID]:
         if self.uid_map:
             uid, _ = self.uid_map.popitem(last=False)
             self.uid_map[uid] = None
             return uid
         return None
 
-    def move_to_end(self, uid: axon_uid) -> None:
+    def move_to_end(self, uid: AxonUID) -> None:
         if uid in self.uid_map:
             self.uid_map.pop(uid)
             self.uid_map[uid] = None
 
-    def remove_uid(self, uid: axon_uid) -> None:
+    def remove_uid(self, uid: AxonUID) -> None:
         if uid in self.uid_map:
             self.uid_map.pop(uid)
 

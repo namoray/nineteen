@@ -9,7 +9,7 @@ from datetime import datetime
 
 task_data = defaultdict(lambda: defaultdict(list))
 
-axon_uid = int
+AxonUID = int
 
 
 class PeriodScore(BaseModel):
@@ -24,7 +24,7 @@ class UIDRecord(BaseModel):
         arbitrary_types_allowed = True
         allow_mutation = True
 
-    axon_uid: axon_uid
+    axon_uid: AxonUID
     task: Task
     synthetic_requests_still_to_make: int = Field(..., description="Synthetic requests still to make")
     declared_volume: float = Field(..., description="Declared volume for the UID")
