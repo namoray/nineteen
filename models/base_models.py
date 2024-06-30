@@ -7,7 +7,6 @@ Keep it as SynapseNameBase / SynapseNameIncoming / SynapseNameOutgoing
 from typing import List, Optional, Dict
 from pydantic import BaseModel, Field
 
-
 from core import constants as cst, Task
 from core import dataclasses as dc
 from models import utility_models

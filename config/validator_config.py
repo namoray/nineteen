@@ -14,7 +14,8 @@ def _get_env_file_from_cli_config() -> str:
     env_file = args.env_file
 
     if not env_file:
-        parser.error("You didn't specify an env file! Use --env_file to specify it.")
+        bt.logging.error("here")
+        bt.logging.error("You didn't specify an env file! Use --env_file to specify it.")
 
     return env_file
 

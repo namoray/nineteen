@@ -84,7 +84,6 @@ class SyntheticDataManager:
                 sync_tasks.append(asyncio.create_task(self._update_synthetic_data_for_task(task)))
 
             await asyncio.gather(*sync_tasks)
-            break
             tasks_needing_synthetic_data = [
                 task for task in tasks.Task if task not in self.task_to_stored_synthetic_data
             ]
@@ -119,9 +118,9 @@ class SyntheticDataManager:
         return synth_data
 
     async def store_synthetic_data_in_redis(self, task: Task, synthetic_data: BaseModel) -> None:
-        synthetic_data_json = await redis_utils.load_json_from_redis(redis_db, cst.SYNTHETIC_DATA_KEY)
+        synthetic_data_json = await redis_utils.load_json_from_redis(cst.SYNTHETIC_DATA_KEY)
         synthetic_data_json[task] = synthetic_data
-        await redis_utils.save_json_to_redis(redis_db, cst.SYNTHETIC_DATA_KEY, synthetic_data_json)
+        await self.redis_db.set(cst.SYNTHETIC_DATA_KEY, synthetic_data_json)
 
     async def _update_synthetic_data_for_task(self, task: Task) -> Dict[str, Any]:
         if task == Task.avatar:
@@ -172,6 +171,3 @@ if __name__ == "__main__":
     synthetic_data_manager._update_synthetic_data_for_task = synthetic_data_manager.fake_update_synthetic_data
     thread = threading.Thread(target=synthetic_data_manager._start_async_loop, daemon=True)
     thread.start()
-    import time
-    while True:
-        time.sleep(100)
