@@ -73,15 +73,15 @@ class SyntheticDataManager:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         loop.run_until_complete(self._continuously_fetch_synthetic_data_for_tasks())
-    
+
     @property
     async def task_to_stored_synthetic_data(self):
         return await redis_utils.load_json_from_redis(self.redis_db, cst.SYNTHETIC_DATA_KEY)
 
-
     async def _continuously_fetch_synthetic_data_for_tasks(self) -> None:
-
-        tasks_needing_synthetic_data = [task for task in tasks.Task if task not in self.task_to_stored_synthetic_data]
+        tasks_needing_synthetic_data = [
+            task for task in tasks.Task if task not in await self.task_to_stored_synthetic_data
+        ]
         while tasks_needing_synthetic_data:
             sync_tasks = []
             for task in tasks_needing_synthetic_data:
@@ -89,7 +89,7 @@ class SyntheticDataManager:
 
             await asyncio.gather(*sync_tasks)
             tasks_needing_synthetic_data = [
-                task for task in tasks.Task if task not in self.task_to_stored_synthetic_data
+                task for task in tasks.Task if task not in await self.task_to_stored_synthetic_data
             ]
 
         while True:
@@ -166,7 +166,9 @@ class SyntheticDataManager:
 
     # How should i put this in main only?
     async def fake_update_synthetic_data(self, task):
-        await self.store_synthetic_data_in_redis(task, {"test": "data", "test_key": "test_value"})
+        await self.store_synthetic_data_in_redis(
+            task, {"test": "data", "test_key": "test_value", "rand_id": random.randint(0, 100000)}
+        )
 
 
 if __name__ == "__main__":
@@ -176,5 +178,6 @@ if __name__ == "__main__":
     thread = threading.Thread(target=synthetic_data_manager._start_async_loop, daemon=True)
     thread.start()
     import time
+
     while True:
         time.sleep(100)
