@@ -63,7 +63,7 @@ services:
 
   core_validator:
     build:
-      context: ./core_validator
+      context: ./core
       dockerfile: Dockerfile
     depends_on:
       - redis

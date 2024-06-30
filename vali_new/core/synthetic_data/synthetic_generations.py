@@ -1,10 +1,13 @@
 import asyncio
 import base64
+import json
 import random
 import string
 import threading
 import httpx
 from typing import Dict, Any
+
+from pydantic import BaseModel
 from config.validator_config import config as validator_config
 from core import Task, tasks
 import bittensor as bt
@@ -13,6 +16,9 @@ from models import base_models
 from validation.proxy import validation_utils
 from core import utils as core_utils
 from PIL.Image import Image
+from redis.asyncio import Redis
+from vali_new.core import constants as cst
+from vali_new.core.utils import redis_utils
 
 SEED = "seed"
 TEMPERATURE = "temperature"
@@ -57,9 +63,9 @@ def _my_boy_postie() -> str:
 
 
 class SyntheticDataManager:
-    def __init__(self) -> None:
+    def __init__(self, redis_db: Redis) -> None:
         self.task_to_stored_synthetic_data: Dict[Task, Dict[str, Any]] = {}
-
+        self.redis_db = redis_db
         thread = threading.Thread(target=self._start_async_loop, daemon=True)
         thread.start()
 
@@ -87,7 +93,7 @@ class SyntheticDataManager:
                 await self._update_synthetic_data_for_task(task)
                 await asyncio.sleep(3)
 
-    async def wfetch_synthetic_data_for_task(self, task: Task) -> Dict[str, Any]:
+    async def fetch_synthetic_data_for_task(self, task: Task) -> Dict[str, Any]:
         while task not in self.task_to_stored_synthetic_data:
             bt.logging.warning(f"Synthetic data not found for task {task} yet, waiting...")
             await asyncio.sleep(10)
@@ -111,6 +117,11 @@ class SyntheticDataManager:
 
         return synth_data
 
+    async def store_synthetic_data_in_redis(self, task: Task, synthetic_data: BaseModel) -> None:
+        synthetic_data_json = await redis_utils.load_json_from_redis(cst.SYNTHETIC_DATA_KEY)
+        synthetic_data_json[task] = synthetic_data
+        await self.redis_db.set(cst.SYNTHETIC_DATA_KEY, synthetic_data_json)
+
     async def _update_synthetic_data_for_task(self, task: Task) -> Dict[str, Any]:
         if task == Task.avatar:
             synthetic_data = base_models.AvatarIncoming(
@@ -123,7 +134,7 @@ class SyntheticDataManager:
                 ipadapter_strength=0.5,
                 init_image=_my_boy_postie(),
             ).dict()
-            self.task_to_stored_synthetic_data[task] = synthetic_data
+            await self.store_synthetic_data_in_redis(task, synthetic_data)
         else:
             try:
                 async with httpx.AsyncClient(timeout=7) as client:
@@ -147,4 +158,4 @@ class SyntheticDataManager:
                 bt.logging.error(f"Synthetic data Response contained invalid JSON: error :{e}")
                 return None
 
-            self.task_to_stored_synthetic_data[task] = response_json
+            await self.store_synthetic_data_in_redis(task, response_json)
