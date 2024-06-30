@@ -62,7 +62,6 @@ def _my_boy_postie() -> str:
 
 class SyntheticDataManager:
     def __init__(self, redis_db: Redis, external_server_url: str, start_event_loop: bool = True) -> None:
-        self.task_to_stored_synthetic_data: Dict[Task, Dict[str, Any]] = {}
         self.redis_db = redis_db
         self.external_server_url = external_server_url
         if start_event_loop:
@@ -74,9 +73,14 @@ class SyntheticDataManager:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         loop.run_until_complete(self._continuously_fetch_synthetic_data_for_tasks())
+    
+    @property
+    async def task_to_stored_synthetic_data(self):
+        return await redis_utils.load_json_from_redis(self.redis_db, cst.SYNTHETIC_DATA_KEY)
+
 
     async def _continuously_fetch_synthetic_data_for_tasks(self) -> None:
-        # Initial fetch be quick
+
         tasks_needing_synthetic_data = [task for task in tasks.Task if task not in self.task_to_stored_synthetic_data]
         while tasks_needing_synthetic_data:
             sync_tasks = []
@@ -84,7 +88,6 @@ class SyntheticDataManager:
                 sync_tasks.append(asyncio.create_task(self._update_synthetic_data_for_task(task)))
 
             await asyncio.gather(*sync_tasks)
-            break
             tasks_needing_synthetic_data = [
                 task for task in tasks.Task if task not in self.task_to_stored_synthetic_data
             ]
