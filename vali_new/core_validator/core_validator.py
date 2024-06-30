@@ -23,7 +23,6 @@ from validation.proxy import validation_utils
 
 from validation.scoring.main import Scorer
 from validation.weight_setting.main import WeightSetter
-from validation.db import post_stats
 from validation.db.db_management import db_manager
 from redis.asyncio import Redis
 
