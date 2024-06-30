@@ -3,16 +3,15 @@ import collections
 import random
 from typing import AsyncGenerator, Dict, List
 
-from core import Task, bittensor_overrides as bto
+from core import Task
 import bittensor as bt
 from validation.models import UIDRecord, axon_uid
-from validation.synthetic_data import synthetic_generations
 from core import tasks, constants as core_cst
 from validation.proxy.utils import query_utils
-from models import base_models, utility_models
 from validation.db.db_management import db_manager
 from vali_new.core import constants as cst
 from vali_new.core.utils import redis_utils
+from redis.asyncio import Redis
 ## NEEDS MOVING TO SOME CONFIG
 
 # LLM VOLUMES ARE IN TOKENS,
@@ -37,21 +36,17 @@ class UidManager:
     def __init__(
         self,
         capacities_for_tasks: Dict[Task, Dict[axon_uid, float]],
-        dendrite: bt.dendrite,
         validator_hotkey: str,
-        uid_to_uid_info: Dict[axon_uid, utility_models.UIDinfo],
-        synthetic_data_manager: synthetic_generations.SyntheticDataManager,
         is_testnet: bool,
+        redis_db: Redis,
     ) -> None:
         self.capacities_for_tasks = capacities_for_tasks
-        self.dendrite = dendrite
         self.validator_hotkey = validator_hotkey
-        self.uid_to_axon: Dict[axon_uid, bto.axon] = {info.uid: info.axon for info in uid_to_uid_info.values()}
+        self.redis_db = redis_db
 
         self.uid_records_for_tasks: Dict[Task, Dict[axon_uid, UIDRecord]] = collections.defaultdict(dict)
         self.synthetic_scoring_tasks: List[asyncio.Task] = []
         self.task_to_uid_queue: Dict[Task, query_utils.UIDQueue] = {}
-        self.synthetic_data_manager = synthetic_data_manager
 
         self.is_testnet = is_testnet
 
@@ -83,7 +78,6 @@ class UidManager:
                             task,
                             uid,
                             volume,
-                            axon=self.uid_to_axon[uid],
                         )
                     )
                 )
@@ -92,12 +86,8 @@ class UidManager:
     async def collect_synthetic_scoring_results(self) -> None:
         await asyncio.gather(*self.synthetic_scoring_tasks)
 
-    async def handle_task_scoring_for_uid(
-        self, task: Task, uid: axon_uid, volume: float, axon: bt.chain_data.AxonInfo
-    ) -> None:
+    async def handle_task_scoring_for_uid(self, task: Task, uid: axon_uid, volume: float) -> None:
         volume_to_score = volume * self._get_percentage_of_tasks_to_score()
-
-        uid_queue = self.task_to_uid_queue[task]
 
         if task not in TASK_TO_VOLUME_TO_REQUESTS_CONVERSION:
             bt.logging.warning(
@@ -112,8 +102,6 @@ class UidManager:
             task=task,
             synthetic_requests_still_to_make=number_of_requests,
             declared_volume=volume,
-            axon=axon,
-            hotkey=axon.hotkey,
         )
         self.uid_records_for_tasks[task][uid] = uid_record
 
@@ -130,7 +118,9 @@ class UidManager:
             # TODO: Review if this is the best way to add tasks to some sort of queue in redis
             # Im sure there's a much better way
             synthetic_query_to_add = {"task": task, "uid": uid}
-            redis_utils.add_json_to_list_in_redis(cst.SYNTHETIC_QUERIES_TO_MAKE_KEY, synthetic_query_to_add)
+            await redis_utils.add_json_to_list_in_redis(
+                self.redis_db, cst.SYNTHETIC_QUERIES_TO_MAKE_KEY, synthetic_query_to_add
+            )
             if uid_record.consumed_volume >= volume_to_score:
                 break
 
@@ -157,3 +147,24 @@ class UidManager:
     async def _consume_generator(generator: AsyncGenerator) -> None:
         async for _ in generator:
             pass
+
+
+async def main():
+    redis_db = Redis()
+    uid_manager = UidManager(
+        capacities_for_tasks={tasks.Task.chat_llama_3: {1: 100_000}},
+        validator_hotkey="123",
+        is_testnet=True,
+        redis_db=redis_db,
+    )
+
+    def patched_percentage_tasks_to_score():
+        return 1
+
+    uid_manager._get_percentage_of_tasks_to_score = patched_percentage_tasks_to_score
+    await uid_manager.start_synthetic_scoring()
+    await uid_manager.collect_synthetic_scoring_results()
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

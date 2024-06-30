@@ -25,8 +25,6 @@ class UIDRecord(BaseModel):
         allow_mutation = True
 
     axon_uid: axon_uid
-    hotkey: str
-    axon: bt.chain_data.AxonInfo
     task: Task
     synthetic_requests_still_to_make: int = Field(..., description="Synthetic requests still to make")
     declared_volume: float = Field(..., description="Declared volume for the UID")
