@@ -8,9 +8,11 @@ opencv-python~=4.10
 pydantic~=1.10
 python-dotenv~=1.0
 scikit-learn~=1.5
+redis~=5.0
 sqlite-web==0.6.3
 typer==0.10.0
 xgboost==2.0.3
 scikit-learn
 sqlite-web==0.6.3
 numpy==1.26.4
+
