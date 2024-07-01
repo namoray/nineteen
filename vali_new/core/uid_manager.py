@@ -5,11 +5,11 @@ from typing import AsyncGenerator, Dict, List
 
 from core import Task
 import bittensor as bt
-from validation.models import UIDRecord, AxonUID
+from validation.models import HotkeyRecord, AxonUID
 from core import tasks, constants as core_cst
 from validation.proxy.utils import query_utils
 from validation.db.db_management import db_manager
-from vali_new.utils import redis_constants as cst
+from vali_new.utils import redis_constants as rcst
 from vali_new.utils import redis_utils
 from redis.asyncio import Redis
 ## NEEDS MOVING TO SOME CONFIG
@@ -44,9 +44,9 @@ class UidManager:
         self.validator_hotkey = validator_hotkey
         self.redis_db = redis_db
 
-        self.uid_records_for_tasks: Dict[Task, Dict[AxonUID, UIDRecord]] = collections.defaultdict(dict)
+        self.uid_records_for_tasks: Dict[Task, Dict[AxonUID, HotkeyRecord]] = collections.defaultdict(dict)
         self.synthetic_scoring_tasks: List[asyncio.Task] = []
-        self.task_to_uid_queue: Dict[Task, query_utils.UIDQueue] = {}
+        self.task_to_hotkey_queue: Dict[Task, query_utils.UIDQueue] = {}
 
         self.is_testnet = is_testnet
 
@@ -65,18 +65,18 @@ class UidManager:
     async def start_synthetic_scoring(self) -> None:
         self.synthetic_scoring_tasks = []
         for task in Task:
-            self.task_to_uid_queue[task] = query_utils.UIDQueue()
-            for uid, volume in self.capacities_for_tasks.get(task, {}).items():
+            self.task_to_hotkey_queue[task] = query_utils.UIDQueue()
+            for hotkey, volume in self.capacities_for_tasks.get(task, {}).items():
                 # Need to add before start synthetic scoring so we can query the uid
                 volume_to_score = volume * self._get_percentage_of_tasks_to_score()
                 if volume_to_score == 0:
                     continue
-                self.task_to_uid_queue[task].add_uid(uid)
+                self.task_to_hotkey_queue[task].add_uid(hotkey)
                 self.synthetic_scoring_tasks.append(
                     asyncio.create_task(
                         self.handle_task_scoring_for_uid(
                             task,
-                            uid,
+                            hotkey,
                             volume,
                         )
                     )
@@ -86,7 +86,7 @@ class UidManager:
     async def collect_synthetic_scoring_results(self) -> None:
         await asyncio.gather(*self.synthetic_scoring_tasks)
 
-    async def handle_task_scoring_for_uid(self, task: Task, uid: AxonUID, volume: float) -> None:
+    async def handle_task_scoring_for_uid(self, task: Task, hotkey: str, volume: float) -> None:
         volume_to_score = volume * self._get_percentage_of_tasks_to_score()
 
         if task not in TASK_TO_VOLUME_TO_REQUESTS_CONVERSION:
@@ -97,15 +97,17 @@ class UidManager:
         volume_to_requests_conversion = TASK_TO_VOLUME_TO_REQUESTS_CONVERSION[task]
         number_of_requests = max(int(volume_to_score / volume_to_requests_conversion), 1)
 
-        uid_record = UIDRecord(
-            axon_uid=uid,
+        uid_record = HotkeyRecord(
+            hotkey=hotkey,
             task=task,
             synthetic_requests_still_to_make=number_of_requests,
             declared_volume=volume,
         )
-        self.uid_records_for_tasks[task][uid] = uid_record
+        self.uid_records_for_tasks[task][hotkey] = uid_record
 
         delay_between_requests = (core_cst.SCORING_PERIOD_TIME * 0.98) // (number_of_requests)
+
+        bt.logging.info(f"hotkey: {hotkey}, task: {task}, delay: {delay_between_requests}")
 
         i = 0
         while uid_record.synthetic_requests_still_to_make > 0:
@@ -117,9 +119,9 @@ class UidManager:
 
             # TODO: Review if this is the best way to add tasks to some sort of queue in redis
             # Im sure there's a much better way
-            synthetic_query_to_add = {"task": task, "uid": uid}
+            synthetic_query_to_add = {"task": task, "hotkey": hotkey}
             await redis_utils.add_json_to_list_in_redis(
-                self.redis_db, cst.SYNTHETIC_QUERIES_TO_MAKE_KEY, synthetic_query_to_add
+                self.redis_db, rcst.SYNTHETIC_QUERIES_TO_MAKE_KEY, synthetic_query_to_add
             )
             if uid_record.consumed_volume >= volume_to_score:
                 break
@@ -152,7 +154,7 @@ class UidManager:
 async def main():
     redis_db = Redis()
     uid_manager = UidManager(
-        capacities_for_tasks={tasks.Task.chat_llama_3: {1: 100_000}},
+        capacities_for_tasks={tasks.Task.chat_mixtral: {1: 1_000_000}},
         validator_hotkey="123",
         is_testnet=True,
         redis_db=redis_db,

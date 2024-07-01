@@ -118,7 +118,7 @@ class SyntheticDataManager:
         return synth_data
 
     async def store_synthetic_data_in_redis(self, task: Task, synthetic_data: BaseModel) -> None:
-        synthetic_data_json = await redis_utils.load_json_from_redis(cst.SYNTHETIC_DATA_KEY)
+        synthetic_data_json = await redis_utils.json_load_from_redis(cst.SYNTHETIC_DATA_KEY)
         synthetic_data_json[task] = synthetic_data
         await self.redis_db.set(cst.SYNTHETIC_DATA_KEY, synthetic_data_json)
 

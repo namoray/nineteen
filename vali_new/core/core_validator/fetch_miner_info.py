@@ -65,7 +65,7 @@ async def _fetch_available_capacities_for_each_axon(
     for hotkey in hotkeys:
         # NOTE: Doesn't seem the most efficient to use redis here... lol
         hotkey_info = utility_models.HotkeyInfo(
-            **(await redis_utils.load_json_from_redis(redis_db, cst.HOTKEY_INFO_KEY + hotkey))
+            **(await redis_utils.json_load_from_redis(redis_db, cst.HOTKEY_INFO_KEY + hotkey))
         )
         task = asyncio.create_task(
             query_utils.query_individual_axon(

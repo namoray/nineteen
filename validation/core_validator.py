@@ -256,7 +256,7 @@ class CoreValidator:
                     post_stats.UidRecordPostObject(
                         miner_hotkey=record.hotkey,
                         validator_hotkey=self.public_hotkey_address,
-                        axon_uid=record.axon_uid,
+                        axon_uid=record.hotkey,
                         period_score=record.period_score,
                         declared_volume=record.declared_volume,
                         consumed_volume=record.consumed_volume,

@@ -14,18 +14,20 @@ def _remove_enums(map: Dict[Any, Any]) -> Dict[Any, Any]:
     return map
 
 
-async def load_json_from_redis(redis_db: Redis, key: str, default: Any = {}) -> Dict[Any, Any]:
+async def json_load_from_redis(redis_db: Redis, key: str, default: Any = {}) -> Dict[Any, Any]:
     raw_json = await redis_db.get(key)
     if raw_json is None:
         json_obj = default
     else:
         json_obj = json.loads(raw_json)
+    
     return json_obj
 
 
-async def save_json_to_redis(redis_db: Redis, key: str, json_to_save: Dict[Any, Any]) -> None:
+async def save_json_to_redis(redis_db: Redis, key: str, json_to_save: Dict[Any, Any], remove_enums: bool = True) -> None:
     # Convert Task to Task.value, etc
-    json_to_save = _remove_enums(json_to_save)
+    if remove_enums:
+        json_to_save = _remove_enums(json_to_save)
     json_string = json.dumps(json_to_save)
     await redis_db.set(key, json_string)
 

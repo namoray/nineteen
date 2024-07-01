@@ -11,7 +11,7 @@ import bittensor as bt
 
 from models import utility_models
 from validation.db import sql
-from validation.models import PeriodScore, RewardData, UIDRecord
+from validation.models import PeriodScore, RewardData, HotkeyRecord
 
 MAX_TASKS_IN_DB_STORE = 1000
 db_lock = asyncio.Lock()
@@ -181,14 +181,14 @@ class DatabaseManager:
 
     async def insert_uid_record(
         self,
-        uid_record: UIDRecord,
+        uid_record: HotkeyRecord,
         validator_hotkey: str,
     ) -> None:
         async with db_lock:
             await self.conn.execute(
                 sql.insert_uid_record(),
                 (
-                    uid_record.axon_uid,
+                    uid_record.hotkey,
                     uid_record.hotkey,
                     validator_hotkey,
                     uid_record.task.value,

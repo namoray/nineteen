@@ -6,7 +6,7 @@ from core import Task
 from models import base_models, utility_models
 import bittensor as bt
 from validation.proxy.utils import constants as cst
-from validation.models import UIDRecord, AxonUID
+from validation.models import HotkeyRecord, AxonUID
 from core import bittensor_overrides as bto
 from collections import OrderedDict
 from validation.scoring import scoring_utils
@@ -122,14 +122,14 @@ def _get_formatted_payload(content: str, first_message: bool, add_finish_reason:
 
 
 async def query_miner_stream(
-    uid_record: UIDRecord,
+    uid_record: HotkeyRecord,
     synapse: bt.Synapse,
     outgoing_model: BaseModel,
     task: Task,
     dendrite: bto.dendrite,
     synthetic_query: bool,
 ) -> AsyncIterator[str]:
-    axon_uid = uid_record.axon_uid
+    axon_uid = uid_record.hotkey
     axon = uid_record.axon
 
     time1 = time.time()
@@ -185,7 +185,7 @@ async def query_miner_stream(
 
 
 def create_scoring_adjustment_task(
-    query_result: utility_models.QueryResult, synapse: bt.Synapse, uid_record: UIDRecord, synthetic_query: bool
+    query_result: utility_models.QueryResult, synapse: bt.Synapse, uid_record: HotkeyRecord, synthetic_query: bool
 ):
     asyncio.create_task(
         scoring_utils.adjust_uid_record_from_result(query_result, synapse, uid_record, synthetic_query=synthetic_query)
@@ -193,14 +193,14 @@ def create_scoring_adjustment_task(
 
 
 async def query_miner_no_stream(
-    uid_record: UIDRecord,
+    uid_record: HotkeyRecord,
     synapse: bt.Synapse,
     outgoing_model: BaseModel,
     task: Task,
     dendrite: bto.dendrite,
     synthetic_query: bool,
 ) -> utility_models.QueryResult:
-    axon_uid = uid_record.axon_uid
+    axon_uid = uid_record.hotkey
     axon = uid_record.axon
     resulting_synapse, response_time = await query_individual_axon(
         synapse=synapse, dendrite=dendrite, axon=axon, uid=axon_uid, log_requests_and_responses=False

@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from core import Task, bittensor_overrides as bto
 import bittensor as bt
-from validation.models import UIDRecord, AxonUID
+from validation.models import HotkeyRecord, AxonUID
 from validation.synthetic_data import synthetic_generations
 from core import tasks, constants as core_cst
 from validation.proxy.utils import query_utils
@@ -55,7 +55,7 @@ class UidManager:
         self.validator_hotkey = validator_hotkey
         self.uid_to_axon: Dict[AxonUID, bto.axon] = {info.uid: info.axon for info in uid_to_uid_info.values()}
 
-        self.uid_records_for_tasks: Dict[Task, Dict[AxonUID, UIDRecord]] = collections.defaultdict(dict)
+        self.uid_records_for_tasks: Dict[Task, Dict[AxonUID, HotkeyRecord]] = collections.defaultdict(dict)
         self.synthetic_scoring_tasks: List[asyncio.Task] = []
         self.task_to_uid_queue: Dict[Task, query_utils.UIDQueue] = {}
         self.synthetic_data_manager = synthetic_data_manager
@@ -121,8 +121,8 @@ class UidManager:
         volume_to_requests_conversion = TASK_TO_VOLUME_TO_REQUESTS_CONVERSION[task]
         number_of_requests = max(int(volume_to_score / volume_to_requests_conversion), 1)
 
-        uid_record = UIDRecord(
-            axon_uid=uid,
+        uid_record = HotkeyRecord(
+            hotkey=uid,
             task=task,
             synthetic_requests_still_to_make=number_of_requests,
             declared_volume=volume,
@@ -144,7 +144,7 @@ class UidManager:
 
             if i % 100 == 0 and (i > 0 or self.is_testnet):
                 bt.logging.debug(
-                    f"synthetic requests still to make: {uid_record.synthetic_requests_still_to_make} on iteration {i} for uid {uid_record.axon_uid} and task {task}"
+                    f"synthetic requests still to make: {uid_record.synthetic_requests_still_to_make} on iteration {i} for uid {uid_record.hotkey} and task {task}"
                 )
             if uid_record.consumed_volume >= volume_to_score:
                 break
@@ -156,7 +156,7 @@ class UidManager:
             outgoing_model = getattr(base_models, synthetic_synapse.__class__.__name__ + core_cst.OUTGOING)
 
             self.post_synthetic_task_to_redis(
-                uid_record.axon_uid, task, synthetic_synapse, outgoing_model, synthetic_query=True
+                uid_record.hotkey, task, synthetic_synapse, outgoing_model, synthetic_query=True
             )
             continue
 

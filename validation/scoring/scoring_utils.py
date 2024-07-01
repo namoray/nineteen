@@ -1,12 +1,12 @@
 import bittensor as bt
-from validation.models import UIDRecord
+from validation.models import HotkeyRecord
 from validation.proxy import work_and_speed_functions
 from models import utility_models
 from validation.db.db_management import db_manager
 
 
 async def adjust_uid_record_from_result(
-    query_result: utility_models.QueryResult, synapse: bt.Synapse, uid_record: UIDRecord, synthetic_query: bool
+    query_result: utility_models.QueryResult, synapse: bt.Synapse, uid_record: HotkeyRecord, synthetic_query: bool
 ) -> None:
     """This does a query, and returns either the finished image request"""
 

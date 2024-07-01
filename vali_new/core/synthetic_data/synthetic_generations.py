@@ -70,7 +70,7 @@ class SyntheticDataManager:
 
     @property
     async def task_to_stored_synthetic_data(self):
-        return await redis_utils.load_json_from_redis(self.redis_db, cst.SYNTHETIC_DATA_KEY)
+        return await redis_utils.json_load_from_redis(self.redis_db, cst.SYNTHETIC_DATA_KEY)
 
     async def _continuously_fetch_synthetic_data_for_tasks(self) -> None:
         tasks_needing_synthetic_data = [
@@ -92,7 +92,7 @@ class SyntheticDataManager:
                 await asyncio.sleep(3)
 
     async def store_synthetic_data_in_redis(self, task: Task, synthetic_data: BaseModel) -> None:
-        synthetic_data_json = await redis_utils.load_json_from_redis(redis_db, cst.SYNTHETIC_DATA_KEY)
+        synthetic_data_json = await redis_utils.json_load_from_redis(redis_db, cst.SYNTHETIC_DATA_KEY)
         synthetic_data_json[task] = synthetic_data
         await redis_utils.save_json_to_redis(redis_db, cst.SYNTHETIC_DATA_KEY, synthetic_data_json)
 
