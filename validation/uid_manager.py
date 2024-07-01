@@ -127,7 +127,6 @@ class UidManager:
             synthetic_requests_still_to_make=number_of_requests,
             declared_volume=volume,
             axon=axon,
-            hotkey=axon.hotkey,
         )
         self.uid_records_for_tasks[task][uid] = uid_record
 
