@@ -14,10 +14,10 @@ def _remove_enums(map: Dict[Any, Any]) -> Dict[Any, Any]:
     return map
 
 
-async def load_json_from_redis(redis_db: Redis, key: str) -> Dict[Any, Any]:
+async def load_json_from_redis(redis_db: Redis, key: str, default: Any = {}) -> Dict[Any, Any]:
     raw_json = await redis_db.get(key)
     if raw_json is None:
-        json_obj = {}
+        json_obj = default
     else:
         json_obj = json.loads(raw_json)
     return json_obj

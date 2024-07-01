@@ -7,8 +7,8 @@ from config import configuration
 from models import utility_models
 
 from redis.asyncio import Redis
-from vali_new.core.utils import redis_utils
-from vali_new.core import constants as cst
+from vali_new.utils import redis_utils
+from vali_new.utils import redis_constants as cst
 
 from collections import defaultdict
 from typing import Dict, Tuple

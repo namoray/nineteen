@@ -9,8 +9,8 @@ from validation.models import UIDRecord, AxonUID
 from core import tasks, constants as core_cst
 from validation.proxy.utils import query_utils
 from validation.db.db_management import db_manager
-from vali_new.core import constants as cst
-from vali_new.core.utils import redis_utils
+from vali_new.utils import redis_constants as cst
+from vali_new.utils import redis_utils
 from redis.asyncio import Redis
 ## NEEDS MOVING TO SOME CONFIG
 

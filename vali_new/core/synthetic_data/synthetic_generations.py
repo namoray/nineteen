@@ -14,8 +14,8 @@ from validation.proxy import validation_utils
 from core import utils as core_utils
 from PIL.Image import Image
 from redis.asyncio import Redis
-from vali_new.core import constants as cst
-from vali_new.core.utils import redis_utils
+from vali_new.utils import redis_constants as cst
+from vali_new.utils import redis_utils
 
 SEED = "seed"
 TEMPERATURE = "temperature"
