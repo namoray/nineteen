@@ -167,7 +167,7 @@ class CoreValidator:
                     synapse=synapses.Capacity(),
                     dendrite=self.dendrite,
                     axon=self.uid_to_uid_info[uid].axon,
-                    axon_uid=uid,
+                    uid=uid,
                     deserialize=True,
                     log_requests_and_responses=False,
                 )

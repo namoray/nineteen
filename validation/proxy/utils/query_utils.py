@@ -51,7 +51,7 @@ def get_formatted_response(
 async def query_individual_axon(
     dendrite: bt.dendrite,
     axon: bto.axon,
-    axon_uid: int,
+    uid: int,
     synapse: bt.Synapse,
     deserialize: bool = False,
     log_requests_and_responses: bool = True,
@@ -65,7 +65,7 @@ async def query_individual_axon(
     start_time = time.time()
 
     if log_requests_and_responses:
-        bt.logging.info(f"Querying axon {axon_uid} for {operation_name}")
+        bt.logging.info(f"Querying axon {uid} for {operation_name}")
 
     response = await dendrite.forward(
         axons=axon,
@@ -203,7 +203,7 @@ async def query_miner_no_stream(
     axon_uid = uid_record.axon_uid
     axon = uid_record.axon
     resulting_synapse, response_time = await query_individual_axon(
-        synapse=synapse, dendrite=dendrite, axon=axon, axon_uid=axon_uid, log_requests_and_responses=False
+        synapse=synapse, dendrite=dendrite, axon=axon, uid=axon_uid, log_requests_and_responses=False
     )
 
     # IDE doesn't recognise the above typehints, idk why? :-(
