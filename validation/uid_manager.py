@@ -159,22 +159,6 @@ class UidManager:
             )
             continue
 
-            if not stream:
-                uid_queue.move_to_end(uid)
-                tasks_in_progress.append(
-                    asyncio.create_task(
-                        query_utils.query_miner_no_stream(
-                            uid_record, synthetic_synapse, outgoing_model, task, self.dendrite, synthetic_query=True
-                        )
-                    )
-                )
-            else:
-                uid_queue.move_to_end(uid)
-                generator = query_utils.query_miner_stream(
-                    uid_record, synthetic_synapse, outgoing_model, task, self.dendrite, synthetic_query=True
-                )
-                # We need to iterate through the generator to consume it - so the request finishes
-                tasks_in_progress.append(asyncio.create_task(self._consume_generator(generator)))
 
             # Need to make this here so its lowered regardless of the result of the above
             uid_record.synthetic_requests_still_to_make -= 1

@@ -237,7 +237,7 @@ async def query_miner_no_stream(
             status_code=resulting_synapse.axon.status_code,
             error_message=resulting_synapse.error_message,
         )
-        create_scoring_adjustment_task(query_result, synapse, uid_record, synthetic_query)
+        # create_scoring_adjustment_task(query_result, synapse, uid_record, synthetic_query)
 
     else:
         query_result = utility_models.QueryResult(
@@ -250,7 +250,7 @@ async def query_miner_no_stream(
             success=False,
             miner_hotkey=uid_record.hotkey,
         )
-        create_scoring_adjustment_task(query_result, synapse, uid_record, synthetic_query)
+        # create_scoring_adjustment_task(query_result, synapse, uid_record, synthetic_query)
         return query_result
 
 
