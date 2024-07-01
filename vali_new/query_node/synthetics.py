@@ -7,7 +7,7 @@ from core import Task
 from vali_new.utils import redis_utils
 from vali_new.utils import redis_constants as rcst
 from vali_new import constants as vcst
-
+from vali_new.query_node import query_utils
 
 # TODO: replace this with however pub-sub will work for redis in python
 # But ideally we'd be language agnostic for any pub-sub stuff
@@ -30,7 +30,20 @@ async def monitor_for_queries(redis_db: Redis):
 
 
 async def execute_synthetic_query(redis_db: Redis, hotkey: str, task: Task):
-    print("Task to query:" + task, "hotkey:" + hotkey)
+    stream = task in [Task.chat_llama_3, Task.chat_mixtral]
+    if not stream:
+        asyncio.create_task(
+            query_utils.query_miner_no_stream(
+                uid_record, synthetic_synapse, outgoing_model, task, self.dendrite, synthetic_query=True
+            )
+        )
+    else:
+        uid_queue.move_to_end(uid)
+        generator = query_utils.query_miner_stream(
+            uid_record, synthetic_synapse, outgoing_model, task, self.dendrite, synthetic_query=True
+        )
+        # We need to iterate through the generator to consume it - so the request finishes
+        tasks_in_progress.append(asyncio.create_task(self._consume_generator(generator)))
 
 
 async def main():
