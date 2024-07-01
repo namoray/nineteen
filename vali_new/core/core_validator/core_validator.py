@@ -92,7 +92,7 @@ class CoreValidator:
 
     def _get_task_weights(self) -> Dict[Task, float]:
         """
-        TODO: Replace with onchain commitments. For initial testnet release,
+        TODO: Replace with onchain commitments. For initial release,
         Hardcode to a couple of values
         """
         weights = {
