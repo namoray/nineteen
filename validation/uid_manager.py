@@ -111,8 +111,6 @@ class UidManager:
     ) -> None:
         volume_to_score = volume * self._get_percentage_of_tasks_to_score()
 
-        uid_queue = self.task_to_uid_queue[task]
-
         if task not in TASK_TO_VOLUME_TO_REQUESTS_CONVERSION:
             bt.logging.warning(
                 f"Task {task} not in TASK_TO_VOLUME_CONVERSION, it will not be scored. This should not happen."
