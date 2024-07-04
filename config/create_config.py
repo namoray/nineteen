@@ -1,5 +1,5 @@
 from typing import Dict, Any, Optional
-from core import constants as core_cst
+from core import constants as ccst
 from rich.prompt import Prompt
 from mining.db.db_management import miner_db_manager
 
@@ -39,20 +39,20 @@ def int_processing_func(input: str) -> Optional[int]:
 
 
 GLOBAL_PARAMETERS = {
-    core_cst.HOTKEY_PARAM: {"default": "default", "message": "Hotkey name: "},
+    ccst.HOTKEY_PARAM: {"default": "default", "message": "Hotkey name: "},
 }
 
 MISC_PARAMETERS = {
-    core_cst.WALLET_NAME_PARAM: {"default": "default", "message": "Wallet Name "},
-    core_cst.SUBTENSOR_NETWORK_PARAM: {
+    ccst.WALLET_NAME_PARAM: {"default": "default", "message": "Wallet Name "},
+    ccst.SUBTENSOR_NETWORK_PARAM: {
         "default": "finney",
         "message": "Subtensor Network (finney, test, local)",
     },
-    core_cst.SUBTENSOR_CHAINENDPOINT_PARAM: {
+    ccst.SUBTENSOR_CHAINENDPOINT_PARAM: {
         "default": None,
         "message": "Subtensor Chain Endpoint ",
     },
-    core_cst.IS_VALIDATOR_PARAM: {
+    ccst.IS_VALIDATOR_PARAM: {
         "default": "n",
         "message": "Is this a Validator hotkey? (y/n) ",
         "process_function": bool_processing_func,
@@ -60,31 +60,31 @@ MISC_PARAMETERS = {
 }
 
 VALIDATOR_PARAMETERS = {
-    core_cst.API_SERVER_PORT_PARAM: {
+    ccst.API_SERVER_PORT_PARAM: {
         "default": None,
         "message": "API server port (if you're running an organic validator, else leave it)",
     },
-    core_cst.EXTERNAL_SERVER_ADDRESS_PARAM: {
-        "default": core_cst.EXTERNAL_SERVER_ADDRESS_PARAM,
+    ccst.EXTERNAL_SERVER_ADDRESS_PARAM: {
+        "default": ccst.EXTERNAL_SERVER_ADDRESS_PARAM,
         "message": "External Server Address: ",
         "process_function": http_address_processing_func,
     },
 }
 
 MINER_PARAMETERS = {
-    core_cst.AXON_PORT_PARAM: {"default": 8091, "message": "Axon Port: "},
-    core_cst.AXON_EXTERNAL_IP_PARAM: {"default": None, "message": "Axon External IP: "},
-    core_cst.IMAGE_WORKER_URL_PARAM: {
+    ccst.AXON_PORT_PARAM: {"default": 8091, "message": "Axon Port: "},
+    ccst.AXON_EXTERNAL_IP_PARAM: {"default": None, "message": "Axon External IP: "},
+    ccst.IMAGE_WORKER_URL_PARAM: {
         "default": None,
         "message": "Image Worker URL: ",
         "process_function": optional_http_address_processing_func,
     },
-    core_cst.MIXTRAL_TEXT_WORKER_URL_PARAM: {
+    ccst.MIXTRAL_TEXT_WORKER_URL_PARAM: {
         "default": None,
         "message": "Mixtral Text Worker URL: ",
         "process_function": optional_http_address_processing_func,
     },
-    core_cst.LLAMA_3_TEXT_WORKER_URL_PARAM: {
+    ccst.LLAMA_3_TEXT_WORKER_URL_PARAM: {
         "default": None,
         "message": "Llama 3 Text Worker URL: ",
         "process_function": optional_http_address_processing_func,
@@ -105,7 +105,7 @@ def _insert_defaults_for_task_configs(hotkey: str) -> None:
 def handle_parameters(parameters: Dict[str, Any], hotkey: str):
     global config
     for parameter, metadata in parameters.items():
-        if parameter == core_cst.HOTKEY_PARAM:
+        if parameter == ccst.HOTKEY_PARAM:
             continue
         while True:
             try:
@@ -133,7 +133,7 @@ def get_input(parameter_metadata: Dict[str, Dict[str, Any]]) -> Any:
 
 def get_config():
     while True:
-        hotkey = get_input(GLOBAL_PARAMETERS[core_cst.HOTKEY_PARAM])
+        hotkey = get_input(GLOBAL_PARAMETERS[ccst.HOTKEY_PARAM])
         if hotkey == "":
             break
 
@@ -141,7 +141,7 @@ def get_config():
 
         handle_parameters(MISC_PARAMETERS, hotkey)
 
-        if config[hotkey][core_cst.IS_VALIDATOR_PARAM]:
+        if config[hotkey][ccst.IS_VALIDATOR_PARAM]:
             handle_parameters(VALIDATOR_PARAMETERS, hotkey)
         else:
             handle_parameters(MINER_PARAMETERS, hotkey)
@@ -153,7 +153,7 @@ def get_config():
             _insert_defaults_for_task_configs(hotkey)
 
         with open(f".{hotkey}.env", "w") as f:
-            f.write(f"{core_cst.HOTKEY_PARAM}=" + hotkey + "\n")
+            f.write(f"{ccst.HOTKEY_PARAM}=" + hotkey + "\n")
             for key, value in config[hotkey].items():
                 f.write(f"{key}=")
                 if value is not None:

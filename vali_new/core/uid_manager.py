@@ -6,7 +6,7 @@ from typing import AsyncGenerator, Dict, List
 from core import Task
 import bittensor as bt
 from validation.models import HotkeyRecord, AxonUID
-from core import tasks, constants as core_cst
+from core import tasks, constants as ccst
 from validation.proxy.utils import query_utils
 from validation.db.db_management import db_manager
 from vali_new.utils import redis_constants as rcst
@@ -105,7 +105,7 @@ class UidManager:
         )
         self.uid_records_for_tasks[task][hotkey] = uid_record
 
-        delay_between_requests = (core_cst.SCORING_PERIOD_TIME * 0.98) // (number_of_requests)
+        delay_between_requests = (ccst.SCORING_PERIOD_TIME * 0.98) // (number_of_requests)
 
         bt.logging.info(f"hotkey: {hotkey}, task: {task}, delay: {delay_between_requests}")
 
@@ -120,7 +120,7 @@ class UidManager:
             # TODO: Review if this is the best way to add tasks to some sort of queue in redis
             # Im sure there's a much better way
             synthetic_query_to_add = {"task": task, "hotkey": hotkey}
-            await redis_utils.add_json_to_list_in_redis(
+            await redis_utils.add_json_to_redis_list(
                 self.redis_db, rcst.SYNTHETIC_QUERIES_TO_MAKE_KEY, synthetic_query_to_add
             )
             if uid_record.consumed_volume >= volume_to_score:

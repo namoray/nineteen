@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from typing import Optional
-from core import constants as core_cst
+from core import constants as ccst
 import os
 import bittensor as bt
 import argparse
@@ -27,17 +27,17 @@ load_dotenv(env_file, verbose=True)
 
 
 class Config(BaseModel):
-    hotkey_name: str = os.getenv(core_cst.HOTKEY_PARAM, "default")
-    wallet_name: str = os.getenv(core_cst.WALLET_NAME_PARAM, "default")
+    hotkey_name: str = os.getenv(ccst.HOTKEY_PARAM, "default")
+    wallet_name: str = os.getenv(ccst.WALLET_NAME_PARAM, "default")
 
-    subtensor_network: str = os.getenv(core_cst.SUBTENSOR_NETWORK_PARAM, "test")
+    subtensor_network: str = os.getenv(ccst.SUBTENSOR_NETWORK_PARAM, "test")
     subtensor_chainendpoint: Optional[str] = os.getenv(
-        core_cst.SUBTENSOR_CHAINENDPOINT_PARAM, None
+        ccst.SUBTENSOR_CHAINENDPOINT_PARAM, None
     )
 
-    external_server_url: str = os.getenv(core_cst.EXTERNAL_SERVER_ADDRESS_PARAM, None)
+    external_server_url: str = os.getenv(ccst.EXTERNAL_SERVER_ADDRESS_PARAM, None)
 
-    api_server_port: Optional[int] = os.getenv(core_cst.API_SERVER_PORT_PARAM, None)
+    api_server_port: Optional[int] = os.getenv(ccst.API_SERVER_PORT_PARAM, None)
 
     is_validator: bool = False
 

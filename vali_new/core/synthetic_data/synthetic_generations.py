@@ -54,6 +54,51 @@ def _my_boy_postie() -> str:
     return b64_postie_altered
 
 
+async def store_synthetic_data_in_redis(task: Task, synthetic_data: BaseModel) -> None:
+    synthetic_data_json = await redis_utils.json_load_from_redis(redis_db, cst.SYNTHETIC_DATA_KEY)
+    synthetic_data_json[task] = synthetic_data
+    await redis_utils.save_json_to_redis(redis_db, cst.SYNTHETIC_DATA_KEY, synthetic_data_json)
+
+
+async def _update_synthetic_data_for_task(task: Task, external_server_url: str) -> Dict[str, Any]:
+    if task == Task.avatar:
+        synthetic_data = base_models.AvatarIncoming(
+            seed=random.randint(1, 1_000_000_000),
+            text_prompts=[_get_random_avatar_text_prompt()],
+            height=1280,
+            width=1280,
+            steps=15,
+            control_strength=0.5,
+            ipadapter_strength=0.5,
+            init_image=_my_boy_postie(),
+        ).dict()
+        await store_synthetic_data_in_redis(task, synthetic_data)
+    else:
+        try:
+            async with httpx.AsyncClient(timeout=7) as client:
+                response = await client.post(
+                    external_server_url + "get-synthetic-data",
+                    json={"task": task.value},
+                )
+                response.raise_for_status()  # raises an HTTPError if an unsuccessful status code was received
+        except httpx.RequestError:
+            # bt.logging.warning(f"Getting synthetic data error: {err.request.url!r}: {err}")
+            return None
+        except httpx.HTTPStatusError:
+            # bt.logging.warning(
+            #     f"Syntehtic data error; status code {err.response.status_code} while requesting {err.request.url!r}: {err}"
+            # )
+            return None
+
+        try:
+            response_json = response.json()
+        except ValueError as e:
+            bt.logging.error(f"Synthetic data Response contained invalid JSON: error :{e}")
+            return None
+
+        await store_synthetic_data_in_redis(task, response_json)
+
+
 class SyntheticDataManager:
     def __init__(self, redis_db: Redis, external_server_url: str, start_event_loop: bool = True) -> None:
         self.redis_db = redis_db
@@ -91,60 +136,17 @@ class SyntheticDataManager:
                 await self._update_synthetic_data_for_task(task)
                 await asyncio.sleep(3)
 
-    async def store_synthetic_data_in_redis(self, task: Task, synthetic_data: BaseModel) -> None:
-        synthetic_data_json = await redis_utils.json_load_from_redis(redis_db, cst.SYNTHETIC_DATA_KEY)
-        synthetic_data_json[task] = synthetic_data
-        await redis_utils.save_json_to_redis(redis_db, cst.SYNTHETIC_DATA_KEY, synthetic_data_json)
-
-    async def _update_synthetic_data_for_task(self, task: Task) -> Dict[str, Any]:
-        if task == Task.avatar:
-            synthetic_data = base_models.AvatarIncoming(
-                seed=random.randint(1, 1_000_000_000),
-                text_prompts=[_get_random_avatar_text_prompt()],
-                height=1280,
-                width=1280,
-                steps=15,
-                control_strength=0.5,
-                ipadapter_strength=0.5,
-                init_image=_my_boy_postie(),
-            ).dict()
-            await self.store_synthetic_data_in_redis(task, synthetic_data)
-        else:
-            try:
-                async with httpx.AsyncClient(timeout=7) as client:
-                    response = await client.post(
-                        self.external_server_url + "get-synthetic-data",
-                        json={"task": task.value},
-                    )
-                    response.raise_for_status()  # raises an HTTPError if an unsuccessful status code was received
-            except httpx.RequestError:
-                # bt.logging.warning(f"Getting synthetic data error: {err.request.url!r}: {err}")
-                return None
-            except httpx.HTTPStatusError:
-                # bt.logging.warning(
-                #     f"Syntehtic data error; status code {err.response.status_code} while requesting {err.request.url!r}: {err}"
-                # )
-                return None
-
-            try:
-                response_json = response.json()
-            except ValueError as e:
-                bt.logging.error(f"Synthetic data Response contained invalid JSON: error :{e}")
-                return None
-
-            await self.store_synthetic_data_in_redis(task, response_json)
-
-    # How should i put this in main only?
-    async def fake_update_synthetic_data(self, task):
-        await self.store_synthetic_data_in_redis(
-            task, {"test": "data", "test_key": "test_value", "rand_id": random.randint(0, 100000)}
-        )
-
 
 if __name__ == "__main__":
     redis_db = Redis()
     synthetic_data_manager = SyntheticDataManager(redis_db, "", start_event_loop=False)
-    synthetic_data_manager._update_synthetic_data_for_task = synthetic_data_manager.fake_update_synthetic_data
+
+    async def _fake_update_synthetic_data(task):
+        await store_synthetic_data_in_redis(
+            task, {"test": "data", "test_key": "test_value", "rand_id": random.randint(0, 100000)}
+        )
+
+    synthetic_data_manager._update_synthetic_data_for_task = _fake_update_synthetic_data
     thread = threading.Thread(target=synthetic_data_manager._start_async_loop, daemon=True)
     thread.start()
     import time

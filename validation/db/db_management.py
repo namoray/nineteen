@@ -5,7 +5,7 @@ import json
 from typing import List, Dict, Any, Optional, Union
 
 import aiosqlite
-from core import Task, constants as core_cst
+from core import Task, constants as ccst
 
 import bittensor as bt
 
@@ -23,7 +23,7 @@ class DatabaseManager:
         self.task_weights: Dict[Task, float] = {}
 
     async def initialize(self):
-        self.conn = await aiosqlite.connect(core_cst.VISION_DB)
+        self.conn = await aiosqlite.connect(ccst.VISION_DB)
 
     async def get_tasks_and_number_of_results(self) -> Dict[str, int]:
         async with db_lock:

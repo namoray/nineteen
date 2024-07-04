@@ -5,14 +5,14 @@ So you can more accurately calculate your own volume
 """
 
 from core import Task, tasks
-from core import constants as core_cst
+from core import constants as ccst
 from validation.proxy.work_and_speed_functions import TaskType
 
 
 def calculate_volume_for_task(
     task: Task, concurrent_requests_each_gpu_server_can_handle: float, gpus_with_server_on: float = 1
 ) -> int:
-    vol_in_seconds = gpus_with_server_on * concurrent_requests_each_gpu_server_can_handle * core_cst.SCORING_PERIOD_TIME
+    vol_in_seconds = gpus_with_server_on * concurrent_requests_each_gpu_server_can_handle * ccst.SCORING_PERIOD_TIME
 
     task_config = tasks.get_task_config(task)
 

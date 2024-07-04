@@ -1,6 +1,6 @@
 import sqlite3
 from typing import Dict
-from core import Task, constants as core_cst
+from core import Task, constants as ccst
 
 from core import TASK_TO_MAX_CAPACITY
 from mining.db import sql
@@ -29,7 +29,7 @@ class DatabaseManager:
 
     def get_connection(self):
         if not hasattr(self.local_data, "conn"):
-            self.local_data.conn = sqlite3.connect(core_cst.VISION_DB)
+            self.local_data.conn = sqlite3.connect(ccst.VISION_DB)
         return self.local_data.conn
 
     def close(self):

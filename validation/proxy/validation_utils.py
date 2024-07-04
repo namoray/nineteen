@@ -14,7 +14,7 @@ from config.validator_config import config as validator_config
 from fastapi import HTTPException
 from pydantic import BaseModel
 import random
-from core import constants as core_cst, utils as core_utils
+from core import constants as ccst, utils as core_utils
 from models import utility_models, base_models
 import numpy as np
 
@@ -36,7 +36,7 @@ def get_synapse_from_body(
     synapse_model: Type[bt.Synapse],
 ) -> bt.Synapse:
     body_dict = body.dict()
-    body_dict["seed"] = random.randint(1, core_cst.LARGEST_SEED)
+    body_dict["seed"] = random.randint(1, ccst.LARGEST_SEED)
     synapse = synapse_model(**body_dict)
     return synapse
 
@@ -65,7 +65,7 @@ def connect_to_external_server() -> str:
     hotkey_name = validator_config.hotkey_name
 
     servers = {
-        core_cst.EXTERNAL_SERVER_ADDRESS_PARAM: validator_config.external_server_url,
+        ccst.EXTERNAL_SERVER_ADDRESS_PARAM: validator_config.external_server_url,
     }
 
     # Check each server

@@ -9,7 +9,7 @@ from core import Task, bittensor_overrides as bto
 import bittensor as bt
 from validation.models import HotkeyRecord, AxonUID
 from validation.synthetic_data import synthetic_generations
-from core import tasks, constants as core_cst
+from core import tasks, constants as ccst
 from validation.proxy.utils import query_utils
 from models import base_models, utility_models
 from validation.db.db_management import db_manager
@@ -130,7 +130,7 @@ class UidManager:
         )
         self.uid_records_for_tasks[task][uid] = uid_record
 
-        delay_between_requests = (core_cst.SCORING_PERIOD_TIME * 0.98) // (number_of_requests)
+        delay_between_requests = (ccst.SCORING_PERIOD_TIME * 0.98) // (number_of_requests)
 
         i = 0
         tasks_in_progress = []
@@ -152,13 +152,12 @@ class UidManager:
 
             synthetic_synapse = tasks.TASKS_TO_SYNAPSE[task](**synthetic_data)
             stream = isinstance(synthetic_synapse, bt.StreamingSynapse)
-            outgoing_model = getattr(base_models, synthetic_synapse.__class__.__name__ + core_cst.OUTGOING)
+            outgoing_model = getattr(base_models, synthetic_synapse.__class__.__name__ + ccst.OUTGOING)
 
             self.post_synthetic_task_to_redis(
                 uid_record.hotkey, task, synthetic_synapse, outgoing_model, synthetic_query=True
             )
             continue
-
 
             # Need to make this here so its lowered regardless of the result of the above
             uid_record.synthetic_requests_still_to_make -= 1

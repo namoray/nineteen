@@ -7,7 +7,7 @@ import bittensor as bt
 
 # import base miner class which takes care of most of the boilerplate
 from config import configuration
-from core import Task, constants as core_cst, utils
+from core import Task, constants as ccst, utils
 from config.miner_config import config as miner_config
 from core import bittensor_overrides as bto
 
@@ -176,7 +176,7 @@ class CoreMiner:
 
     def wait_for_next_epoch(self) -> None:
         current_block = self.subtensor.get_current_block()
-        while current_block - self.last_epoch_block < core_cst.BLOCKS_PER_EPOCH:
+        while current_block - self.last_epoch_block < ccst.BLOCKS_PER_EPOCH:
             if self.should_exit:
                 break
             time.sleep(1)
