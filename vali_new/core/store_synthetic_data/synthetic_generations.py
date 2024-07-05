@@ -8,14 +8,13 @@ from typing import Dict, Any
 from pydantic import BaseModel
 from core import Task, tasks
 import bittensor as bt
-from core import dataclasses as dc
 from models import base_models, utility_models
 from validation.proxy import validation_utils
 from core import utils as cutils
 from PIL.Image import Image
 from redis.asyncio import Redis
 from vali_new.utils import redis_constants as cst
-from vali_new.utils import redis_utils
+from vali_new.utils import redis_utils as rutils, synthetic_utils as sutils
 
 SEED = "seed"
 TEMPERATURE = "temperature"
@@ -32,39 +31,24 @@ def load_postie_to_pil(image_path: str) -> Image:
 my_boy_postie = load_postie_to_pil("validation/synthetic_data/postie.png")
 
 
-def _get_random_avatar_text_prompt() -> dc.TextPrompt:
-    nouns = ['king', 'man', 'woman', 'joker', 'queen', 'child', 'doctor', 'teacher', 'soldier', 'merchant']  # fmt: off
-    locations = ['forest', 'castle', 'city', 'village', 'desert', 'oceanside', 'mountain', 'garden', 'library', 'market']  # fmt: off
-    looks = ['happy', 'sad', 'angry', 'worried', 'curious', 'lost', 'busy', 'relaxed', 'fearful', 'thoughtful']  # fmt: off
-    actions = ['running', 'walking', 'reading', 'talking', 'sleeping', 'dancing', 'working', 'playing', 'watching', 'singing']  # fmt: off
-    times = ['in the morning', 'at noon', 'in the afternoon', 'in the evening', 'at night', 'at midnight', 'at dawn', 'at dusk', 'during a storm', 'during a festival']  # fmt: off
-
-    noun = random.choice(nouns)
-    location = random.choice(locations)
-    look = random.choice(looks)
-    action = random.choice(actions)
-    time = random.choice(times)
-
-    text = f"{noun} in a {location}, looking {look}, {action} {time}"
-    return dc.TextPrompt(text=text, weight=1.0)
-
 
 def _my_boy_postie() -> str:
     b64_postie_altered = validation_utils.alter_image(my_boy_postie)
     return b64_postie_altered
 
+
 # TOOD: Change to mapping
 async def _store_synthetic_data_in_redis(redis_db: Redis, task: Task, synthetic_data: BaseModel) -> None:
-    synthetic_data_json = await redis_utils.json_load_from_redis(redis_db, cst.SYNTHETIC_DATA_KEY)
+    synthetic_data_json = await rutils.json_load_from_redis(redis_db, cst.SYNTHETIC_DATA_KEY)
     synthetic_data_json[task] = synthetic_data
-    await redis_utils.save_json_to_redis(redis_db, cst.SYNTHETIC_DATA_KEY, synthetic_data_json)
+    await rutils.save_json_to_redis(redis_db, cst.SYNTHETIC_DATA_KEY, synthetic_data_json)
 
 
 async def _update_synthetic_data_for_task(redis_db: Redis, task: Task, external_server_url: str) -> Dict[str, Any]:
     if task == Task.avatar:
         synthetic_data = base_models.AvatarIncoming(
             seed=random.randint(1, 1_000_000_000),
-            text_prompts=[_get_random_avatar_text_prompt()],
+            text_prompts=[sutils.get_random_avatar_text_prompt()],
             height=1280,
             width=1280,
             steps=15,
@@ -100,7 +84,7 @@ async def _update_synthetic_data_for_task(redis_db: Redis, task: Task, external_
 
 
 async def _get_stored_synthetic_data(redis_db: Redis):
-    return await redis_utils.json_load_from_redis(redis_db, cst.SYNTHETIC_DATA_KEY)
+    return await rutils.json_load_from_redis(redis_db, cst.SYNTHETIC_DATA_KEY)
 
 
 async def _continuously_fetch_synthetic_data_for_tasks(redis_db: Redis, external_server_url: str) -> None:

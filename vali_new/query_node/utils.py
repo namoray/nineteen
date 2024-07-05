@@ -6,7 +6,7 @@ from core import Task
 from models import base_models, utility_models
 import bittensor as bt
 from validation.proxy.utils import constants as cst
-from validation.models import HotkeyRecord, AxonUID
+from vali_new.models import Participant, AxonUID
 from core import bittensor_overrides as bto
 from collections import OrderedDict
 from validation.scoring import scoring_utils
@@ -122,15 +122,14 @@ def _get_formatted_payload(content: str, first_message: bool, add_finish_reason:
 
 
 async def query_miner_stream(
-    uid_record: HotkeyRecord,
+    participant: Participant,
     synapse: bt.Synapse,
-    outgoing_model: BaseModel,
     task: Task,
     dendrite: bto.dendrite,
     synthetic_query: bool,
 ) -> AsyncIterator[str]:
-    axon_uid = uid_record.hotkey
-    axon = uid_record.axon
+    axon_uid = participant.hotkey
+    axon = participant
 
     time1 = time.time()
     text_generator = await query_individual_axon_stream(
@@ -176,32 +175,34 @@ async def query_miner_stream(
             response_time=response_time,
             task=task,
             success=not first_message,
-            miner_hotkey=uid_record.hotkey,
+            miner_hotkey=participant.hotkey,
             status_code=status_code,
             error_message=error_message,
         )
 
-        create_scoring_adjustment_task(query_result, synapse, uid_record, synthetic_query)
+        create_scoring_adjustment_task(query_result, synapse, participant, synthetic_query)
 
 
 def create_scoring_adjustment_task(
-    query_result: utility_models.QueryResult, synapse: bt.Synapse, uid_record: HotkeyRecord, synthetic_query: bool
+    query_result: utility_models.QueryResult, synapse: bt.Synapse, participant: Participant, synthetic_query: bool
 ):
     asyncio.create_task(
-        scoring_utils.adjust_uid_record_from_result(query_result, synapse, uid_record, synthetic_query=synthetic_query)
+        scoring_utils.adjust_participant_from_result(
+            query_result, synapse, participant, synthetic_query=synthetic_query
+        )
     )
 
 
 async def query_miner_no_stream(
-    uid_record: HotkeyRecord,
+    participant: Participant,
     synapse: bt.Synapse,
     outgoing_model: BaseModel,
     task: Task,
     dendrite: bto.dendrite,
     synthetic_query: bool,
 ) -> utility_models.QueryResult:
-    axon_uid = uid_record.hotkey
-    axon = uid_record.axon
+    axon_uid = participant.hotkey
+    axon = participant.axon
     resulting_synapse, response_time = await query_individual_axon(
         synapse=synapse, dendrite=dendrite, axon=axon, uid=axon_uid, log_requests_and_responses=False
     )
@@ -219,11 +220,11 @@ async def query_miner_no_stream(
             response_time=response_time,
             task=task,
             success=True,
-            miner_hotkey=uid_record.hotkey,
+            miner_hotkey=participant.hotkey,
             status_code=resulting_synapse.axon.status_code,
             error_message=resulting_synapse.error_message,
         )
-        create_scoring_adjustment_task(query_result, synapse, uid_record, synthetic_query)
+        create_scoring_adjustment_task(query_result, synapse, participant, synthetic_query)
         return query_result
 
     elif task == Task.avatar:
@@ -233,11 +234,11 @@ async def query_miner_no_stream(
             response_time=response_time,
             task=task,
             success=False,
-            miner_hotkey=uid_record.hotkey,
+            miner_hotkey=participant.hotkey,
             status_code=resulting_synapse.axon.status_code,
             error_message=resulting_synapse.error_message,
         )
-        # create_scoring_adjustment_task(query_result, synapse, uid_record, synthetic_query)
+        # create_scoring_adjustment_task(query_result, synapse, participant, synthetic_query)
 
     else:
         query_result = utility_models.QueryResult(
@@ -248,9 +249,9 @@ async def query_miner_no_stream(
             task=task,
             status_code=resulting_synapse.axon.status_code,
             success=False,
-            miner_hotkey=uid_record.hotkey,
+            miner_hotkey=participant.hotkey,
         )
-        # create_scoring_adjustment_task(query_result, synapse, uid_record, synthetic_query)
+        # create_scoring_adjustment_task(query_result, synapse, participant, synthetic_query)
         return query_result
 
 

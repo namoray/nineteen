@@ -1,28 +1,11 @@
 import asyncio
 import random
-from typing import List
 
 from vali_new.models import Participant
 from vali_new.utils import redis_constants as rcst
 from vali_new.utils import redis_utils as rutils
 from redis.asyncio import Redis
-
-
-async def load_participant(redis_db: Redis, participant_id: str) -> Participant:
-    participant_raw = await rutils.json_load_from_redis(redis_db, participant_id)
-    participant = Participant(**participant_raw)
-    return participant
-
-
-async def load_participants(redis_db: Redis) -> List[Participant]:
-    participant_ids_set = await redis_db.smembers(rcst.PARTICIPANT_IDS_KEY)
-
-    participants = []
-    for participant_id in (i.decode("utf-8") for i in participant_ids_set):
-        participants.append(await load_participant(redis_db, participant_id))
-
-    return participants
-
+from vali_new.utils import participant_utils as putils
 
 async def handle_scheduling_for_participant(redis_db: Redis, participant_id: Participant) -> None:
     """
@@ -36,7 +19,7 @@ async def handle_scheduling_for_participant(redis_db: Redis, participant_id: Par
     i = 0
 
     # Is there a better way to do this than at the start?
-    participant = await load_participant(redis_db, participant_id)
+    participant = await putils.load_participant(redis_db, participant_id)
     while participant.synthetic_requests_still_to_make > 0:
         # Random perturbation(s) to make sure we dont burst all requests at once
         if i == 0:
@@ -46,7 +29,7 @@ async def handle_scheduling_for_participant(redis_db: Redis, participant_id: Par
 
         await asyncio.sleep(participant.delay_between_synthetic_requests * random_factor)
 
-        participant = await load_participant(redis_db, participant_id)
+        participant = await putils.load_participant(redis_db, participant_id)
         await rutils.add_str_to_redis_list(redis_db, rcst.SYNTHETIC_QUERIES_TO_MAKE_KEY, participant.id)
 
         # Organic queries consume volume too, so it's possible we enough that we don't
@@ -60,7 +43,7 @@ async def start_scheduling(
     redis_db: Redis,
 ) -> None:
     synthetic_scoring_tasks = []
-    participants = await load_participants(redis_db)
+    participants = await putils.load_participants(redis_db)
 
     for participant in participants:
         synthetic_scoring_tasks.append(asyncio.create_task(handle_scheduling_for_participant(redis_db, participant)))
