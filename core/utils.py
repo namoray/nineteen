@@ -1,5 +1,6 @@
+import asyncio
 import base64
-from typing import Dict
+from typing import AsyncGenerator, Callable, Dict
 import numpy as np
 from PIL import Image
 import cv2
@@ -59,3 +60,15 @@ def base64_to_pil(image_b64: str) -> Image.Image:
         return image
     except binascii.Error:
         return None
+
+
+def start_async_loop(func: Callable):
+    """Start the event loop and run the async tasks."""
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(func())
+
+
+async def consume_generator(generator: AsyncGenerator) -> None:
+    async for _ in generator:
+        pass

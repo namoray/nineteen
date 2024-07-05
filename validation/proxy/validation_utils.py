@@ -1,4 +1,3 @@
-import asyncio
 import sys
 import time
 import traceback
@@ -10,7 +9,6 @@ from rich.console import Console
 import bittensor as bt
 import fastapi
 import httpx
-from config.validator_config import config as validator_config
 from fastapi import HTTPException
 from pydantic import BaseModel
 import random
@@ -61,17 +59,14 @@ def health_check(base_url):
         return False
 
 
-def connect_to_external_server() -> str:
-    hotkey_name = validator_config.hotkey_name
+def connect_to_external_server(external_server_address: str) -> str:
 
     servers = {
-        ccst.EXTERNAL_SERVER_ADDRESS_PARAM: validator_config.external_server_url,
+        ccst.EXTERNAL_SERVER_ADDRESS_PARAM: external_server_address,
     }
 
     # Check each server
     for name, url in servers.items():
-        if url is None:
-            raise Exception(f"{hotkey_name}.{name.upper()} not set in the config")
 
         retry_interval = 2
         while True:

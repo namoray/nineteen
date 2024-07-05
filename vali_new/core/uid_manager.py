@@ -1,154 +1,153 @@
 import asyncio
 import collections
 import random
-from typing import AsyncGenerator, Dict, List
+from typing import Dict, List
 
 from core import Task
 import bittensor as bt
-from validation.models import HotkeyRecord, AxonUID
+from validation.models import HotkeyRecord, UidRecordsForTask
 from core import tasks, constants as ccst
 from validation.proxy.utils import query_utils
 from validation.db.db_management import db_manager
 from vali_new.utils import redis_constants as rcst
 from vali_new.utils import redis_utils
 from redis.asyncio import Redis
-## NEEDS MOVING TO SOME CONFIG
 
-# LLM VOLUMES ARE IN TOKENS,
-# IMAGE VOLUMES ARE IN STEP
-# CLIP IS IN IMAGES
-TASK_TO_VOLUME_TO_REQUESTS_CONVERSION: Dict[Task, float] = {
-    Task.chat_llama_3: 300,
-    Task.chat_mixtral: 300,
-    Task.proteus_text_to_image: 10,
-    Task.playground_text_to_image: 50,
-    Task.dreamshaper_text_to_image: 10,
-    Task.proteus_image_to_image: 10,
-    Task.playground_image_to_image: 50,
-    Task.dreamshaper_image_to_image: 10,
-    Task.jugger_inpainting: 20,
-    Task.avatar: 10,
-    Task.clip_image_embeddings: 1,
-}
+
+def calculate_period_scores_for_uids(uid_records_for_tasks: UidRecordsForTask) -> None:
+    for task in uid_records_for_tasks:
+        for record in uid_records_for_tasks[task].values():
+            record.calculate_period_score()
+
+
+async def store_period_scores(uid_records_for_tasks: UidRecordsForTask, validator_hotkey: str) -> None:
+    for uid_records in uid_records_for_tasks.values():
+        for uid_record in uid_records.values():
+            await db_manager.insert_uid_record(uid_record, validator_hotkey)
+
+
+def _get_percentage_of_tasks_to_score():
+    return 1
+
+
+async def calculate_synthetic_query_parameters(task: Task, declared_volume: float):
+    assert (
+        task in tasks.TASK_TO_VOLUME_TO_REQUESTS_CONVERSION
+    ), f"Task {task} not in TASK_TO_VOLUME_CONVERSION, it will not be scored. This should not happen."
+
+    volume_to_score = declared_volume * _get_percentage_of_tasks_to_score()
+    volume_to_requests_conversion = tasks.TASK_TO_VOLUME_TO_REQUESTS_CONVERSION[task]
+    number_of_requests_to_make = max(int(volume_to_score / volume_to_requests_conversion), 1)
+
+    delay_between_requests = (ccst.SCORING_PERIOD_TIME * 0.98) // (number_of_requests_to_make)
+
+    return volume_to_score, number_of_requests_to_make, delay_between_requests
+
+
+async def handle_task_scoring_for_uid(
+    redis_db: Redis,
+    task: Task,
+    hotkey: str,
+    declared_volume: float,
+    volume_to_score: float,
+    number_of_requests_to_make: int,
+    delay_between_requests: float,
+) -> None:
+    """
+    Calculates volume to score
+    Calculates number of synthetic requests off the back of that
+    Creates a uid record & stores it
+    Calculates delay between requests
+
+    Add a marker to redis between the delays to send a request
+    """
+
+    uid_record = HotkeyRecord(
+        hotkey=hotkey,
+        task=task,
+        synthetic_requests_still_to_make=number_of_requests_to_make,
+        declared_volume=declared_volume,
+    )
+    # replace below with
+    # self.uid_records_for_tasks[task][hotkey] = uid_record
+
+    i = 0
+    while uid_record.synthetic_requests_still_to_make > 0:
+        # Random perturbation(s) to make sure we dont burst all requests at once
+        if i == 0:
+            random_factor = random.random()
+        else:
+            random_factor = random.random() * 0.05 + 0.95
+
+        await asyncio.sleep(delay_between_requests * random_factor)
+
+        synthetic_query_to_add = {"task": task, "hotkey": hotkey}
+        await redis_utils.add_json_to_redis_list(redis_db, rcst.SYNTHETIC_QUERIES_TO_MAKE_KEY, synthetic_query_to_add)
+
+        # Organic queries consume volume too, so it's possible we enough that we don't
+        # Need synthetics anymore
+        if uid_record.consumed_volume >= volume_to_score:
+            break
+
+
+async def store_all_participants_in_redis(
+    redis_db: Redis,
+    capacities_for_tasks: Dict[Task, Dict[str, float]],
+    task_to_hotkey_queue: Dict[Task, query_utils.UIDQueue],
+):
+    for task in Task:
+        task_to_hotkey_queue[task] = query_utils.UIDQueue()
+        for hotkey, declared_volume in capacities_for_tasks.get(task, {}).items():
+            await store_participant(redis_db, task, hotkey, declared_volume)
+
+
+async def store_participant(redis_db: Redis, task: Task, hotkey: str, declared_volume: float): ...
+
+
+async def start_synthetic_scoring(
+    redis_db: Redis,
+    capacities_for_tasks: Dict[Task, Dict[str, float]],
+    task_to_hotkey_queue: Dict[Task, query_utils.UIDQueue],
+) -> None:
+    synthetic_scoring_tasks = []
+    for task in Task:
+        task_to_hotkey_queue[task] = query_utils.UIDQueue()
+        for hotkey, declared_volume in capacities_for_tasks.get(task, {}).items():
+            volume_to_score, number_of_requests_to_make, delay_between_requests = calculate_synthetic_query_parameters(
+                task, declared_volume
+            )
+            if volume_to_score == 0:
+                continue
+            synthetic_scoring_tasks.append(
+                asyncio.create_task(
+                    handle_task_scoring_for_uid(
+                        redis_db,
+                        task,
+                        hotkey,
+                        declared_volume,
+                        volume_to_score,
+                        number_of_requests_to_make,
+                        delay_between_requests,
+                    )
+                )
+            )
+    bt.logging.info(f"Starting querying for {len(synthetic_scoring_tasks)} tasks 🔥")
+    return synthetic_scoring_tasks
 
 
 class UidManager:
     def __init__(
         self,
-        capacities_for_tasks: Dict[Task, Dict[AxonUID, float]],
-        validator_hotkey: str,
-        is_testnet: bool,
         redis_db: Redis,
     ) -> None:
-        self.capacities_for_tasks = capacities_for_tasks
-        self.validator_hotkey = validator_hotkey
         self.redis_db = redis_db
-
-        self.uid_records_for_tasks: Dict[Task, Dict[AxonUID, HotkeyRecord]] = collections.defaultdict(dict)
+        # Replace with redis?
+        self.uid_records_for_tasks: UidRecordsForTask = collections.defaultdict(dict)
         self.synthetic_scoring_tasks: List[asyncio.Task] = []
         self.task_to_hotkey_queue: Dict[Task, query_utils.UIDQueue] = {}
 
-        self.is_testnet = is_testnet
-
-    def calculate_period_scores_for_uids(self) -> None:
-        for task in self.uid_records_for_tasks:
-            for record in self.uid_records_for_tasks[task].values():
-                record.calculate_period_score()
-
-    async def store_period_scores(self) -> None:
-        for uid_records in self.uid_records_for_tasks.values():
-            for uid_record in uid_records.values():
-                await db_manager.insert_uid_record(uid_record, self.validator_hotkey)
-
-    # this needs refactoring to not be a bunch of asyncio tasks which is very prone to errors
-    # And problems, but instead just be one
-    async def start_synthetic_scoring(self) -> None:
-        self.synthetic_scoring_tasks = []
-        for task in Task:
-            self.task_to_hotkey_queue[task] = query_utils.UIDQueue()
-            for hotkey, volume in self.capacities_for_tasks.get(task, {}).items():
-                # Need to add before start synthetic scoring so we can query the uid
-                volume_to_score = volume * self._get_percentage_of_tasks_to_score()
-                if volume_to_score == 0:
-                    continue
-                self.task_to_hotkey_queue[task].add_uid(hotkey)
-                self.synthetic_scoring_tasks.append(
-                    asyncio.create_task(
-                        self.handle_task_scoring_for_uid(
-                            task,
-                            hotkey,
-                            volume,
-                        )
-                    )
-                )
-        bt.logging.info(f"Starting querying for {len(self.synthetic_scoring_tasks)} tasks 🔥")
-
     async def collect_synthetic_scoring_results(self) -> None:
         await asyncio.gather(*self.synthetic_scoring_tasks)
-
-    async def handle_task_scoring_for_uid(self, task: Task, hotkey: str, volume: float) -> None:
-        volume_to_score = volume * self._get_percentage_of_tasks_to_score()
-
-        if task not in TASK_TO_VOLUME_TO_REQUESTS_CONVERSION:
-            bt.logging.warning(
-                f"Task {task} not in TASK_TO_VOLUME_CONVERSION, it will not be scored. This should not happen."
-            )
-            return
-        volume_to_requests_conversion = TASK_TO_VOLUME_TO_REQUESTS_CONVERSION[task]
-        number_of_requests = max(int(volume_to_score / volume_to_requests_conversion), 1)
-
-        uid_record = HotkeyRecord(
-            hotkey=hotkey,
-            task=task,
-            synthetic_requests_still_to_make=number_of_requests,
-            declared_volume=volume,
-        )
-        self.uid_records_for_tasks[task][hotkey] = uid_record
-
-        delay_between_requests = (ccst.SCORING_PERIOD_TIME * 0.98) // (number_of_requests)
-
-        bt.logging.info(f"hotkey: {hotkey}, task: {task}, delay: {delay_between_requests}")
-
-        i = 0
-        while uid_record.synthetic_requests_still_to_make > 0:
-            # Random perturbation to make sure we dont burst
-            if i == 0:
-                await asyncio.sleep(delay_between_requests * random.random())
-            else:
-                await asyncio.sleep(delay_between_requests * (random.random() * 0.05 + 0.95))
-
-            # TODO: Review if this is the best way to add tasks to some sort of queue in redis
-            # Im sure there's a much better way
-            synthetic_query_to_add = {"task": task, "hotkey": hotkey}
-            await redis_utils.add_json_to_redis_list(
-                self.redis_db, rcst.SYNTHETIC_QUERIES_TO_MAKE_KEY, synthetic_query_to_add
-            )
-            if uid_record.consumed_volume >= volume_to_score:
-                break
-
-    @staticmethod
-    def _get_percentage_of_tasks_to_score() -> float:
-        """
-        The function generates a random float value between 0 and 1.
-        sometimes it returns 0
-        sometimes it returns a random float value between 0 and 0.1.
-        Otherwise, it returns a random float value between 0.4 and 0.8.
-
-        Returns:
-            float: The percentage of tasks to score.
-
-        """
-        if random.random() < 0.7:
-            return 0.05
-        elif random.random() < 0.9:
-            return random.random() * 0.05 + 0.05
-        else:
-            return random.random() * 0.4 + 0.4
-
-    @staticmethod
-    async def _consume_generator(generator: AsyncGenerator) -> None:
-        async for _ in generator:
-            pass
 
 
 async def main():

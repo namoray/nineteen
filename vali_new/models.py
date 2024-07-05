@@ -21,7 +21,8 @@ class PeriodScore(BaseModel):
 class HotkeyRecord(BaseModel):
     class Config:
         arbitrary_types_allowed = True
-        allow_mutation = True
+        # Deprecated?
+        # allow_mutation = True
 
     hotkey: str
     task: Task

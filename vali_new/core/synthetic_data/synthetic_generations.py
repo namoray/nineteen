@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from core import Task, tasks
 import bittensor as bt
 from core import dataclasses as dc
-from models import base_models
+from models import base_models, utility_models
 from validation.proxy import validation_utils
 from core import utils as core_utils
 from PIL.Image import Image
@@ -53,14 +53,14 @@ def _my_boy_postie() -> str:
     b64_postie_altered = validation_utils.alter_image(my_boy_postie)
     return b64_postie_altered
 
-
-async def store_synthetic_data_in_redis(task: Task, synthetic_data: BaseModel) -> None:
+# TOOD: Change to mapping
+async def _store_synthetic_data_in_redis(redis_db: Redis, task: Task, synthetic_data: BaseModel) -> None:
     synthetic_data_json = await redis_utils.json_load_from_redis(redis_db, cst.SYNTHETIC_DATA_KEY)
     synthetic_data_json[task] = synthetic_data
     await redis_utils.save_json_to_redis(redis_db, cst.SYNTHETIC_DATA_KEY, synthetic_data_json)
 
 
-async def _update_synthetic_data_for_task(task: Task, external_server_url: str) -> Dict[str, Any]:
+async def _update_synthetic_data_for_task(redis_db: Redis, task: Task, external_server_url: str) -> Dict[str, Any]:
     if task == Task.avatar:
         synthetic_data = base_models.AvatarIncoming(
             seed=random.randint(1, 1_000_000_000),
@@ -72,7 +72,7 @@ async def _update_synthetic_data_for_task(task: Task, external_server_url: str) 
             ipadapter_strength=0.5,
             init_image=_my_boy_postie(),
         ).dict()
-        await store_synthetic_data_in_redis(task, synthetic_data)
+        await _store_synthetic_data_in_redis(redis_db, task, synthetic_data)
     else:
         try:
             async with httpx.AsyncClient(timeout=7) as client:
@@ -96,7 +96,31 @@ async def _update_synthetic_data_for_task(task: Task, external_server_url: str) 
             bt.logging.error(f"Synthetic data Response contained invalid JSON: error :{e}")
             return None
 
-        await store_synthetic_data_in_redis(task, response_json)
+        await _store_synthetic_data_in_redis(redis_db, task, response_json)
+
+
+async def _get_stored_synthetic_data(redis_db: Redis):
+    return await redis_utils.json_load_from_redis(redis_db, cst.SYNTHETIC_DATA_KEY)
+
+
+async def _continuously_fetch_synthetic_data_for_tasks(redis_db: Redis, external_server_url: str) -> None:
+    tasks_needing_synthetic_data = [
+        task for task in tasks.Task if task not in await _get_stored_synthetic_data(redis_db)
+    ]
+    while tasks_needing_synthetic_data:
+        sync_tasks = []
+        for task in tasks_needing_synthetic_data:
+            sync_tasks.append(asyncio.create_task(_update_synthetic_data_for_task(redis_db, task, external_server_url)))
+
+        await asyncio.gather(*sync_tasks)
+        tasks_needing_synthetic_data = [
+            task for task in tasks.Task if task not in await _get_stored_synthetic_data(redis_db)
+        ]
+
+    while True:
+        for task in tasks.Task:
+            await _update_synthetic_data_for_task(redis_db, task, external_server_url)
+            await asyncio.sleep(3)
 
 
 class SyntheticDataManager:
@@ -104,52 +128,34 @@ class SyntheticDataManager:
         self.redis_db = redis_db
         self.external_server_url = external_server_url
         if start_event_loop:
-            thread = threading.Thread(target=self._start_async_loop, daemon=True)
-            thread.start()
+            self._start_synthetic_event_loop()
 
-    def _start_async_loop(self):
-        """Start the event loop and run the async tasks."""
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        loop.run_until_complete(self._continuously_fetch_synthetic_data_for_tasks())
+    def _start_synthetic_event_loop(self):
+        self.thread = threading.Thread(
+            target=core_utils.start_async_loop, args=_continuously_fetch_synthetic_data_for_tasks, daemon=True
+        )
+        self.thread.start()
 
-    @property
-    async def task_to_stored_synthetic_data(self):
-        return await redis_utils.json_load_from_redis(self.redis_db, cst.SYNTHETIC_DATA_KEY)
 
-    async def _continuously_fetch_synthetic_data_for_tasks(self) -> None:
-        tasks_needing_synthetic_data = [
-            task for task in tasks.Task if task not in await self.task_to_stored_synthetic_data
-        ]
-        while tasks_needing_synthetic_data:
-            sync_tasks = []
-            for task in tasks_needing_synthetic_data:
-                sync_tasks.append(asyncio.create_task(self._update_synthetic_data_for_task(task)))
+## Testing utils
+async def patched_update_synthetic_data(redis_db: Redis, task: Task = Task.chat_llama_3):
+    synthetic_data = base_models.ChatIncoming(
+        seed=random.randint(1, 1_000_000_000),
+        temperature=0.5,
+        messages=[utility_models.Message(role=utility_models.Role.user, content="Test content prompt")],
+        model=utility_models.ChatModels.llama_3,
+    ).model_dump()
 
-            await asyncio.gather(*sync_tasks)
-            tasks_needing_synthetic_data = [
-                task for task in tasks.Task if task not in await self.task_to_stored_synthetic_data
-            ]
-
-        while True:
-            for task in tasks.Task:
-                await self._update_synthetic_data_for_task(task)
-                await asyncio.sleep(3)
+    await _store_synthetic_data_in_redis(redis_db, task, synthetic_data)
 
 
 if __name__ == "__main__":
+    import time
+
     redis_db = Redis()
     synthetic_data_manager = SyntheticDataManager(redis_db, "", start_event_loop=False)
-
-    async def _fake_update_synthetic_data(task):
-        await store_synthetic_data_in_redis(
-            task, {"test": "data", "test_key": "test_value", "rand_id": random.randint(0, 100000)}
-        )
-
-    synthetic_data_manager._update_synthetic_data_for_task = _fake_update_synthetic_data
-    thread = threading.Thread(target=synthetic_data_manager._start_async_loop, daemon=True)
-    thread.start()
-    import time
+    _update_synthetic_data_for_task = patched_update_synthetic_data
+    synthetic_data_manager._start_synthetic_event_loop()
 
     while True:
         time.sleep(100)

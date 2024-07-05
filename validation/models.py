@@ -3,7 +3,7 @@ from collections import defaultdict
 
 from pydantic import BaseModel, Field
 from core import Task
-from typing import Optional
+from typing import Dict, Optional
 from datetime import datetime
 
 task_data = defaultdict(lambda: defaultdict(list))
@@ -46,10 +46,9 @@ class HotkeyRecord(BaseModel):
         """
         if self.total_requests_made == 0 or self.declared_volume == 0:
             return None
-        
+
         self.declared_volume = max(self.declared_volume, 1)
         volume_unqueried = max(self.declared_volume - self.consumed_volume, 0)
-
 
         percentage_of_volume_unqueried = volume_unqueried / self.declared_volume
         percentage_of_429s = self.requests_429 / self.total_requests_made
@@ -93,3 +92,6 @@ class RewardData(BaseModel):
             "volume": self.volume,
             "created_at": self.created_at.isoformat(),  # Convert datetime to ISO string
         }
+
+
+UidRecordsForTask = Dict[Task, Dict[AxonUID, HotkeyRecord]]

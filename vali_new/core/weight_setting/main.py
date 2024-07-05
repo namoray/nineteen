@@ -11,11 +11,6 @@ from validation.models import AxonUID
 from validation.weight_setting import calculations
 
 VERSION_KEY = 40_004
-
-# If 1 then only take into account the most recent. If zero then they are all equal
-PERIOD_SCORE_TIME_DECAYING_FACTOR = 0.2
-
-
 async def start_weight_setting_process(
     subtensor: bt.subtensor,
     metagraph: bt.metagraph,
