@@ -35,7 +35,8 @@ class Participant(BaseModel):
     requests_500: int = Field(0, description="HTTP 500 requests")
     period_score: Optional[float] = Field(None, description="Period score")
 
-    def get_participant_id(self) -> str:
+    @property
+    def id(self) -> str:
         participant_id = self.hotkey + self.task.value
         return participant_id
 

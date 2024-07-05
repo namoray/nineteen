@@ -4,13 +4,13 @@ import random
 from typing import Dict, List
 
 from core import Task
-import bittensor as bt
-from validation.models import HotkeyRecord, UidRecordsForTask
+from vali_new.models import Participant
+from validation.models import UidRecordsForTask
 from core import tasks
 from validation.proxy.utils import query_utils
 from validation.db.db_management import db_manager
 from vali_new.utils import redis_constants as rcst
-from vali_new.utils import redis_utils
+from vali_new.utils import redis_utils as rutils
 from redis.asyncio import Redis
 
 
@@ -29,15 +29,25 @@ async def store_period_scores(uid_records_for_tasks: UidRecordsForTask, validato
 def _get_percentage_of_tasks_to_score():
     return 1
 
+async def load_participant(redis_db: Redis, participant_id: str) -> Participant:
+    participant_raw = await rutils.json_load_from_redis(redis_db, participant_id)
+    participant = Participant(**participant_raw)
+    return participant
+
+
+async def load_participants(redis_db: Redis) -> List[Participant]:
+    participant_ids_set = await redis_db.smembers(rcst.PARTICIPANT_IDS_KEY)
+
+    participants = []
+    for participant_id in (i.decode("utf-8") for i in participant_ids_set):
+        participants.append(await load_participant(redis_db, participant_id))
+
+    return participants
+
 
 async def handle_task_scoring_for_uid(
     redis_db: Redis,
-    task: Task,
-    hotkey: str,
-    declared_volume: float,
-    volume_to_score: float,
-    number_of_requests_to_make: int,
-    delay_between_requests: float,
+    participant_id: Participant
 ) -> None:
     """
     Calculates volume to score
@@ -48,55 +58,45 @@ async def handle_task_scoring_for_uid(
     Add a marker to redis between the delays to send a request
     """
 
-    uid_record = HotkeyRecord(
-        hotkey=hotkey,
-        task=task,
-        synthetic_requests_still_to_make=number_of_requests_to_make,
-        declared_volume=declared_volume,
-    )
-    # replace below with
-    # self.uid_records_for_tasks[task][hotkey] = uid_record
 
     i = 0
-    while uid_record.synthetic_requests_still_to_make > 0:
+
+    # Is there a better way to do this than at the start?
+    participant = await load_participant(redis_db, participant_id)
+    while participant.synthetic_requests_still_to_make > 0:
         # Random perturbation(s) to make sure we dont burst all requests at once
         if i == 0:
             random_factor = random.random()
         else:
             random_factor = random.random() * 0.05 + 0.95
 
-        await asyncio.sleep(delay_between_requests * random_factor)
+        await asyncio.sleep(participant.delay_between_synthetic_requests * random_factor)
 
-        synthetic_query_to_add = {"task": task, "hotkey": hotkey}
-        await redis_utils.add_json_to_redis_list(redis_db, rcst.SYNTHETIC_QUERIES_TO_MAKE_KEY, synthetic_query_to_add)
+        participant = await load_participant(redis_db, participant_id)
+        await rutils.add_str_to_redis_list(redis_db, rcst.SYNTHETIC_QUERIES_TO_MAKE_KEY, participant.id)
 
         # Organic queries consume volume too, so it's possible we enough that we don't
-        # Need synthetics anymore
-        if uid_record.consumed_volume >= volume_to_score:
+        # Need synthetics anymore. This is the only fresh info we need from 'participant' object
+        if await rutils.check_value_is_in_set(redis_db, rcst.PARITICIPANT_IDS_TO_STOP_KEY, participant.id):
+            await rutils.remove_value_from_set(redis_db, rcst.PARITICIPANT_IDS_TO_STOP_KEY, participant.id)
             break
 
 
 async def start_synthetic_scoring(
     redis_db: Redis,
-    capacities_for_tasks: Dict[Task, Dict[str, float]],
-    task_to_hotkey_queue: Dict[Task, query_utils.UIDQueue],
 ) -> None:
     synthetic_scoring_tasks = []
-    participants = await redis_utils.load_participants
+    participants = await load_participants(redis_db) 
 
-    synthetic_scoring_tasks.append(
-        asyncio.create_task(
-            handle_task_scoring_for_uid(
-                redis_db,
-                task,
-                hotkey,
-                declared_volume,
-                volume_to_score,
-                number_of_requests_to_make,
-                delay_between_requests,
+    for participant in participants:
+        synthetic_scoring_tasks.append(
+            asyncio.create_task(
+                handle_task_scoring_for_uid(
+                    redis_db,
+                    participant
+                )
             )
         )
-    )
     return synthetic_scoring_tasks
 
 

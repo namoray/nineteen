@@ -161,9 +161,9 @@ async def store_participant(
         delay_between_synthetic_requests=delay_between_synthetic_requests,
     )
     # How should i best do this, with redisJSON perhaps?
-    participant_id = participant.get_participant_id()
-    await redis_utils.save_json_to_redis(redis_db, key=participant_id, json_to_save=participant.model_dump())
-    await redis_utils.add_to_set_redis(redis_db, cst.PARTICIPANT_IDS_KEY, participant_id)
+
+    await redis_utils.save_json_to_redis(redis_db, key=participant.id, json_to_save=participant.model_dump())
+    await redis_utils.add_to_set_redis(redis_db, cst.PARTICIPANT_IDS_KEY, participant.id)
 
 
 async def get_and_store_participant_info(redis_db: Redis, metagraph: bt.metagraph, subtensor: bt.subtensor):
