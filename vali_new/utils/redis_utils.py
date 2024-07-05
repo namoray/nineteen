@@ -56,7 +56,7 @@ async def add_str_to_redis_list(redis_db: Redis, queue: str, value_to_add: str) 
 
 
 async def check_value_is_in_set(redis_db: Redis, name: str, value) -> bool:
-    return redis_db.sismember(name, value)
+    return await redis_db.sismember(name, value)
 
 
 async def remove_value_from_set(redis_db: Redis, name: str, value: str) -> None:

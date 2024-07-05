@@ -24,7 +24,7 @@ async def load_participants(redis_db: Redis) -> List[Participant]:
     return participants
 
 
-async def handle_scheduling_for_uid(redis_db: Redis, participant_id: Participant) -> None:
+async def handle_scheduling_for_participant(redis_db: Redis, participant_id: Participant) -> None:
     """
     Calculates volume to score
     Calculates number of synthetic requests off the back of that
@@ -63,7 +63,7 @@ async def start_scheduling(
     participants = await load_participants(redis_db)
 
     for participant in participants:
-        synthetic_scoring_tasks.append(asyncio.create_task(handle_scheduling_for_uid(redis_db, participant)))
+        synthetic_scoring_tasks.append(asyncio.create_task(handle_scheduling_for_participant(redis_db, participant)))
     return synthetic_scoring_tasks
 
 
