@@ -1,8 +1,11 @@
-from typing import Any, Dict
+from typing import Any, Dict, List
 from redis.asyncio import Redis
+from vali_new.utils import redis_constants as rcst
 import json
 from enum import Enum
 import copy
+
+from vali_new.models import Participant
 
 def _remove_enums(map: Dict[Any, Any]) -> Dict[Any, Any]:
     # TODO: Does this need to be deep copy?
@@ -45,3 +48,14 @@ async def add_json_to_redis_list(redis_db: Redis, queue: str, json_to_add: Dict[
     json_string = json.dumps(json_to_add)
 
     await redis_db.rpush(queue, json_string)
+
+async def load_participants(redis_db: Redis) -> List[Participant]:
+    participant_ids_set = await redis_db.smembers(rcst.PARTICIPANT_IDS_KEY)
+
+    participants = []
+    for participant_id in (i.decode("utf-8") for i in participant_ids_set):
+        participant_raw = await json_load_from_redis(redis_db, participant_id)
+        participant = Participant(**participant_raw)
+        participants.append(participant)
+    
+    return participants

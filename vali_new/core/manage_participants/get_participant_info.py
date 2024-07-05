@@ -1,4 +1,5 @@
 import asyncio
+import random
 import threading
 from typing import List
 
@@ -174,8 +175,14 @@ async def get_and_store_participant_info(redis_db: Redis, metagraph: bt.metagrap
 
 
 ## Testing utils
-async def patched_get_and_store_participant_info(redis_db: Redis) -> None:
-    capacities_for_tasks = {Task.chat_llama_3: {"hotkey123": 10_000, "hotkey456": 5_000}}
+async def patched_get_and_store_participant_info(redis_db: Redis, number_of_participants: int = 10) -> None:
+    participants_dict = {}
+    for i in range(number_of_participants):
+        hotkey = "hotkey" + str(random.randint(1, 10_000))
+        vol = (random.random() *4000 + 1000)
+        participants_dict[hotkey] = vol
+
+    capacities_for_tasks = {Task.chat_llama_3:participants_dict }
     await _store_capacities_in_redis(redis_db, capacities_for_tasks)
     await _store_all_participants_in_redis(redis_db, capacities_for_tasks)
 

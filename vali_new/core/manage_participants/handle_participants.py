@@ -82,28 +82,21 @@ async def start_synthetic_scoring(
     task_to_hotkey_queue: Dict[Task, query_utils.UIDQueue],
 ) -> None:
     synthetic_scoring_tasks = []
-    for task in Task:
-        task_to_hotkey_queue[task] = query_utils.UIDQueue()
-        for hotkey, declared_volume in capacities_for_tasks.get(task, {}).items():
-            volume_to_score, number_of_requests_to_make, delay_between_requests = calculate_synthetic_query_parameters(
-                task, declared_volume
+    participants = await redis_utils.load_participants
+
+    synthetic_scoring_tasks.append(
+        asyncio.create_task(
+            handle_task_scoring_for_uid(
+                redis_db,
+                task,
+                hotkey,
+                declared_volume,
+                volume_to_score,
+                number_of_requests_to_make,
+                delay_between_requests,
             )
-            if volume_to_score == 0:
-                continue
-            synthetic_scoring_tasks.append(
-                asyncio.create_task(
-                    handle_task_scoring_for_uid(
-                        redis_db,
-                        task,
-                        hotkey,
-                        declared_volume,
-                        volume_to_score,
-                        number_of_requests_to_make,
-                        delay_between_requests,
-                    )
-                )
-            )
-    bt.logging.info(f"Starting querying for {len(synthetic_scoring_tasks)} tasks 🔥")
+        )
+    )
     return synthetic_scoring_tasks
 
 
