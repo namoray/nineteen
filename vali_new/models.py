@@ -18,7 +18,7 @@ class PeriodScore(BaseModel):
     created_at: datetime
 
 
-class HotkeyRecord(BaseModel):
+class Participant(BaseModel):
     class Config:
         arbitrary_types_allowed = True
         # Deprecated?
@@ -27,12 +27,17 @@ class HotkeyRecord(BaseModel):
     hotkey: str
     task: Task
     synthetic_requests_still_to_make: int = Field(..., description="Synthetic requests still to make")
+    delay_between_synthetic_requests: float = Field(..., description="Delay between synthetic requests")
     declared_volume: float = Field(..., description="Declared volume for the UID")
     consumed_volume: float = Field(0, description="Queried volume for the UID")
     total_requests_made: int = Field(0, description="Total requests made")
     requests_429: int = Field(0, description="HTTP 429 requests")
     requests_500: int = Field(0, description="HTTP 500 requests")
     period_score: Optional[float] = Field(None, description="Period score")
+
+    def get_participant_id(self) -> str:
+        participant_id = self.hotkey + self.task.value
+        return participant_id
 
     def calculate_period_score(self) -> float:
         """
@@ -47,10 +52,9 @@ class HotkeyRecord(BaseModel):
         """
         if self.total_requests_made == 0 or self.declared_volume == 0:
             return None
-        
+
         self.declared_volume = max(self.declared_volume, 1)
         volume_unqueried = max(self.declared_volume - self.consumed_volume, 0)
-
 
         percentage_of_volume_unqueried = volume_unqueried / self.declared_volume
         percentage_of_429s = self.requests_429 / self.total_requests_made

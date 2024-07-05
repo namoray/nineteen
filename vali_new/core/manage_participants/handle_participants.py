@@ -6,7 +6,7 @@ from typing import Dict, List
 from core import Task
 import bittensor as bt
 from validation.models import HotkeyRecord, UidRecordsForTask
-from core import tasks, constants as ccst
+from core import tasks
 from validation.proxy.utils import query_utils
 from validation.db.db_management import db_manager
 from vali_new.utils import redis_constants as rcst
@@ -28,20 +28,6 @@ async def store_period_scores(uid_records_for_tasks: UidRecordsForTask, validato
 
 def _get_percentage_of_tasks_to_score():
     return 1
-
-
-async def calculate_synthetic_query_parameters(task: Task, declared_volume: float):
-    assert (
-        task in tasks.TASK_TO_VOLUME_TO_REQUESTS_CONVERSION
-    ), f"Task {task} not in TASK_TO_VOLUME_CONVERSION, it will not be scored. This should not happen."
-
-    volume_to_score = declared_volume * _get_percentage_of_tasks_to_score()
-    volume_to_requests_conversion = tasks.TASK_TO_VOLUME_TO_REQUESTS_CONVERSION[task]
-    number_of_requests_to_make = max(int(volume_to_score / volume_to_requests_conversion), 1)
-
-    delay_between_requests = (ccst.SCORING_PERIOD_TIME * 0.98) // (number_of_requests_to_make)
-
-    return volume_to_score, number_of_requests_to_make, delay_between_requests
 
 
 async def handle_task_scoring_for_uid(
@@ -90,20 +76,6 @@ async def handle_task_scoring_for_uid(
             break
 
 
-async def store_all_participants_in_redis(
-    redis_db: Redis,
-    capacities_for_tasks: Dict[Task, Dict[str, float]],
-    task_to_hotkey_queue: Dict[Task, query_utils.UIDQueue],
-):
-    for task in Task:
-        task_to_hotkey_queue[task] = query_utils.UIDQueue()
-        for hotkey, declared_volume in capacities_for_tasks.get(task, {}).items():
-            await store_participant(redis_db, task, hotkey, declared_volume)
-
-
-async def store_participant(redis_db: Redis, task: Task, hotkey: str, declared_volume: float): ...
-
-
 async def start_synthetic_scoring(
     redis_db: Redis,
     capacities_for_tasks: Dict[Task, Dict[str, float]],
@@ -148,6 +120,12 @@ class UidManager:
 
     async def collect_synthetic_scoring_results(self) -> None:
         await asyncio.gather(*self.synthetic_scoring_tasks)
+
+    async def start_period(self) -> None:
+        # Get the participant info from redis
+
+        # Store each participant info in redis somehow
+        ...
 
 
 async def main():

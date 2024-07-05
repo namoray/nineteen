@@ -12,7 +12,7 @@ import httpx
 from fastapi import HTTPException
 from pydantic import BaseModel
 import random
-from core import constants as ccst, utils as core_utils
+from core import constants as ccst, utils as cutils
 from models import utility_models, base_models
 import numpy as np
 
@@ -103,7 +103,7 @@ def alter_image(
     if pil_image.mode == "RGBA":
         pil_image = pil_image.convert("RGB")
 
-    new_image = core_utils.pil_to_base64(pil_image)
+    new_image = cutils.pil_to_base64(pil_image)
     return new_image
 
 
@@ -115,7 +115,7 @@ def alter_clip_body(
 
     new_images = []
     for image in body.image_b64s:
-        pil_image = core_utils.base64_to_pil(image)
+        pil_image = cutils.base64_to_pil(image)
         new_image = alter_image(pil_image)
         new_images.append(new_image)
 

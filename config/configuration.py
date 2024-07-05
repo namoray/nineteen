@@ -127,3 +127,9 @@ def get_validator_cli_config() -> "bt.Config":
 
     config.full_path.mkdir(parents=True, exist_ok=True)
     return config
+
+def prepare_validator_config_and_logging() -> bt.config:
+    base_config = get_validator_cli_config()
+
+    bt.logging(config=base_config, logging_dir=base_config.full_path)
+    return base_config

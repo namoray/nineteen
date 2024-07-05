@@ -12,7 +12,7 @@ import bittensor as bt
 from core import dataclasses as dc
 from models import base_models
 from validation.proxy import validation_utils
-from core import utils as core_utils
+from core import utils as cutils
 from PIL.Image import Image
 from redis.asyncio import Redis
 from vali_new.utils import redis_constants as cst
@@ -26,7 +26,7 @@ TEXT_PROMPTS = "text_prompts"
 def load_postie_to_pil(image_path: str) -> Image:
     with open(image_path, "rb") as image_file:
         base64_string = base64.b64encode(image_file.read()).decode("utf-8")
-    pil_image = core_utils.base64_to_pil(base64_string)
+    pil_image = cutils.base64_to_pil(base64_string)
     return pil_image
 
 
