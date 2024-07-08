@@ -68,7 +68,3 @@ def start_async_loop(func: Callable):
     asyncio.set_event_loop(loop)
     loop.run_until_complete(func())
 
-
-async def consume_generator(generator: AsyncGenerator) -> None:
-    async for _ in generator:
-        pass
