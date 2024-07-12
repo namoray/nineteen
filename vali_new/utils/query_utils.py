@@ -7,7 +7,7 @@ import random
 import numpy as np
 
 
-def _alter_image(
+def alter_image(
     pil_image: Image.Image,
 ) -> str:
     numpy_image = np.array(pil_image)
@@ -39,7 +39,7 @@ def alter_clip_body(
     new_images = []
     for image in body.image_b64s:
         pil_image = cutils.base64_to_pil(image)
-        new_image = _alter_image(pil_image)
+        new_image = alter_image(pil_image)
         new_images.append(new_image)
 
     body.image_b64s = new_images

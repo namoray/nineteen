@@ -9,12 +9,14 @@ from pydantic import BaseModel
 from core import Task, tasks
 import bittensor as bt
 from models import base_models, utility_models
-from validation.proxy import validation_utils
 from core import utils as cutils
 from PIL.Image import Image
 from redis.asyncio import Redis
 from vali_new.utils import redis_constants as cst
-from vali_new.utils import redis_utils as rutils, synthetic_utils as sutils
+from vali_new.utils import redis_utils as rutils, synthetic_utils as sutils, query_utils as qutils
+from core.logging import get_logger
+
+logger = get_logger(__name__)
 
 SEED = "seed"
 TEMPERATURE = "temperature"
@@ -31,9 +33,8 @@ def load_postie_to_pil(image_path: str) -> Image:
 my_boy_postie = load_postie_to_pil("validation/synthetic_data/postie.png")
 
 
-
 def _my_boy_postie() -> str:
-    b64_postie_altered = validation_utils.alter_image(my_boy_postie)
+    b64_postie_altered = qutils.alter_image(my_boy_postie)
     return b64_postie_altered
 
 
@@ -131,6 +132,8 @@ async def patched_update_synthetic_data(redis_db: Redis, task: Task = Task.chat_
     ).model_dump()
 
     await _store_synthetic_data_in_redis(redis_db, task, synthetic_data)
+
+    logger.info(f"Stored synthetic data for task: {task.value}!")
 
 
 if __name__ == "__main__":
