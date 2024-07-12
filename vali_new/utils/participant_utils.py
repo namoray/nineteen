@@ -4,6 +4,10 @@ from vali_new.models import Participant
 from vali_new.utils import redis_constants as rcst
 from vali_new.utils import redis_utils as rutils
 from redis.asyncio import Redis
+from core.logging import get_logger
+
+
+logger = get_logger(__name__)
 
 
 async def load_participant(redis_db: Redis, participant_id: str) -> Participant:
@@ -20,3 +24,21 @@ async def load_participants(redis_db: Redis) -> List[Participant]:
         participants.append(await load_participant(redis_db, participant_id))
 
     return participants
+
+
+async def add_participant_to_synthetic_query_list(redis_db: Redis, participant_id: str) -> None:
+    logger.debug(f"Adding {participant_id} to synthetic queries")
+    participant = await load_participant(redis_db, participant_id)
+    await rutils.add_str_to_redis_list(redis_db, rcst.SYNTHETIC_QUERIES_TO_MAKE_KEY, participant.id)
+
+
+async def check_and_remove_participant_from_synthetics_if_finished(redis_db: Redis, participant_id: str) -> bool:
+    if await rutils.check_value_is_in_set(redis_db, rcst.PARITICIPANT_IDS_TO_STOP_KEY, participant_id):
+        logger.debug(f"Removing {participant_id} from synthetic queries")
+        await rutils.remove_value_from_set(redis_db, rcst.PARITICIPANT_IDS_TO_STOP_KEY, participant_id)
+        return True
+    return False
+
+
+async def load_synthetic_query_list(redis_db: Redis) -> List[str]:
+    return await rutils.get_redis_list(redis_db, rcst.SYNTHETIC_QUERIES_TO_MAKE_KEY)

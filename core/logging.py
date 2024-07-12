@@ -46,7 +46,7 @@ class StreamlitHandler(logging.Handler):
 @lru_cache(maxsize=None)
 def get_logger(name: str):
     logger = logging.getLogger(name.split(".")[-1])
-    mode: str = os.getenv("LOGGING_MODE", "prod")
+    mode: str = os.getenv("ENV", "prod")
 
     logger.setLevel(logging.DEBUG if mode != "prod" else logging.INFO)
     logger.handlers.clear()

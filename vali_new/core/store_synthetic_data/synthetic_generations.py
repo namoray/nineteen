@@ -84,13 +84,9 @@ async def _update_synthetic_data_for_task(redis_db: Redis, task: Task, external_
         await _store_synthetic_data_in_redis(redis_db, task, response_json)
 
 
-async def _get_stored_synthetic_data(redis_db: Redis):
-    return await rutils.json_load_from_redis(redis_db, cst.SYNTHETIC_DATA_KEY)
-
-
 async def _continuously_fetch_synthetic_data_for_tasks(redis_db: Redis, external_server_url: str) -> None:
     tasks_needing_synthetic_data = [
-        task for task in tasks.Task if task not in await _get_stored_synthetic_data(redis_db)
+        task for task in tasks.Task if task not in await get_stored_synthetic_data(redis_db)
     ]
     while tasks_needing_synthetic_data:
         sync_tasks = []
@@ -99,13 +95,17 @@ async def _continuously_fetch_synthetic_data_for_tasks(redis_db: Redis, external
 
         await asyncio.gather(*sync_tasks)
         tasks_needing_synthetic_data = [
-            task for task in tasks.Task if task not in await _get_stored_synthetic_data(redis_db)
+            task for task in tasks.Task if task not in await get_stored_synthetic_data(redis_db)
         ]
 
     while True:
         for task in tasks.Task:
             await _update_synthetic_data_for_task(redis_db, task, external_server_url)
             await asyncio.sleep(3)
+
+
+async def get_stored_synthetic_data(redis_db: Redis):
+    return await rutils.json_load_from_redis(redis_db, cst.SYNTHETIC_DATA_KEY)
 
 
 class SyntheticDataManager:
@@ -131,7 +131,7 @@ async def patched_update_synthetic_data(redis_db: Redis, task: Task = Task.chat_
         model=utility_models.ChatModels.llama_3,
     ).model_dump()
 
-    await _store_synthetic_data_in_redis(redis_db, task, synthetic_data)
+    await _store_synthetic_data_in_redis(redis_db, Task.chat_llama_3, synthetic_data)
 
     logger.info(f"Stored synthetic data for task: {task.value}!")
 

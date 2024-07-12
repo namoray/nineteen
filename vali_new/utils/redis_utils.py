@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, List
 from redis.asyncio import Redis
 import json
 from enum import Enum
@@ -51,6 +51,9 @@ async def add_json_to_redis_list(redis_db: Redis, queue: str, json_to_add: Dict[
 
 async def add_str_to_redis_list(redis_db: Redis, queue: str, value_to_add: str) -> None:
     await redis_db.rpush(queue, value_to_add)
+
+async def get_redis_list(redis_db: Redis, queue: str) -> List[str]:
+    return await redis_db.lrange(queue, 0, -1)
 
 # Should the two below really be in redis utils? i dont think so
 

@@ -8,7 +8,7 @@ from models import utility_models
 
 from redis.asyncio import Redis
 from vali_new.models import Participant
-from vali_new.utils import redis_utils
+from vali_new.utils import redis_utils as rutils, query_utils as qutils
 from vali_new.utils import redis_constants as cst
 from core import constants as ccst
 from collections import defaultdict
@@ -17,7 +17,6 @@ from typing import Optional
 from core import tasks, utils as cutils
 
 from core import Task
-from validation.proxy.utils import query_utils
 from core import bittensor_overrides as bto
 from models import base_models, synapses
 
@@ -47,7 +46,7 @@ async def _sync_metagraph(redis_db: Redis, metagraph: bt.metagraph, subtensor: b
                 hotkey=hotkey,
             )
             # TODO: Is this the best way to store the info?
-            await redis_utils.save_json_to_redis(redis_db, cst.HOTKEY_INFO_KEY + hotkey, hotkey_info.dict())
+            await rutils.save_json_to_redis(redis_db, cst.HOTKEY_INFO_KEY + hotkey, hotkey_info.dict())
 
     return hotkeys
 
@@ -60,10 +59,10 @@ async def _fetch_available_capacities_for_each_axon(
     for hotkey in hotkeys:
         # NOTE: Doesn't seem the most efficient to use redis here... lol
         hotkey_info = utility_models.HotkeyInfo(
-            **(await redis_utils.json_load_from_redis(redis_db, cst.HOTKEY_INFO_KEY + hotkey))
+            **(await rutils.json_load_from_redis(redis_db, cst.HOTKEY_INFO_KEY + hotkey))
         )
         task = asyncio.create_task(
-            query_utils.query_individual_axon(
+            qutils.query_individual_axon(
                 synapse=synapses.Capacity(),
                 dendrite=dendrite,
                 axon=hotkey_info.axon,
@@ -103,7 +102,7 @@ def _correct_capacities(capacities_for_tasks: Dict[Task, Dict[str, float]]):
 
 
 async def _store_capacities_in_redis(redis_db: Redis, capacities_for_tasks: Dict[Task, Dict[str, float]]):
-    await redis_utils.save_json_to_redis(redis_db, cst.CAPACITIES_KEY, capacities_for_tasks)
+    await rutils.save_json_to_redis(redis_db, cst.CAPACITIES_KEY, capacities_for_tasks)
 
 
 async def _store_all_participants_in_redis(
@@ -162,8 +161,8 @@ async def store_participant(
     )
     # How should i best do this, with redisJSON perhaps?
 
-    await redis_utils.save_json_to_redis(redis_db, key=participant.id, json_to_save=participant.model_dump())
-    await redis_utils.add_to_set_redis(redis_db, cst.PARTICIPANT_IDS_KEY, participant.id)
+    await rutils.save_json_to_redis(redis_db, key=participant.id, json_to_save=participant.model_dump())
+    await rutils.add_to_set_redis(redis_db, cst.PARTICIPANT_IDS_KEY, participant.id)
     return participant.id
 
 
