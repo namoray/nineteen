@@ -3,6 +3,7 @@ import os
 
 os.environ["ENV"] = "dev"
 
+import time
 from typing import Any, Awaitable, Callable, TypeVar  # noqa
 import streamlit as st  # noqa
 from core import Task  # noqa
@@ -35,7 +36,7 @@ def get_synthetic_data():
     return run_in_loop(synthetic_generations.get_stored_synthetic_data)
 
 
-@st.cache_data
+@st.cache_data(ttl=0.1)
 def get_synthetic_scheduling_queue():
     return run_in_loop(putils.load_synthetic_scheduling_queue)
 
@@ -212,10 +213,10 @@ with st.container():
         st.subheader("Query queue")
 
         if st.button("Add synthetic queries which are ready"):
-            run_in_loop(putils.add_synthetic_query_to_queue, participant_id)
+            run_in_loop(scheduling_participants.run_schedule_processor, with_redis=True, run_once=True)
             st.cache_data.clear()
-        synthetic_query_list = get_query_queue()
 
+        synthetic_query_list = get_query_queue()
         if synthetic_query_list:
             st.write(synthetic_query_list)
 

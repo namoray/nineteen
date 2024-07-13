@@ -3,6 +3,9 @@ from redis.asyncio import Redis
 import json
 from enum import Enum
 import copy
+from core.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 def _remove_enums(map: Dict[Any, Any]) -> Dict[Any, Any]:
@@ -53,7 +56,6 @@ async def add_json_to_redis_list(redis_db: Redis, queue: str, json_to_add: Dict[
 
 
 async def add_to_sorted_set(redis_db: Redis, name: str, data: str | dict[Any, Any], score: float) -> None:
-
     if isinstance(data, dict):
         json_to_add = _remove_enums(data)
         data = json.dumps(json_to_add)
@@ -68,7 +70,40 @@ async def get_redis_list(redis_db: Redis, queue: str) -> List[str]:
     return await redis_db.lrange(queue, 0, -1)
 
 
-# Should the two below really be in redis utils? i dont think so
+async def get_sorted_set(redis_db: Redis, name: str) -> List[str]:
+    return await redis_db.zrevrange(name, 0, -1)
+
+
+async def get_first_from_sorted_set(redis_db: Redis, key: str) -> dict[str, Any] | None:
+    """
+    Get the first (lowest scored) item from a Redis sorted set.
+
+    :param redis_db: Redis connection
+    :param key: The key of the sorted set
+    :return: The first item as a dictionary, or None if the set is empty
+    """
+    result = await redis_db.zrange(key, 0, 0, withscores=True)
+    if not result:
+        return None
+
+    item, score = result[0]
+    try:
+        return json.loads(item.decode("utf-8"))
+    except json.JSONDecodeError:
+        logger.error(f"Failed to decode JSON from Redis: {item}")
+        return None
+
+
+async def remove_from_sorted_set(redis_db: Redis, key: str, data: Dict[str, Any]) -> None:
+    """
+    Remove an item from a Redis sorted set.
+
+    :param redis_db: Redis connection
+    :param key: The key of the sorted set
+    :param data: The data to remove (should match the stored JSON string)
+    """
+    json_str = json.dumps(data)
+    await redis_db.zrem(key, json_str)
 
 
 async def check_value_is_in_set(redis_db: Redis, name: str, value) -> bool:

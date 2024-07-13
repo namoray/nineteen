@@ -1,3 +1,4 @@
+import json
 from vali_new.models import Participant
 from vali_new.utils import redis_constants as rcst
 from vali_new.utils import redis_utils as rutils
@@ -6,6 +7,10 @@ from core.logging import get_logger
 
 
 logger = get_logger(__name__)
+
+
+def construct_synthetic_query_message(participant_id: str) -> str:
+    return json.dumps({"query_type": "synthetic", "query_payload": {"participant_id": participant_id}})
 
 
 async def load_participant(redis_db: Redis, participant_id: str) -> Participant:
@@ -34,9 +39,8 @@ async def check_and_remove_participant_from_synthetics_if_finished(redis_db: Red
 
 
 async def add_synthetic_query_to_queue(redis_db: Redis, participant_id: str) -> None:
-    logger.debug(f"Adding {participant_id} to synthetic queries")
-    participant = await load_participant(redis_db, participant_id)
-    await rutils.add_str_to_redis_list(redis_db, rcst.QUERY_QUEUE_KEY, participant.id)
+    message = construct_synthetic_query_message(participant_id)
+    await rutils.add_str_to_redis_list(redis_db, rcst.QUERY_QUEUE_KEY, message)
 
 
 async def load_query_queue(redis_db: Redis) -> list[str]:
@@ -44,4 +48,4 @@ async def load_query_queue(redis_db: Redis) -> list[str]:
 
 
 async def load_synthetic_scheduling_queue(redis_db: Redis) -> list[str]:
-    return await rutils.get_redis_list(redis_db, rcst.SYNTHETIC_SCHEDULING_QUEUE_KEY)
+    return await rutils.get_sorted_set(redis_db, rcst.SYNTHETIC_SCHEDULING_QUEUE_KEY)
