@@ -10,7 +10,7 @@ from operation_logic import chat_logic
 from starlette.types import Send
 from functools import partial
 from models import utility_models
-from config.miner_config import config as miner_config
+from config.miner_config import config as config
 
 operation_name = "ChatOperation"
 
@@ -44,9 +44,9 @@ class ChatOperation(abstract_operation.Operation):
     @abstract_operation.enforce_concurrency_limits
     async def forward(synapse: synapses.Chat) -> synapses.Chat:
         if synapse.model == utility_models.ChatModels.mixtral.value:
-            url = miner_config.mixtral_text_worker_url
+            url = config.mixtral_text_worker_url
         elif synapse.model == utility_models.ChatModels.llama_3.value:
-            url = miner_config.llama_3_text_worker_url
+            url = config.llama_3_text_worker_url
         else:
             raise NotImplementedError(f"Model {synapse.model} not implemented for chat operation")
         task = tasks.get_task_from_synapse(synapse)

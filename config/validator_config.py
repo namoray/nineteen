@@ -1,10 +1,8 @@
-from pydantic import BaseModel
 from dotenv import load_dotenv
-from typing import Optional
-from core import constants as ccst
 import os
 import bittensor as bt
 import argparse
+from models import config_models
 
 
 def _get_env_file_from_cli_config() -> str:
@@ -26,20 +24,4 @@ if not os.path.exists(env_file):
 load_dotenv(env_file, verbose=True)
 
 
-class Config(BaseModel):
-    hotkey_name: str = os.getenv(ccst.HOTKEY_PARAM, "default")
-    wallet_name: str = os.getenv(ccst.WALLET_NAME_PARAM, "default")
-
-    subtensor_network: str = os.getenv(ccst.SUBTENSOR_NETWORK_PARAM, "test")
-    subtensor_chainendpoint: Optional[str] = os.getenv(
-        ccst.SUBTENSOR_CHAINENDPOINT_PARAM, None
-    )
-
-    external_server_url: str = os.getenv(ccst.EXTERNAL_SERVER_ADDRESS_PARAM, None)
-
-    api_server_port: Optional[int] = os.getenv(ccst.API_SERVER_PORT_PARAM, None)
-
-    is_validator: bool = False
-
-
-config = Config()
+config = config_models.ValidatorConfig()

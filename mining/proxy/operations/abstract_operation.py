@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from core import tasks, utils
 from mining.proxy import core_miner
 from mining.proxy.core_miner import miner_requests_stats
-from config.miner_config import config as miner_config
+from config.miner_config import config as config
 from functools import wraps
 
 T = TypeVar("T", bound=bt.Synapse)
@@ -41,8 +41,8 @@ def enforce_concurrency_limits(func):
         task_value = task.value if task is not None else None
         task_is_stream = tasks.TASK_IS_STREAM.get(task, False)
 
-        capacity_config = utils.load_capacities(miner_config.hotkey_name)
-        concurrency_groups = utils.load_concurrency_groups(miner_config.hotkey_name)
+        capacity_config = utils.load_capacities(config.hotkey_name)
+        concurrency_groups = utils.load_concurrency_groups(config.hotkey_name)
 
         if task_value is None:
             bt.logging.warning(

@@ -14,7 +14,7 @@ from models import utility_models
 from core import constants as cst
 from core import dataclasses as dc
 from pydantic import BaseModel
-from config.miner_config import config as miner_config
+from config.miner_config import config as config
 import httpx
 import bittensor as bt
 
@@ -284,7 +284,7 @@ def model_to_printable_dict(model: Optional[BaseModel], max_length: int = 50) ->
 
 
 async def get_image_from_server(body: BaseModel, post_endpoint: str, timeout: float = 20.0):
-    endpoint = miner_config.image_worker_url + post_endpoint
+    endpoint = config.image_worker_url + post_endpoint
     async with httpx.AsyncClient(timeout=timeout) as client:
         try:
             response = await client.post(endpoint, json=body.dict())

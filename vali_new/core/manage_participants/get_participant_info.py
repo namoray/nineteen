@@ -1,10 +1,9 @@
 import asyncio
 import random
 import threading
-from typing import List
 
 import bittensor as bt
-from models import utility_models
+from models import config_models, utility_models
 
 from redis.asyncio import Redis
 from vali_new.models import Participant
@@ -12,47 +11,49 @@ from vali_new.utils import redis_utils as rutils, query_utils as qutils
 from vali_new.utils import redis_constants as cst
 from core import constants as ccst
 from collections import defaultdict
-from typing import Dict, Tuple
-from typing import Optional
-from core import tasks, utils as cutils
-
+from core import tasks
+from config import configuration
 from core import Task
+
 from core import bittensor_overrides as bto
 from models import base_models, synapses
 
+from core.logging import get_logger
+
+
+logger = get_logger(__name__)
 
 # Replace with some global threading lock?
 threading_lock = threading.Lock()
 
 
-async def _sync_metagraph(redis_db: Redis, metagraph: bt.metagraph, subtensor: bt.subtensor) -> None:
+async def _sync_metagraph(redis_db: Redis, postgresql_db: metagraph: bt.metagraph, subtensor: bt.subtensor) -> None:
     bt.logging.info("Resyncing the metagraph!")
     await asyncio.to_thread(metagraph.sync, subtensor=subtensor, lite=True)
 
     bt.logging.info("Got the capacities, now storing the info....")
-    _, axon_indexes_tensor = metagraph.incentive.sort(descending=True)
+    logger.debug(f"Metagraph incentive: {metagraph.incentive}; type: {type(metagraph.incentive)}")
 
     with threading_lock:
-        uids: List[int] = metagraph.uids.tolist()
-        axon_indexes = axon_indexes_tensor.tolist()
-        hotkeys: List[str] = metagraph.hotkeys  # noqa: F841
+        uids: list[int] = metagraph.uids.tolist()
+        hotkeys: list[str] = metagraph.hotkeys  # noqa: F841
         axons = metagraph.axons
 
-        for i in axon_indexes:
-            uid, hotkey, axon = uids[i], hotkeys[i], axons[i]
+        for uid, hotkey, axon in zip(uids, hotkeys, axons):
             hotkey_info = utility_models.HotkeyInfo(
                 uid=uid,
-                axon=axon,
+                axon_ip=axon.ip,
                 hotkey=hotkey,
             )
             # TODO: Is this the best way to store the info?
+            # NO; I think this should really go into a sql table
             await rutils.save_json_to_redis(redis_db, cst.HOTKEY_INFO_KEY + hotkey, hotkey_info.dict())
 
     return hotkeys
 
 
 async def _fetch_available_capacities_for_each_axon(
-    redis_db: Redis, hotkeys: List[str], dendrite: bto.dendrite
+    redis_db: Redis, hotkeys: list[str], dendrite: bto.dendrite
 ) -> None:
     hotkey_to_query_task = {}
 
@@ -74,8 +75,8 @@ async def _fetch_available_capacities_for_each_axon(
 
         hotkey_to_query_task[hotkey] = task
 
-    responses_and_response_times: List[
-        Tuple[Optional[Dict[Task, base_models.VolumeForTask]], float]
+    responses_and_response_times: list[
+        tuple[dict[Task, base_models.VolumeForTask] | None, float]
     ] = await asyncio.gather(*hotkey_to_query_task.values())
 
     all_capacities = [i[0] for i in responses_and_response_times]
@@ -97,17 +98,17 @@ async def _fetch_available_capacities_for_each_axon(
         return capacities_for_tasks
 
 
-def _correct_capacities(capacities_for_tasks: Dict[Task, Dict[str, float]]):
+def _correct_capacities(capacities_for_tasks: dict[Task, dict[str, float]]):
     return capacities_for_tasks
 
 
-async def _store_capacities_in_redis(redis_db: Redis, capacities_for_tasks: Dict[Task, Dict[str, float]]):
+async def _store_capacities_in_redis(redis_db: Redis, capacities_for_tasks: dict[Task, dict[str, float]]):
     await rutils.save_json_to_redis(redis_db, cst.CAPACITIES_KEY, capacities_for_tasks)
 
 
 async def _store_all_participants_in_redis(
     redis_db: Redis,
-    capacities_for_tasks: Dict[Task, Dict[str, float]],
+    capacities_for_tasks: dict[Task, dict[str, float]],
 ):
     for task in Task:
         for hotkey, declared_volume in capacities_for_tasks.get(task, {}).items():
@@ -179,17 +180,19 @@ async def patched_get_and_store_participant_info(redis_db: Redis, number_of_part
     participants_dict = {}
     for i in range(number_of_participants):
         hotkey = "hotkey" + str(random.randint(1, 10_000))
-        vol = (random.random() *4000 + 1000)
+        vol = random.random() * 4000 + 1000
         participants_dict[hotkey] = vol
 
-    capacities_for_tasks = {Task.chat_llama_3:participants_dict }
+    capacities_for_tasks = {Task.chat_llama_3: participants_dict}
     await _store_capacities_in_redis(redis_db, capacities_for_tasks)
     await _store_all_participants_in_redis(redis_db, capacities_for_tasks)
 
 
 async def main():
+    # Remember to export ENV=test
     redis_db = Redis()
-    config = cutils.prepare_config_and_logging()
+    validator_config = config_models.ValidatorConfig()
+    config = configuration.prepare_validator_config_and_logging(validator_config)
     subtensor = bt.subtensor(config=config)
     metagraph = subtensor.metagraph(netuid=config.netuid, lite=True)
     await get_and_store_participant_info(redis_db, metagraph, subtensor)

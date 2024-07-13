@@ -6,7 +6,7 @@ from core import utils
 from mining.proxy import core_miner
 from mining.proxy.operations import abstract_operation
 from models import synapses
-from config.miner_config import config as miner_config
+from config.miner_config import config as config
 import copy
 
 operation_name = "CapacityOperation"
@@ -17,7 +17,7 @@ T = TypeVar("T", bound=bt.Synapse)
 class CapacityOperation(abstract_operation.Operation):
     @staticmethod
     async def forward(synapse: synapses.Capacity) -> synapses.Capacity:
-        capacity_config = utils.load_capacities(miner_config.hotkey_name)
+        capacity_config = utils.load_capacities(config.hotkey_name)
         capacities_with_concurrencies = copy.deepcopy(capacity_config)
         for key in capacities_with_concurrencies:
             del capacities_with_concurrencies[key]["concurrency_group_id"]

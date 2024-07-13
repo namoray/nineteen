@@ -8,7 +8,7 @@ import bittensor as bt
 # import base miner class which takes care of most of the boilerplate
 from config import configuration
 from core import Task, constants as ccst, utils
-from config.miner_config import config as miner_config
+from config.miner_config import config as config
 from core import bittensor_overrides as bto
 
 
@@ -19,7 +19,7 @@ metagraph = None
 
 asyncio_lock: asyncio.Lock = asyncio.Lock()
 threading_lock: threading.Lock = threading.Lock()
-MIN_VALIDATOR_STAKE = 0 if miner_config.subtensor_network == "test" else 5000
+MIN_VALIDATOR_STAKE = 0 if config.subtensor_network == "test" else 5000
 
 
 class MinerRequestsStatus:
@@ -32,7 +32,7 @@ class MinerRequestsStatus:
         return self._active_requests_for_each_concurrency_group
 
     def decrement_concurrency_group_from_task(self, task: Task) -> None:
-        capacity_config = utils.load_capacities(miner_config.hotkey_name)
+        capacity_config = utils.load_capacities(config.hotkey_name)
         concurrency_group_id = capacity_config.get(task.value, {}).get("concurrency_group_id")
         if concurrency_group_id is not None:
             concurrency_group_id = str(concurrency_group_id)

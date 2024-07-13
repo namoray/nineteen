@@ -49,7 +49,7 @@ class HotkeyInfo(BaseModel):
 
     uid: AxonUID
     hotkey: str
-    axon: bt.chain_data.AxonInfo
+    axon_ip: str
 
 
 class OperationDistribution(BaseModel):

@@ -4,7 +4,7 @@ import httpx
 from models import base_models
 from pydantic import BaseModel
 from typing import List, Optional
-from config.miner_config import config as miner_config
+from config.miner_config import config as config
 
 
 class ClipEmbeddingsResponse(BaseModel):
@@ -12,7 +12,7 @@ class ClipEmbeddingsResponse(BaseModel):
 
 
 async def _get_clip_embeddings_from_server(body: BaseModel) -> ClipEmbeddingsResponse:
-    clip_endpoint = miner_config.image_worker_url + "clip-embeddings"
+    clip_endpoint = config.image_worker_url + "clip-embeddings"
 
     try:
         async with httpx.AsyncClient(timeout=5) as client:  # noqa

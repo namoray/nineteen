@@ -1,6 +1,7 @@
 import argparse
 import pathlib
 import bittensor as bt
+from models import config_models
 
 
 def check_config(config: "bt.Config") -> None:
@@ -18,43 +19,41 @@ def check_config(config: "bt.Config") -> None:
     config.miner.full_path.mkdir(parents=True, exist_ok=True)
 
 
-def get_miner_cli_config() -> "bt.Config":
-    from config.miner_config import config as miner_config
-
+def get_miner_cli_config(config: config_models.MinerConfig) -> "bt.Config":
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
         "--axon.port",
         type=int,
-        default=miner_config.axon_port,
+        default=config.axon_port,
         help="Port to run the axon on.",
     )
 
-    parser.add_argument("--axon.external_ip", type=str, default=miner_config.axon_external_ip)
+    parser.add_argument("--axon.external_ip", type=str, default=config.axon_external_ip)
 
-    parser.add_argument("--debug_miner", action="store_true", default=miner_config.debug_miner)
+    parser.add_argument("--debug_miner", action="store_true", default=config.debug_miner)
 
     parser.add_argument(
         "--subtensor.network",
-        default=miner_config.subtensor_network,
+        default=config.subtensor_network,
         help="Bittensor network to connect to.",
     )
 
     parser.add_argument(
         "--subtensor.chain_endpoint",
-        default=miner_config.subtensor_chainendpoint,
+        default=config.subtensor_chainendpoint,
         help="Chain endpoint to connect to.",
     )
 
     parser.add_argument(
         "--netuid",
         type=int,
-        default=19 if miner_config.subtensor_network != "test" else 176,
+        default=19 if config.subtensor_network != "test" else 176,
         help="The chain subnet uid.",
     )
 
-    parser.add_argument("--wallet.name", type=str, default=miner_config.wallet_name)
-    parser.add_argument("--wallet.hotkey", type=str, default=miner_config.hotkey_name)
+    parser.add_argument("--wallet.name", type=str, default=config.wallet_name)
+    parser.add_argument("--wallet.hotkey", type=str, default=config.hotkey_name)
 
     bt.subtensor.add_args(parser)
     bt.logging.add_args(parser)
@@ -75,39 +74,37 @@ def get_miner_cli_config() -> "bt.Config":
     return config
 
 
-def get_validator_cli_config() -> "bt.Config":
-    from config.validator_config import config as validator_config
-
+def get_validator_cli_config(config: config_models.ValidatorConfig) -> "bt.Config":
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
         "--subtensor.network",
-        default=validator_config.subtensor_network,
+        default=config.subtensor_network,
         help="Bittensor network to connect to.",
     )
 
     parser.add_argument(
         "--subtensor.chain_endpoint",
-        default=validator_config.subtensor_chainendpoint,
+        default=config.subtensor_chainendpoint,
         help="Chain endpoint to connect to.",
     )
 
     parser.add_argument(
         "--netuid",
         type=int,
-        default=19 if validator_config.subtensor_network != "test" else 176,
+        default=19 if config.subtensor_network != "test" else 176,
         help="The chain subnet uid.",
     )
 
     parser.add_argument(
         "--wallet.name",
         type=str,
-        default=validator_config.wallet_name,
+        default=config.wallet_name,
     )
     parser.add_argument(
         "--wallet.hotkey",
         type=str,
-        default=validator_config.hotkey_name,
+        default=config.hotkey_name,
     )
 
     bt.subtensor.add_args(parser)
@@ -128,8 +125,9 @@ def get_validator_cli_config() -> "bt.Config":
     config.full_path.mkdir(parents=True, exist_ok=True)
     return config
 
-def prepare_validator_config_and_logging() -> bt.config:
-    base_config = get_validator_cli_config()
+
+def prepare_validator_config_and_logging(config: config_models.ValidatorConfig) -> bt.config:
+    base_config = get_validator_cli_config(config)
 
     bt.logging(config=base_config, logging_dir=base_config.full_path)
     return base_config

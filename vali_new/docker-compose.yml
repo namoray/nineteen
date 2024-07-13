@@ -1,6 +1,6 @@
 services:
   redis:
-    image: redis:latest
+    image: redis/redis-stack:latest
     ports:
       - "6379:6379"
 
