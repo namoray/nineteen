@@ -30,6 +30,7 @@ class Participant(BaseModel):
     delay_between_synthetic_requests: float = Field(..., description="Delay between synthetic requests")
     declared_volume: float = Field(..., description="Declared volume for the UID")
     consumed_volume: float = Field(0, description="Queried volume for the UID")
+    volume_to_score: float = Field(0, description="Volume to score")
     total_requests_made: int = Field(0, description="Total requests made")
     requests_429: int = Field(0, description="HTTP 429 requests")
     requests_500: int = Field(0, description="HTTP 500 requests")

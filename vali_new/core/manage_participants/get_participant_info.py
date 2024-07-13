@@ -120,8 +120,8 @@ async def _store_all_participants_in_redis(
                 hotkey,
                 declared_volume,
                 volume_to_score,
-                number_of_requests_to_make,
-                delay_between_requests,
+                synthetic_requests_still_to_make=number_of_requests_to_make,
+                delay_between_synthetic_requests=delay_between_requests,
             )
 
 
@@ -147,14 +147,14 @@ async def store_participant(
     task: Task,
     hotkey: str,
     declared_volume: float,
-    volume_to_score,
-    number_of_requests_to_make,
-    delay_between_synthetic_requests,
+    volume_to_score: float,
+    synthetic_requests_still_to_make: int,
+    delay_between_synthetic_requests: float,
 ):
     participant = Participant(
         hotkey=hotkey,
         task=task,
-        synthetic_requests_still_to_make=number_of_requests_to_make,
+        synthetic_requests_still_to_make=synthetic_requests_still_to_make,
         declared_volume=declared_volume,
         volume_to_score=volume_to_score,
         delay_between_synthetic_requests=delay_between_synthetic_requests,

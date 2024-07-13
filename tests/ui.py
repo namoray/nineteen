@@ -11,6 +11,10 @@ from vali_new.core.store_synthetic_data import synthetic_generations  # noqa
 import asyncio  # noqa
 from vali_new.core.manage_participants import get_participant_info, scheduling_participants  # noqa
 from vali_new.utils import participant_utils as putils, redis_utils as rutils  # noqa
+from vali_new.utils import redis_constants as rcst  # noqa
+import pandas as pd  # noqa
+
+pd.set_option("future.no_silent_downcasting", True)
 
 st.set_page_config(layout="wide")
 st.markdown("# Vision [τ, τ] SN19 - Dev Panel")
@@ -34,10 +38,12 @@ def get_synthetic_data():
 def get_participants():
     participants = run_in_loop(putils.load_participants)
     participants = [{**participant.model_dump(), **{"id": participant.id}} for participant in participants]
+    for participant in participants:
+        participant["task"] = participant["task"].value
     return participants
 
 
-@st.cache_data
+@st.cache_data(ttl=0.1)
 def get_synthetic_query_list():
     participants = run_in_loop(putils.load_synthetic_query_list)
 
@@ -51,12 +57,25 @@ def get_event_loop():
     return loop
 
 
-def run_in_loop(func: Callable[[Any, Any], Awaitable[T]], with_redis: bool = True, *args: Any, **kwargs: Any) -> T:
+def run_in_loop(
+    func: Callable[[Any, Any], Awaitable[T]],
+    *args: Any,
+    with_redis: bool = True,
+    create_task: bool = False,
+    **kwargs: Any,
+) -> T:
     loop = get_event_loop()
-    if with_redis:
-        return loop.run_until_complete(run_with_redis(func, *args, **kwargs))
+
+    if create_task:
+        if with_redis:
+            return loop.create_task(run_with_redis(func, *args, **kwargs))
+        else:
+            return loop.create_task(func(*args, **kwargs))
     else:
-        return loop.run_until_complete(func(*args, **kwargs))
+        if with_redis:
+            return loop.run_until_complete(run_with_redis(func, *args, **kwargs))
+        else:
+            return loop.run_until_complete(func(*args, **kwargs))
 
 
 async def run_with_redis(func: Callable[[Redis, Any, Any], Awaitable[T]], *args: Any, **kwargs: Any) -> T:
@@ -72,12 +91,11 @@ async def clear_redis(redis_db: Redis):
     st.cache_data.clear()
 
 
+if "participants_being_scheduled" not in st.session_state:
+    st.session_state["participants_being_scheduled"] = {}
+
 ####################################################################
 ################# State #######################################
-if "scheduling_active" not in st.session_state:
-    st.session_state.scheduling_active = False
-if "participants_being_scheduled" not in st.session_state:
-    st.session_state.participants_being_scheduled = {}
 
 
 ####################################################################
@@ -93,35 +111,35 @@ with st.container():
         c1, c2 = st.columns(2)
         with c1:
             if st.button("Toggle Scheduling for all participants"):
-                st.session_state.scheduling_active = not st.session_state.scheduling_active
-                if st.session_state.scheduling_active:
-                    st.session_state.scheduling_tasks = run_in_loop(scheduling_participants.start_scheduling)
+                st.session_state["scheduling_active"] = not st.session_state.get("scheduling_active", False)
+                if st.session_state.get("scheduling_active", False):
+                    st.session_state["scheduling_tasks"] = run_in_loop(scheduling_participants.start_scheduling)
 
                 else:
                     logger.debug("Cancelling scheduling tasks")
-                    for task in st.session_state.scheduling_tasks:
+                    for task in st.session_state.get("scheduling_tasks", []):
                         task.cancel()
-                    st.session_state.scheduling_tasks = []
-            st.write("Scheduling is", "active" if st.session_state.scheduling_active else "inactive")
+                    st.session_state["scheduling_tasks"] = []
+            st.write("Scheduling is", "active" if st.session_state.get("scheduling_active") else "inactive")
         with c2:
             participant_id = st.selectbox(
                 "Select participant", [participant["id"] for participant in get_participants()], key="toplevel"
             )
 
-            if st.button(f"Toggle scheduling for participant: {participant_id}"):
-                if participant_id in st.session_state.participants_being_scheduled:
-                    task = st.session_state.participants_being_scheduled.pop(participant_id)
+            if st.button(f"Toggle scheduling for participant: {participant_id}") and participant_id is not None:
+                if participant_id in st.session_state.get("participants_being_scheduled", {}):
+                    task = st.session_state["participants_being_scheduled"].pop(participant_id)
                     task.cancel()
                 else:
                     scheduling_task = run_in_loop(
-                        scheduling_participants.handle_scheduling_for_participant, participant_id
+                        scheduling_participants.handle_scheduling_for_participant, participant_id, create_task=True
                     )
-
-                    st.session_state.participants_being_scheduled[participant_id] = scheduling_task
+                    st.cache_data.clear()
+                    st.session_state["participants_being_scheduled"][participant_id] = scheduling_task
 
             st.write(
                 f"Scheduling for {participant_id} is",
-                "active" if participant_id in st.session_state.participants_being_scheduled else "inactive",
+                "active" if participant_id in st.session_state.get("participants_being_scheduled", {}) else "inactive",
             )
 
     st.markdown("---")
@@ -165,7 +183,20 @@ with col2:
         st.cache_data.clear()
 
     participants = get_participants()
-    st.write(participants)
+    edited_participants = st.data_editor(participants, num_rows="dynamic", key="participant_editor")
+    if st.button("Save participants"):
+        run_in_loop(rutils.delete_key_from_redis, rcst.PARTICIPANT_IDS_KEY)
+        for participant in edited_participants:
+            run_in_loop(
+                get_participant_info.store_participant,
+                task=participant["task"],
+                hotkey=participant["hotkey"],
+                declared_volume=participant["declared_volume"],
+                volume_to_score=participant["volume_to_score"],
+                synthetic_requests_still_to_make=participant["synthetic_requests_still_to_make"],
+                delay_between_synthetic_requests=participant["delay_between_synthetic_requests"],
+            )
+        st.cache_data.clear()
 
 
 ####################################################################
@@ -181,7 +212,7 @@ with col3:
 
     participant_id = st.selectbox("Select participant", [participant["id"] for participant in get_participants()])
 
-    if st.button("Schedule participant for synthetic request"):
+    if st.button("Add synthetic request for participant"):
         run_in_loop(putils.add_participant_to_synthetic_query_list, participant_id)
         st.cache_data.clear()
     synthetic_query_list = get_synthetic_query_list()
@@ -193,7 +224,9 @@ with col3:
 ### Participants #######
 
 with col4:
-    st.subheader("On going queries")
+    st.header("Ongoing")
+    st.subheader("Scheduling")
+
 log_display = st.empty()
 
 

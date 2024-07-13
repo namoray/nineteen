@@ -5,7 +5,6 @@ from enum import Enum
 import copy
 
 
-
 def _remove_enums(map: Dict[Any, Any]) -> Dict[Any, Any]:
     # TODO: Does this need to be deep copy?
     map_copy = copy.copy(map)
@@ -18,6 +17,8 @@ def _remove_enums(map: Dict[Any, Any]) -> Dict[Any, Any]:
             map_copy[k] = v.value
     return map_copy
 
+async def delete_key_from_redis(redis_db: Redis, key: str) -> None:
+    await redis_db.delete(key)
 
 async def json_load_from_redis(redis_db: Redis, key: str, default: Any = {}) -> Dict[Any, Any]:
     raw_json = await redis_db.get(key)
