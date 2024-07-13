@@ -3,7 +3,6 @@ import os
 
 os.environ["ENV"] = "dev"
 
-import time
 from typing import Any, Awaitable, Callable, TypeVar  # noqa
 import streamlit as st  # noqa
 from core import Task  # noqa
@@ -213,6 +212,7 @@ with st.container():
         st.subheader("Query queue")
 
         if st.button("Add synthetic queries which are ready"):
+            st.cache_data.clear()
             run_in_loop(scheduling_participants.run_schedule_processor, with_redis=True, run_once=True)
             st.cache_data.clear()
 
