@@ -1,65 +1,48 @@
 import asyncio
+from datetime import datetime, timedelta
 import random
 
+from vali_new.models import Participant
 from redis.asyncio import Redis
-from vali_new.utils import participant_utils as putils
+from vali_new.utils import participant_utils as putils, redis_utils as rutils, redis_constants as rcst
 
 from core.logging import get_logger
 
 logger = get_logger(__name__)
 
 
-async def handle_scheduling_for_participant(redis_db: Redis, participant_id: str) -> None:
-    """
-    Calculates volume to score
-    Calculates number of synthetic requests off the back of that
-    Creates a uid record & stores it
-    Calculates delay between requests
-
-    Add a marker to redis between the delays to send a request
-    """
-    i = 0
-
-    # Is there a better way to do this than at the start?
-    participant = await putils.load_participant(redis_db, participant_id)
-
-    logger.debug(f"Scheduling {participant_id}. Delay: {participant.delay_between_synthetic_requests}.")
-    while participant.synthetic_requests_still_to_make > 0:
-        # Random perturbation(s) to make sure we dont burst all requests at once
-        if i == 0:
-            random_factor = random.random()
-        else:
-            random_factor = random.random() * 0.05 + 0.95
-
-        logger.debug(f"Sleeping for {participant.delay_between_synthetic_requests * random_factor} seconds.")
-        await asyncio.sleep(participant.delay_between_synthetic_requests * random_factor)
-
-        await putils.add_participant_to_synthetic_query_list(redis_db, participant_id)
-
-        # Organic queries consume volume too, so it's possible we enough that we don't
-        # Need synthetics anymore. This is the only fresh info we need from 'participant' object
-        finished = putils.check_and_remove_participant_from_synthetics_if_finished(redis_db, participant_id)
-        if finished:
-            break
-
-
-async def start_scheduling(
+async def schedule_synthetic_queries_for_all_participants(
     redis_db: Redis,
 ) -> None:
-    synthetic_scoring_tasks = []
     participants = await putils.load_participants(redis_db)
-
     for participant in participants:
-        synthetic_scoring_tasks.append(asyncio.create_task(handle_scheduling_for_participant(redis_db, participant.id)))
-    logger.debug(f"Added {len(synthetic_scoring_tasks)} scheduling tasks")
-    return synthetic_scoring_tasks
+        await putils.add_synthetic_query_to_queue(redis_db, participant.id)
+    logger.debug(f"Added {len(participants)} for scheduling")
+
+
+async def schedule_synthetic_queries_for_participant(redis_db: Redis, participant_id: Participant) -> None:
+    participant = await putils.load_participant(redis_db, participant_id)
+    delay = participant.delay_between_synthetic_requests
+
+    for i in range(participant.synthetic_requests_still_to_make):
+        now = datetime.now()
+        randomised_delay = delay * (0.95 + 0.05 * random.random())
+        time_to_execute_query = now + timedelta(seconds=randomised_delay)
+        await schedule_synthetic_query(redis_db, participant_id, time_to_execute_query.timestamp())
+
+
+async def schedule_synthetic_query(redis_db: Redis, participant_id: Participant, timestamp: float) -> None:
+    json_to_add = {"participant_id": participant_id}
+    await rutils.add_to_sorted_set(
+        redis_db, rcst.SYNTHETIC_SCHEDULING_QUEUE_KEY, data=json_to_add, score=timestamp
+    )
+    logger.debug(f"Added {json_to_add} to synthetic scheduling queue")
 
 
 async def main():
     redis_db = Redis()
-
-    scoring_tasks = await start_scheduling(redis_db)
-    await asyncio.gather(*scoring_tasks)
+    redis_db
+    ...
 
 
 if __name__ == "__main__":

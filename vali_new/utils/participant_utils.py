@@ -1,5 +1,3 @@
-from typing import List
-
 from vali_new.models import Participant
 from vali_new.utils import redis_constants as rcst
 from vali_new.utils import redis_utils as rutils
@@ -16,7 +14,7 @@ async def load_participant(redis_db: Redis, participant_id: str) -> Participant:
     return participant
 
 
-async def load_participants(redis_db: Redis) -> List[Participant]:
+async def load_participants(redis_db: Redis) -> list[Participant]:
     participant_ids_set = await redis_db.smembers(rcst.PARTICIPANT_IDS_KEY)
 
     participants = []
@@ -26,12 +24,7 @@ async def load_participants(redis_db: Redis) -> List[Participant]:
     return participants
 
 
-async def add_participant_to_synthetic_query_list(redis_db: Redis, participant_id: str) -> None:
-    logger.debug(f"Adding {participant_id} to synthetic queries")
-    participant = await load_participant(redis_db, participant_id)
-    await rutils.add_str_to_redis_list(redis_db, rcst.SYNTHETIC_QUERIES_TO_MAKE_KEY, participant.id)
-
-
+# TODO: Might be able to get rid of it now
 async def check_and_remove_participant_from_synthetics_if_finished(redis_db: Redis, participant_id: str) -> bool:
     if await rutils.check_value_is_in_set(redis_db, rcst.PARITICIPANT_IDS_TO_STOP_KEY, participant_id):
         logger.debug(f"Removing {participant_id} from synthetic queries")
@@ -40,5 +33,15 @@ async def check_and_remove_participant_from_synthetics_if_finished(redis_db: Red
     return False
 
 
-async def load_synthetic_query_list(redis_db: Redis) -> List[str]:
-    return await rutils.get_redis_list(redis_db, rcst.SYNTHETIC_QUERIES_TO_MAKE_KEY)
+async def add_synthetic_query_to_queue(redis_db: Redis, participant_id: str) -> None:
+    logger.debug(f"Adding {participant_id} to synthetic queries")
+    participant = await load_participant(redis_db, participant_id)
+    await rutils.add_str_to_redis_list(redis_db, rcst.QUERY_QUEUE_KEY, participant.id)
+
+
+async def load_query_queue(redis_db: Redis) -> list[str]:
+    return await rutils.get_redis_list(redis_db, rcst.QUERY_QUEUE_KEY)
+
+
+async def load_synthetic_scheduling_queue(redis_db: Redis) -> list[str]:
+    return await rutils.get_redis_list(redis_db, rcst.SYNTHETIC_SCHEDULING_QUEUE_KEY)

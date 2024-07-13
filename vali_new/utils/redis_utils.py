@@ -17,8 +17,10 @@ def _remove_enums(map: Dict[Any, Any]) -> Dict[Any, Any]:
             map_copy[k] = v.value
     return map_copy
 
+
 async def delete_key_from_redis(redis_db: Redis, key: str) -> None:
     await redis_db.delete(key)
+
 
 async def json_load_from_redis(redis_db: Redis, key: str, default: Any = {}) -> Dict[Any, Any]:
     raw_json = await redis_db.get(key)
@@ -50,11 +52,21 @@ async def add_json_to_redis_list(redis_db: Redis, queue: str, json_to_add: Dict[
     await redis_db.rpush(queue, json_string)
 
 
+async def add_to_sorted_set(redis_db: Redis, name: str, data: str | dict[Any, Any], score: float) -> None:
+
+    if isinstance(data, dict):
+        json_to_add = _remove_enums(data)
+        data = json.dumps(json_to_add)
+    await redis_db.zadd(name, {data: score})
+
+
 async def add_str_to_redis_list(redis_db: Redis, queue: str, value_to_add: str) -> None:
     await redis_db.rpush(queue, value_to_add)
 
+
 async def get_redis_list(redis_db: Redis, queue: str) -> List[str]:
     return await redis_db.lrange(queue, 0, -1)
+
 
 # Should the two below really be in redis utils? i dont think so
 

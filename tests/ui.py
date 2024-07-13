@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 import os
 
 os.environ["ENV"] = "dev"
@@ -35,6 +36,11 @@ def get_synthetic_data():
 
 
 @st.cache_data
+def get_synthetic_scheduling_queue():
+    return run_in_loop(putils.load_synthetic_scheduling_queue)
+
+
+@st.cache_data
 def get_participants():
     participants = run_in_loop(putils.load_participants)
     participants = [{**participant.model_dump(), **{"id": participant.id}} for participant in participants]
@@ -44,8 +50,8 @@ def get_participants():
 
 
 @st.cache_data(ttl=0.1)
-def get_synthetic_query_list():
-    participants = run_in_loop(putils.load_synthetic_query_list)
+def get_query_queue():
+    participants = run_in_loop(putils.load_query_queue)
 
     return participants
 
@@ -107,40 +113,6 @@ with st.container():
     with top_row_col1:
         if st.button("Clear Redis"):
             run_in_loop(clear_redis)
-    with top_row_col2:
-        c1, c2 = st.columns(2)
-        with c1:
-            if st.button("Toggle Scheduling for all participants"):
-                st.session_state["scheduling_active"] = not st.session_state.get("scheduling_active", False)
-                if st.session_state.get("scheduling_active", False):
-                    st.session_state["scheduling_tasks"] = run_in_loop(scheduling_participants.start_scheduling)
-
-                else:
-                    logger.debug("Cancelling scheduling tasks")
-                    for task in st.session_state.get("scheduling_tasks", []):
-                        task.cancel()
-                    st.session_state["scheduling_tasks"] = []
-            st.write("Scheduling is", "active" if st.session_state.get("scheduling_active") else "inactive")
-        with c2:
-            participant_id = st.selectbox(
-                "Select participant", [participant["id"] for participant in get_participants()], key="toplevel"
-            )
-
-            if st.button(f"Toggle scheduling for participant: {participant_id}") and participant_id is not None:
-                if participant_id in st.session_state.get("participants_being_scheduled", {}):
-                    task = st.session_state["participants_being_scheduled"].pop(participant_id)
-                    task.cancel()
-                else:
-                    scheduling_task = run_in_loop(
-                        scheduling_participants.handle_scheduling_for_participant, participant_id, create_task=True
-                    )
-                    st.cache_data.clear()
-                    st.session_state["participants_being_scheduled"][participant_id] = scheduling_task
-
-            st.write(
-                f"Scheduling for {participant_id} is",
-                "active" if participant_id in st.session_state.get("participants_being_scheduled", {}) else "inactive",
-            )
 
     st.markdown("---")
 
@@ -202,27 +174,57 @@ with col2:
 ####################################################################
 ################# Second row #######################################
 
-col3, col4 = st.columns(2)
-
 ##########################
 ### Scheduling #######
+st.markdown("---")
+with st.container():
+    st.markdown("<h1 style='text-align: center;'>Queues</h1>", unsafe_allow_html=True)
 
-with col3:
-    st.subheader("Scheduling")
+    st.markdown("- - -")
+    tc1, tc2 = st.columns(2)
 
-    participant_id = st.selectbox("Select participant", [participant["id"] for participant in get_participants()])
+    with tc1:
+        participant_id = st.selectbox("Select participant", [participant["id"] for participant in get_participants()])
 
-    if st.button("Add synthetic request for participant"):
-        run_in_loop(putils.add_participant_to_synthetic_query_list, participant_id)
-        st.cache_data.clear()
-    synthetic_query_list = get_synthetic_query_list()
+    with tc2:
+        schedule_in_x_seconds = st.number_input("Schedule synthetic query in X seconds", min_value=1, value=1)
 
-    if synthetic_query_list:
-        st.write(synthetic_query_list)
+    st.markdown("- - -")
+    col1, col2 = st.columns(2)
 
+    with col1:
+        st.subheader("Synthetic Scheduling Queue")
+
+        if st.button("Schedule Synthetic Queries for participant"):
+            time_to_schedule_for = datetime.now() + timedelta(seconds=schedule_in_x_seconds)
+            run_in_loop(
+                scheduling_participants.schedule_synthetic_query,
+                participant_id,
+                timestamp=time_to_schedule_for.timestamp(),
+            )
+            st.cache_data.clear()
+
+        scheduled_synthetic_queries = get_synthetic_scheduling_queue()
+
+        if scheduled_synthetic_queries:
+            st.write(scheduled_synthetic_queries)
+    with col2:
+        st.subheader("Query queue")
+
+        if st.button("Add synthetic queries which are ready"):
+            run_in_loop(putils.add_synthetic_query_to_queue, participant_id)
+            st.cache_data.clear()
+        synthetic_query_list = get_query_queue()
+
+        if synthetic_query_list:
+            st.write(synthetic_query_list)
+
+
+st.markdown("---")
 ##########################
 ### Participants #######
 
+col4, col5 = st.columns(2)
 with col4:
     st.header("Ongoing")
     st.subheader("Scheduling")
@@ -230,10 +232,10 @@ with col4:
 log_display = st.empty()
 
 
-col5, col6 = st.columns(2)
+# col5, col6 = st.columns(2)
 
-with col5:
-    st.subheader("Organic Queries")
+# with col5:
+#     st.subheader("Organic Queries")
 
-with col6:
-    st.subheader("Weight setting")
+# with col6:
+#     st.subheader("Weight setting")
