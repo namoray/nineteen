@@ -27,21 +27,36 @@ def get_redis():
 
 @st.cache_data
 def get_synthetic_data():
-    return asyncio.run(run_with_redis(synthetic_generations.get_stored_synthetic_data))
+    return run_in_loop(synthetic_generations.get_stored_synthetic_data)
 
 
 @st.cache_data
 def get_participants():
-    participants = asyncio.run(run_with_redis(putils.load_participants))
+    participants = run_in_loop(putils.load_participants)
     participants = [{**participant.model_dump(), **{"id": participant.id}} for participant in participants]
     return participants
 
 
 @st.cache_data
 def get_synthetic_query_list():
-    participants = asyncio.run(run_with_redis(putils.load_synthetic_query_list))
+    participants = run_in_loop(putils.load_synthetic_query_list)
 
     return participants
+
+
+@st.cache_resource(show_spinner=True)
+def get_event_loop():
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    return loop
+
+
+def run_in_loop(func: Callable[[Any, Any], Awaitable[T]], with_redis: bool = True, *args: Any, **kwargs: Any) -> T:
+    loop = get_event_loop()
+    if with_redis:
+        return loop.run_until_complete(run_with_redis(func, *args, **kwargs))
+    else:
+        return loop.run_until_complete(func(*args, **kwargs))
 
 
 async def run_with_redis(func: Callable[[Redis, Any, Any], Awaitable[T]], *args: Any, **kwargs: Any) -> T:
@@ -58,27 +73,57 @@ async def clear_redis(redis_db: Redis):
 
 
 ####################################################################
+################# State #######################################
+if "scheduling_active" not in st.session_state:
+    st.session_state.scheduling_active = False
+if "participants_being_scheduled" not in st.session_state:
+    st.session_state.participants_being_scheduled = {}
+
+
+####################################################################
 ################# Top level buttons #######################################
 with st.container():
     st.markdown("---")  # Horizontal line above the box
     top_row_col1, top_row_col2 = st.columns(2)
 
-    if "scheduling_active" not in st.session_state:
-        st.session_state.scheduling_active = False
     with top_row_col1:
         if st.button("Clear Redis"):
-            asyncio.run(run_with_redis(clear_redis))
+            run_in_loop(clear_redis)
     with top_row_col2:
-        if st.button("Toggle Scheduling"):
-            st.session_state.scheduling_active = not st.session_state.scheduling_active
-            if st.session_state.scheduling_active:
-                st.session_state.scheduling_tasks = asyncio.run(run_with_redis(scheduling_participants.start_scheduling))
-            else:
-                for task in st.session_state.scheduling_tasks:
-                    task.cancel()
-                st.session_state.scheduling_tasks = []
+        c1, c2 = st.columns(2)
+        with c1:
+            if st.button("Toggle Scheduling for all participants"):
+                st.session_state.scheduling_active = not st.session_state.scheduling_active
+                if st.session_state.scheduling_active:
+                    st.session_state.scheduling_tasks = run_in_loop(scheduling_participants.start_scheduling)
 
-        st.write("Scheduling is", "active" if st.session_state.scheduling_active else "inactive")
+                else:
+                    logger.debug("Cancelling scheduling tasks")
+                    for task in st.session_state.scheduling_tasks:
+                        task.cancel()
+                    st.session_state.scheduling_tasks = []
+            st.write("Scheduling is", "active" if st.session_state.scheduling_active else "inactive")
+        with c2:
+            participant_id = st.selectbox(
+                "Select participant", [participant["id"] for participant in get_participants()], key="toplevel"
+            )
+
+            if st.button(f"Toggle scheduling for participant: {participant_id}"):
+                if participant_id in st.session_state.participants_being_scheduled:
+                    task = st.session_state.participants_being_scheduled.pop(participant_id)
+                    task.cancel()
+                else:
+                    scheduling_task = run_in_loop(
+                        scheduling_participants.handle_scheduling_for_participant, participant_id
+                    )
+
+                    st.session_state.participants_being_scheduled[participant_id] = scheduling_task
+
+            st.write(
+                f"Scheduling for {participant_id} is",
+                "active" if participant_id in st.session_state.participants_being_scheduled else "inactive",
+            )
+
     st.markdown("---")
 
 ####################################################################
@@ -97,7 +142,7 @@ with col1:
     selected_model = st.selectbox("Select Model", model_options, index=0)
 
     if st.button("Add Synthetic Data"):
-        asyncio.run(run_with_redis(synthetic_generations.patched_update_synthetic_data, task=Task(selected_model)))
+        run_in_loop(synthetic_generations.patched_update_synthetic_data, task=Task(selected_model))
         st.cache_data.clear()
 
     synthetic_data = get_synthetic_data()
@@ -112,12 +157,11 @@ with col2:
 
     number_of_participants = st.number_input("Number of participants", min_value=1, value=1)
     if st.button("Add Fake Participants"):
-        asyncio.run(
-            run_with_redis(
-                get_participant_info.patched_get_and_store_participant_info,
-                number_of_participants=number_of_participants,
-            )
+        run_in_loop(
+            get_participant_info.patched_get_and_store_participant_info,
+            number_of_participants=number_of_participants,
         )
+
         st.cache_data.clear()
 
     participants = get_participants()
@@ -138,7 +182,7 @@ with col3:
     participant_id = st.selectbox("Select participant", [participant["id"] for participant in get_participants()])
 
     if st.button("Schedule participant for synthetic request"):
-        asyncio.run(run_with_redis(putils.add_participant_to_synthetic_query_list, participant_id))
+        run_in_loop(putils.add_participant_to_synthetic_query_list, participant_id)
         st.cache_data.clear()
     synthetic_query_list = get_synthetic_query_list()
 
