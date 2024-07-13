@@ -1,4 +1,5 @@
 import asyncio
+import os
 
 
 from redis.asyncio import Redis
@@ -8,6 +9,8 @@ from vali_new.utils import participant_utils as putils, synthetic_utils as sutil
 from vali_new.utils import redis_constants as rcst
 from vali_new.query_node import utils
 from core import bittensor_overrides as bto
+
+DEBUG = os.getenv("ENV", "prod") != "prod"
 
 
 async def execute_query_when_available(redis_db: Redis, dendrite: bto.dendrite, timeout: float = 0) -> None:
@@ -28,12 +31,14 @@ async def execute_synthetic_query(redis_db: Redis, participant: Participant, tas
     stream = task in [Task.chat_llama_3, Task.chat_mixtral]
     if stream:
         # TODO: Need to update uid queue here
-        generator = utils.query_miner_stream(participant, synthetic_synapse, task, dendrite, synthetic_query=True)
+        generator = utils.query_miner_stream(
+            participant, synthetic_synapse, task, dendrite, synthetic_query=True, debug=DEBUG
+        )
         # TODO: Log this somewhere so we can see details about every request that is happening.
         # Probably a job for prom and grafana? or redis and grafana
 
         # We need to iterate through the generator to consume it - so the request finishes
-        asyncio.create_task(qutils.consume_generator(generator))
+        await asyncio.gather(qutils.consume_generator(generator))
     else:
         return
         # asyncio.create_task(

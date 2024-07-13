@@ -1,4 +1,5 @@
 import asyncio
+import random
 import time
 from typing import Any, AsyncIterator, Dict, List, Optional, Tuple, Union
 from pydantic import BaseModel, ValidationError
@@ -121,20 +122,33 @@ def _get_formatted_payload(content: str, first_message: bool, add_finish_reason:
     return dumped_payload
 
 
+async def _get_debug_text_generator():
+    yield "This is a debug text generator. I will yield random numbers with small delays"
+
+    for _ in range(500):
+        yield f"{random.random()}"
+        await asyncio.sleep(random.random() * 0.01)
+
+
 async def query_miner_stream(
     participant: Participant,
     synapse: bt.Synapse,
     task: Task,
     dendrite: bto.dendrite,
     synthetic_query: bool,
+    debug: bool = False,
 ) -> AsyncIterator[str]:
     axon_uid = participant.hotkey
     axon = participant
 
     time1 = time.time()
-    text_generator = await query_individual_axon_stream(
-        synapse=synapse, dendrite=dendrite, axon=axon, axon_uid=axon_uid, log_requests_and_responses=False
-    )
+
+    if debug:
+        text_generator = await _get_debug_text_generator()
+    else:
+        text_generator = await query_individual_axon_stream(
+            synapse=synapse, dendrite=dendrite, axon=axon, axon_uid=axon_uid, log_requests_and_responses=False
+        )
     text_jsons = []
     status_code = 200
     error_message = None
