@@ -1,11 +1,12 @@
 import asyncio
-import random
 import threading
 
 import bittensor as bt
-from models import config_models, utility_models
+from core.bittensor_overrides.chain_data import AxonInfo
+from models import config_models
 
 from redis.asyncio import Redis
+from vali_new.db.database import PSQLDB
 from vali_new.models import Participant
 from vali_new.utils import redis_utils as rutils, query_utils as qutils
 from vali_new.utils import redis_constants as cst
@@ -17,7 +18,7 @@ from core import Task
 
 from core import bittensor_overrides as bto
 from models import base_models, synapses
-
+from vali_new.db import sql
 from core.logging import get_logger
 
 
@@ -27,53 +28,40 @@ logger = get_logger(__name__)
 threading_lock = threading.Lock()
 
 
-async def _sync_metagraph(redis_db: Redis, postgresql_db: metagraph: bt.metagraph, subtensor: bt.subtensor) -> None:
-    bt.logging.info("Resyncing the metagraph!")
+async def _sync_metagraph(metagraph: bt.metagraph, subtensor: bt.subtensor) -> None:
+    logger.info("Resyncing the metagraph!")
     await asyncio.to_thread(metagraph.sync, subtensor=subtensor, lite=True)
 
-    bt.logging.info("Got the capacities, now storing the info....")
-    logger.debug(f"Metagraph incentive: {metagraph.incentive}; type: {type(metagraph.incentive)}")
 
-    with threading_lock:
-        uids: list[int] = metagraph.uids.tolist()
-        hotkeys: list[str] = metagraph.hotkeys  # noqa: F841
-        axons = metagraph.axons
+async def store_metagraph_info(postgresql_db: PSQLDB, metagraph: bt.metagraph) -> list[str]:
+    axons = metagraph.axons
 
-        for uid, hotkey, axon in zip(uids, hotkeys, axons):
-            hotkey_info = utility_models.HotkeyInfo(
-                uid=uid,
-                axon_ip=axon.ip,
-                hotkey=hotkey,
-            )
-            # TODO: Is this the best way to store the info?
-            # NO; I think this should really go into a sql table
-            await rutils.save_json_to_redis(redis_db, cst.HOTKEY_INFO_KEY + hotkey, hotkey_info.dict())
-
-    return hotkeys
+    for axon in axons:
+        logger.debug(f"Storing axon info: {axon}")
+        await sql.insert_axon_info(postgresql_db, axon)
+        # TODO: Is this the best way to store the info?
+        # NO; I think this should really go into a sql table
 
 
-async def _fetch_available_capacities_for_each_axon(
-    redis_db: Redis, hotkeys: list[str], dendrite: bto.dendrite
-) -> None:
+async def _fetch_available_capacities_for_each_axon(psql_db: PSQLDB, dendrite: bto.dendrite) -> None:
     hotkey_to_query_task = {}
 
-    for hotkey in hotkeys:
+    axons = await sql.get_axons(psql_db)
+
+    for axon in axons:
         # NOTE: Doesn't seem the most efficient to use redis here... lol
-        hotkey_info = utility_models.HotkeyInfo(
-            **(await rutils.json_load_from_redis(redis_db, cst.HOTKEY_INFO_KEY + hotkey))
-        )
         task = asyncio.create_task(
             qutils.query_individual_axon(
                 synapse=synapses.Capacity(),
                 dendrite=dendrite,
-                axon=hotkey_info.axon,
-                uid=hotkey_info.uid,
+                axon=axon,
+                uid=axon.axon_uid,
                 deserialize=True,
                 log_requests_and_responses=False,
             )
         )
 
-        hotkey_to_query_task[hotkey] = task
+        hotkey_to_query_task[axon.hotkey] = task
 
     responses_and_response_times: list[
         tuple[dict[Task, base_models.VolumeForTask] | None, float]
@@ -84,7 +72,7 @@ async def _fetch_available_capacities_for_each_axon(
     bt.logging.info(f"Got capacities from {len([i for i in all_capacities if i is not None])} axons!")
     with threading_lock:
         capacities_for_tasks = defaultdict(lambda: {})
-        for hotkey, capacities in zip(hotkeys, all_capacities):
+        for hotkey, capacities in zip([axon.hotkey for axon in axons], all_capacities):
             if capacities is None:
                 continue
 
@@ -102,10 +90,12 @@ def _correct_capacities(capacities_for_tasks: dict[Task, dict[str, float]]):
     return capacities_for_tasks
 
 
-async def _store_capacities_in_redis(redis_db: Redis, capacities_for_tasks: dict[Task, dict[str, float]]):
-    await rutils.save_json_to_redis(redis_db, cst.CAPACITIES_KEY, capacities_for_tasks)
+# TODO: replace with psql
+# async def _store_capacities_in_redis(redis_db: Redis, capacities_for_tasks: dict[Task, dict[str, float]]):
+#     await rutils.save_json_to_redis(redis_db, cst.CAPACITIES_KEY, capacities_for_tasks)
 
 
+# TODO: Replace with psql
 async def _store_all_participants_in_redis(
     redis_db: Redis,
     capacities_for_tasks: dict[Task, dict[str, float]],
@@ -143,6 +133,7 @@ def calculate_synthetic_query_parameters(task: Task, declared_volume: float):
     return volume_to_score, number_of_requests_to_make, delay_between_requests
 
 
+# TODO: replace with psql
 async def store_participant(
     redis_db: Redis,
     task: Task,
@@ -167,35 +158,66 @@ async def store_participant(
     return participant.id
 
 
-async def get_and_store_participant_info(redis_db: Redis, metagraph: bt.metagraph, subtensor: bt.subtensor):
-    hotkeys = await _sync_metagraph(redis_db, metagraph, subtensor)
-    capacities_for_tasks = await _fetch_available_capacities_for_each_axon(hotkeys)
-    corrected_capacities = _correct_capacities(capacities_for_tasks)
-    await _store_capacities_in_redis(corrected_capacities)
-    await _store_all_participants_in_redis(redis_db, capacities_for_tasks)
+async def get_and_store_participant_info(
+    psql_db: PSQLDB, metagraph: bt.metagraph, subtensor: bt.subtensor, dendrite: bto.dendrite, sync: bool = True
+):
+    if sync:
+        await _sync_metagraph(metagraph, subtensor)
+
+    await store_metagraph_info(psql_db, metagraph)
+    # capacities_for_tasks = await _fetch_available_capacities_for_each_axon(psql_db, dendrite)
+    # corrected_capacities = _correct_capacities(capacities_for_tasks)
+    # await _store_capacities_in_redis(corrected_capacities)
+    # await _store_all_participants_in_redis(psql_db, capacities_for_tasks)
 
 
 ## Testing utils
-async def patched_get_and_store_participant_info(redis_db: Redis, number_of_participants: int = 10) -> None:
-    participants_dict = {}
-    for i in range(number_of_participants):
-        hotkey = "hotkey" + str(random.randint(1, 10_000))
-        vol = random.random() * 4000 + 1000
-        participants_dict[hotkey] = vol
+async def patched_get_and_store_participant_info(
+    psql_db: PSQLDB,
+    metagraph: bt.metagraph,
+    subtensor: bt.subtensor,
+    dendrite: bto.dendrite,
+    sync: bool = True,
+    number_of_participants: int = 10,
+):
+    if sync:
+        await _sync_metagraph(metagraph, subtensor)
 
-    capacities_for_tasks = {Task.chat_llama_3: participants_dict}
-    await _store_capacities_in_redis(redis_db, capacities_for_tasks)
-    await _store_all_participants_in_redis(redis_db, capacities_for_tasks)
+    await store_metagraph_info(psql_db, metagraph)
+    # participants_dict = {}
+    # for i in range(number_of_participants):
+    #     hotkey = "hotkey" + str(random.randint(1, 10_000))
+    #     vol = random.random() * 4000 + 1000
+    #     participants_dict[hotkey] = vol
+
+    # capacities_for_tasks = {Task.chat_llama_3: participants_dict}
+    # await _store_capacities_in_redis(redis_db, capacities_for_tasks)
+    # await _store_all_participants_in_redis(redis_db, capacities_for_tasks)
 
 
 async def main():
     # Remember to export ENV=test
     redis_db = Redis()
+    psql_db = PSQLDB()
+    await psql_db.connect()
     validator_config = config_models.ValidatorConfig()
     config = configuration.prepare_validator_config_and_logging(validator_config)
-    subtensor = bt.subtensor(config=config)
-    metagraph = subtensor.metagraph(netuid=config.netuid, lite=True)
-    await get_and_store_participant_info(redis_db, metagraph, subtensor)
+    # subtensor = bt.subtensor(config=config)
+    subtensor = None
+    metagraph = bt.metagraph(netuid=config.netuid, lite=True, sync=False)
+
+    # Don't need to set this, as it's a property derived from the axons
+    # metagraph.hotkeys = ["test-hotkey1", "test-hotkey2"]
+    metagraph.axons = [
+        AxonInfo(
+            version=1, ip="127.0.0.1", port=1, ip_type=4, hotkey="test-hotkey1", coldkey="test-coldkey1", axon_uid=1
+        ),
+        AxonInfo(
+            version=2, ip="127.0.0.1", port=2, ip_type=4, hotkey="test-hotkey2", coldkey="test-coldkey2", axon_uid=2
+        ),
+    ]
+    dendrite = None
+    await patched_get_and_store_participant_info(psql_db, metagraph, subtensor, dendrite, sync=False)
 
 
 if __name__ == "__main__":

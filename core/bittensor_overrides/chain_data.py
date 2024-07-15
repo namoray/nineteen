@@ -14,6 +14,7 @@ class AxonInfo:
     ip_type: int
     hotkey: str
     coldkey: str
+    axon_uid: int
     protocol: int = 4
     placeholder1: int = 0
     placeholder2: int = 0
