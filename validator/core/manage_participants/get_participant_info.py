@@ -105,7 +105,10 @@ def _correct_capacity(task: Task, capacity: float, validator_stake_proportion: f
 
 # TODO: Replace with psql
 async def _store_all_participants_in_db(
-    psql_db: PSQLDB, capacities_for_tasks: dict[Task, dict[str, float]], validator_hotkey: str, validator_stake_proportion: float
+    psql_db: PSQLDB,
+    capacities_for_tasks: dict[Task, dict[str, float]],
+    validator_hotkey: str,
+    validator_stake_proportion: float,
 ):
     participants = []
     for task in Task:
@@ -156,20 +159,9 @@ async def store_participants(
         await sql.insert_participants(connection, participants, validator_hotkey)
 
 
-async def get_and_store_participant_info(
-    psql_db: PSQLDB, metagraph: bt.metagraph, subtensor: bt.subtensor, dendrite: bto.dendrite, sync: bool = True
-):
-    if sync:
-        await _sync_metagraph(metagraph, subtensor)
-
-    await store_metagraph_info(psql_db, metagraph)
-    # capacities_for_tasks = await _fetch_available_capacities_for_each_axon(psql_db, dendrite)
-    # corrected_capacities = _correct_capacities(capacities_for_tasks)
-    # await _store_all_participants_in_redis(psql_db, capacities_for_tasks)
-
 
 ## Testing utils
-async def patched_get_and_store_participant_info(
+async def get_and_store_participant_info(
     psql_db: PSQLDB,
     metagraph: bt.metagraph,
     subtensor: bt.subtensor,
@@ -237,7 +229,7 @@ async def main():
     ]
     metagraph.total_stake = np.array([50, 30, 20])
     dendrite = None
-    await patched_get_and_store_participant_info(
+    await get_and_store_participant_info(
         psql_db, metagraph, subtensor, dendrite, validator_hotkey="test-vali", sync=False
     )
 
