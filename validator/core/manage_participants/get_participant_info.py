@@ -33,14 +33,13 @@ async def _sync_metagraph(metagraph: bt.metagraph, subtensor: bt.subtensor) -> N
     await asyncio.to_thread(metagraph.sync, subtensor=subtensor, lite=True)
 
 
-async def store_metagraph_info(postgresql_db: PSQLDB, metagraph: bt.metagraph) -> list[str]:
+async def store_metagraph_info(psql_db: PSQLDB, metagraph: bt.metagraph) -> list[str]:
     axons = metagraph.axons
 
-    for axon in axons:
-        logger.debug(f"Storing axon info: {axon}")
-        await sql.insert_axon_info(postgresql_db, axon)
-        # TODO: Is this the best way to store the info?
-        # NO; I think this should really go into a sql table
+    async with await psql_db.connection() as connection:
+        await sql.migrate_axons_to_axon_history(connection)
+        await sql.insert_axon_info(connection, axons)
+
 
 
 async def _fetch_available_capacities_for_each_axon(psql_db: PSQLDB, dendrite: bto.dendrite) -> None:
