@@ -95,7 +95,7 @@ async def query_individual_axon(
         bt.logging.info(f"Querying axon {uid} for {operation_name}")
 
     ### HERE TO ASSIST TESTING / DEV
-    if "test" in axon.hotkey:
+    if "test" in axon.hotkey and "vali" not in axon.hotkey:
         if isinstance(synapse, synapses.Capacity):
             response = synapses.Capacity(capacities=tcfg.TASK_TO_MAX_CAPACITY)
             if deserialize:
