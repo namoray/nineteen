@@ -3,11 +3,16 @@ import binascii
 import io
 from typing import AsyncGenerator
 from core import utils as cutils
-from models import base_models
-
+from validator.utils import query_constants as qcst
+from core import task_config as tcfg
+from models import base_models, synapses
+from core.bittensor_overrides.chain_data import AxonInfo
 from PIL import Image
 import random
 import numpy as np
+import time
+from typing import Tuple
+import bittensor as bt
 
 
 def pil_to_base64(image: Image, format: str = "JPEG") -> str:
@@ -68,3 +73,42 @@ def alter_clip_body(
 async def consume_generator(generator: AsyncGenerator) -> None:
     async for _ in generator:
         pass
+
+
+async def query_individual_axon(
+    dendrite: bt.dendrite,
+    axon: AxonInfo,
+    uid: int,
+    synapse: bt.Synapse,
+    deserialize: bool = False,
+    log_requests_and_responses: bool = True,
+) -> Tuple[base_models.BaseSynapse, float]:
+    operation_name = synapse.__class__.__name__
+    if operation_name not in qcst.OPERATION_TIMEOUTS:
+        bt.logging.warning(
+            f"Operation {operation_name} not in operation_to_timeout, this is probably a mistake / bug 🐞"
+        )
+
+    start_time = time.time()
+
+    if log_requests_and_responses:
+        bt.logging.info(f"Querying axon {uid} for {operation_name}")
+
+    ### HERE TO ASSIST TESTING / DEV
+    if "test" in axon.hotkey:
+        if isinstance(synapse, synapses.Capacity):
+            response = synapses.Capacity(capacities=tcfg.TASK_TO_MAX_CAPACITY)
+            if deserialize:
+                response = response.capacities
+            start_time = start_time - 1.5  # add a lil extra time on
+    else:
+        response = await dendrite.forward(
+            axons=axon,
+            synapse=synapse,
+            connect_timeout=1.0,
+            response_timeout=qcst.OPERATION_TIMEOUTS.get(operation_name, 15),
+            deserialize=deserialize,
+            log_requests_and_responses=log_requests_and_responses,
+            streaming=False,
+        )
+    return response, time.time() - start_time

@@ -80,9 +80,9 @@ async def migrate_axons_to_axon_history(connection: Connection) -> None:  # noqa
 
 
 async def get_axons(psql_db: PSQLDB) -> list[chain_data.AxonInfo]:
-    axons = await psql_db.fetch_all(
-        f"SELECT {dcst.HOTKEY}, {dcst.COLDKEY}, {dcst.VERSION},"
-        f"{dcst.IP}, {dcst.PORT}, {dcst.IP_TYPE}, {dcst.AXON_UID}"
+    axons = await psql_db.fetchall(
+        f"SELECT {dcst.HOTKEY}, {dcst.COLDKEY}, {dcst.AXON_VERSION} as version,"
+        f"{dcst.IP}, {dcst.PORT}, {dcst.IP_TYPE}, {dcst.AXON_UID}, {dcst.INCENTIVE}"
         f" FROM {dcst.AXON_INFO_TABLE}"
     )
     return [chain_data.AxonInfo(**axon) for axon in axons]

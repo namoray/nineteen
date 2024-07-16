@@ -1,8 +1,8 @@
 import sqlite3
 from typing import Dict
-from core import Task, constants as ccst
+from core import Task, constants as core_cst, task_config as tcfg
 
-from core import TASK_TO_MAX_CAPACITY
+
 from mining.db import sql
 from threading import local
 
@@ -29,7 +29,7 @@ class DatabaseManager:
 
     def get_connection(self):
         if not hasattr(self.local_data, "conn"):
-            self.local_data.conn = sqlite3.connect(ccst.VISION_DB)
+            self.local_data.conn = sqlite3.connect(core_cst.VISION_DB)
         return self.local_data.conn
 
     def close(self):
@@ -56,7 +56,7 @@ class DatabaseManager:
                 ),
             )
             if not cursor.fetchone():
-                max_capacity = TASK_TO_MAX_CAPACITY[task]
+                max_capacity = tcfg.TASK_TO_MAX_CAPACITY[task]
                 default_capcity = max_capacity / 2
                 concurrency_group_id = DEFUALT_CONCURRENCY_GROUPS[task]
                 cursor.execute(

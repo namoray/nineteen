@@ -1,17 +1,16 @@
 import asyncio
 import random
 import time
-from typing import Any, AsyncIterator, Dict, List, Optional, Tuple, Union
+from typing import Any, AsyncIterator, Dict, List, Optional, Union
 from pydantic import BaseModel, ValidationError
 from core import Task
 from models import base_models, utility_models
 import bittensor as bt
-from validator.proxy.utils import constants as cst
 from validator.models import Participant, AxonUID
 from core import bittensor_overrides as bto
 from collections import OrderedDict
-from validator.scoring import scoring_utils
 import json
+from validator.utils import query_utils as qutils
 
 
 class UIDQueue:
@@ -47,37 +46,6 @@ def get_formatted_response(
         return formatted_response
     else:
         return None
-
-
-async def query_individual_axon(
-    dendrite: bt.dendrite,
-    axon: bto.axon,
-    uid: int,
-    synapse: bt.Synapse,
-    deserialize: bool = False,
-    log_requests_and_responses: bool = True,
-) -> Tuple[base_models.BaseSynapse, float]:
-    operation_name = synapse.__class__.__name__
-    if operation_name not in cst.OPERATION_TIMEOUTS:
-        bt.logging.warning(
-            f"Operation {operation_name} not in operation_to_timeout, this is probably a mistake / bug 🐞"
-        )
-
-    start_time = time.time()
-
-    if log_requests_and_responses:
-        bt.logging.info(f"Querying axon {uid} for {operation_name}")
-
-    response = await dendrite.forward(
-        axons=axon,
-        synapse=synapse,
-        connect_timeout=1.0,
-        response_timeout=cst.OPERATION_TIMEOUTS.get(operation_name, 15),
-        deserialize=deserialize,
-        log_requests_and_responses=log_requests_and_responses,
-        streaming=False,
-    )
-    return response, time.time() - start_time
 
 
 def _load_sse_jsons(chunk: str) -> Union[List[Dict[str, Any]], Dict[str, str]]:
@@ -146,9 +114,10 @@ async def query_miner_stream(
     if debug:
         text_generator = await _get_debug_text_generator()
     else:
-        text_generator = await query_individual_axon_stream(
-            synapse=synapse, dendrite=dendrite, axon=axon, axon_uid=axon_uid, log_requests_and_responses=False
-        )
+        # text_generator = await query_individual_axon_stream(
+        #     synapse=synapse, dendrite=dendrite, axon=axon, axon_uid=axon_uid, log_requests_and_responses=False
+        # )
+        ...
     text_jsons = []
     status_code = 200
     error_message = None
@@ -194,17 +163,17 @@ async def query_miner_stream(
             error_message=error_message,
         )
 
-        create_scoring_adjustment_task(query_result, synapse, participant, synthetic_query)
+        # create_scoring_adjustment_task(query_result, synapse, participant, synthetic_query)
 
 
-def create_scoring_adjustment_task(
-    query_result: utility_models.QueryResult, synapse: bt.Synapse, participant: Participant, synthetic_query: bool
-):
-    asyncio.create_task(
-        scoring_utils.adjust_participant_from_result(
-            query_result, synapse, participant, synthetic_query=synthetic_query
-        )
-    )
+# def create_scoring_adjustment_task(
+#     query_result: utility_models.QueryResult, synapse: bt.Synapse, participant: Participant, synthetic_query: bool
+# ):
+#     asyncio.create_task(
+#         scoring_utils.adjust_participant_from_result(
+#             query_result, synapse, participant, synthetic_query=synthetic_query
+#         )
+#     )
 
 
 async def query_miner_no_stream(
@@ -217,7 +186,7 @@ async def query_miner_no_stream(
 ) -> utility_models.QueryResult:
     axon_uid = participant.hotkey
     axon = participant.axon
-    resulting_synapse, response_time = await query_individual_axon(
+    resulting_synapse, response_time = await qutils.query_individual_axon(
         synapse=synapse, dendrite=dendrite, axon=axon, uid=axon_uid, log_requests_and_responses=False
     )
 
@@ -238,7 +207,7 @@ async def query_miner_no_stream(
             status_code=resulting_synapse.axon.status_code,
             error_message=resulting_synapse.error_message,
         )
-        create_scoring_adjustment_task(query_result, synapse, participant, synthetic_query)
+        # create_scoring_adjustment_task(query_result, synapse, participant, synthetic_query)
         return query_result
 
     elif task == Task.avatar:
@@ -287,26 +256,26 @@ def _extract_response(resulting_synapse: base_models.BaseSynapse, outgoing_model
         return None
 
 
-async def query_individual_axon_stream(
-    dendrite: bt.dendrite,
-    axon: bto.axon,
-    axon_uid: int,
-    synapse: bt.Synapse,
-    deserialize: bool = False,
-    log_requests_and_responses: bool = True,
-):
-    synapse_name = synapse.__class__.__name__
-    if synapse_name not in cst.OPERATION_TIMEOUTS:
-        bt.logging.warning(f"Operation {synapse_name} not in operation_to_timeout, this is probably a mistake / bug 🐞")
-    if log_requests_and_responses:
-        bt.logging.info(f"Querying axon {axon_uid} for {synapse_name}")
-    response = await dendrite.forward(
-        axons=axon,
-        synapse=synapse,
-        connect_timeout=0.3,
-        response_timeout=5,  # if X seconds without any data, its boinked
-        deserialize=deserialize,
-        log_requests_and_responses=log_requests_and_responses,
-        streaming=True,
-    )
-    return response
+# async def query_individual_axon_stream(
+#     dendrite: bt.dendrite,
+#     axon: bto.axon,
+#     axon_uid: int,
+#     synapse: bt.Synapse,
+#     deserialize: bool = False,
+#     log_requests_and_responses: bool = True,
+# ):
+#     synapse_name = synapse.__class__.__name__
+#     if synapse_name not in cst.OPERATION_TIMEOUTS:
+#         bt.logging.warning(f"Operation {synapse_name} not in operation_to_timeout, this is probably a mistake / bug 🐞")
+#     if log_requests_and_responses:
+#         bt.logging.info(f"Querying axon {axon_uid} for {synapse_name}")
+#     response = await dendrite.forward(
+#         axons=axon,
+#         synapse=synapse,
+#         connect_timeout=0.3,
+#         response_timeout=5,  # if X seconds without any data, its boinked
+#         deserialize=deserialize,
+#         log_requests_and_responses=log_requests_and_responses,
+#         streaming=True,
+#     )
+#     return response

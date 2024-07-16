@@ -3,7 +3,6 @@ from typing import Dict, List, Optional, Any
 
 import numpy as np
 from pydantic import BaseModel
-import bittensor as bt
 
 from core import Task
 from validator.models import AxonUID

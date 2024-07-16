@@ -36,45 +36,18 @@ class PSQLDB:
         if self.pool:
             await self.pool.close()
 
-    async def fetch(self, query: str, *args: Any) -> list[dict[str, Any]]:
-        if not self.pool:
-            raise RuntimeError("Database connection not established. Call connect() first.")
-        async with self.pool.acquire() as connection:
-            return await connection.fetch(query, *args)
-
-    async def fetchrow(self, query: str, *args: Any) -> dict[str, Any] | None:
-        if not self.pool:
-            raise RuntimeError("Database connection not established. Call connect() first.")
-        async with self.pool.acquire() as connection:
-            return await connection.fetchrow(query, *args)
-
-    async def execute(self, query: str, *args: Any) -> str:
-        if not self.pool:
-            raise RuntimeError("Database connection not established. Call connect() first.")
-
-        try:
-            async with self.pool.acquire() as connection:
-                return await connection.execute(query, *args)
-        except PostgresError as e:
-            logger.error(f"PostgreSQL Error: {e}")
-            logger.error(f"Error Code: {e.sqlstate}")
-            logger.error(f"Detail: {getattr(e, 'detail', 'No detail')}")
-            logger.error(f"Hint: {getattr(e, 'hint', 'No hint')}")
-            logger.error(f"Query: {query}")
-            logger.error(f"Arguments: {args}")
-            raise
-        except Exception as e:
-            logger.error(f"Unexpected error during query execution: {e}")
-            logger.error(f"Query: {query}")
-            logger.error(f"Arguments: {args}")
-            raise
-
     async def fetchall(self, query: str, *args: Any) -> list[dict[str, Any]]:
         if not self.pool:
             raise RuntimeError("Database connection not established. Call connect() first.")
         async with self.pool.acquire() as connection:
-            rows = await connection.fetch(query, *args)
-            return [dict(row) for row in rows]
+            try:
+                rows = await connection.fetch(query, *args)
+                return [dict(row) for row in rows]
+
+            except asyncpg.exceptions.PostgresError as e:
+                logger.error(f"PostgreSQL error in fetch_all: {str(e)}")
+                logger.error(f"Query: {query}")
+                raise
 
     async def connection(self) -> asyncpg.pool.PoolAcquireContext:
         if not self.pool:

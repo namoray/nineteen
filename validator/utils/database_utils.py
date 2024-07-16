@@ -13,7 +13,6 @@ def get_connection_string_from_env() -> str:
     port = os.getenv("POSTGRES_PORT")
     database = os.getenv("POSTGRES_NAME")
 
-    logger.debug(f"But i got: username; {username}, password; *****, host; {host}, port; {port}, database; {database}")
     if not all([username, password, host, port, database]):
         raise ValueError(
             "All of POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB, POSTGRES_PORT, and POSTGRES_NAME must be set",

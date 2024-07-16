@@ -60,10 +60,9 @@ async def _fetch_available_capacities_for_each_axon(psql_db: PSQLDB, dendrite: b
     axons = await sql.get_axons(psql_db)
 
     for axon in axons:
-        # NOTE: Doesn't seem the most efficient to use redis here... lol
         task = asyncio.create_task(
             qutils.query_individual_axon(
-                synapse=synapses.Capacity(),
+                synapse=synapses.Capacity(capacities=None),
                 dendrite=dendrite,
                 axon=axon,
                 uid=axon.axon_uid,
@@ -94,7 +93,8 @@ async def _fetch_available_capacities_for_each_axon(psql_db: PSQLDB, dendrite: b
                     continue
                 if hotkey not in capacities_for_tasks[task]:
                     capacities_for_tasks[task][hotkey] = float(volume.volume)
-        return capacities_for_tasks
+        _correct_capacities()
+    return capacities_for_tasks
 
 
 def _correct_capacities(capacities_for_tasks: dict[Task, dict[str, float]]):
@@ -195,13 +195,8 @@ async def patched_get_and_store_participant_info(
         await _sync_metagraph(metagraph, subtensor)
 
     await store_metagraph_info(psql_db, metagraph)
-    # participants_dict = {}
-    # for i in range(number_of_participants):
-    #     hotkey = "hotkey" + str(random.randint(1, 10_000))
-    #     vol = random.random() * 4000 + 1000
-    #     participants_dict[hotkey] = vol
+    capacities_for_tasks = await _fetch_available_capacities_for_each_axon(psql_db, dendrite)
 
-    # capacities_for_tasks = {Task.chat_llama_3: participants_dict}
     # await _store_capacities_in_redis(redis_db, capacities_for_tasks)
     # await _store_all_participants_in_redis(redis_db, capacities_for_tasks)
 
@@ -219,16 +214,30 @@ async def main():
 
     # Don't need to set this, as it's a property derived from the axons
     # metagraph.hotkeys = ["test-hotkey1", "test-hotkey2"]
-    # metagraph.axons = [
-    #     AxonInfo(
-    #         version=1, ip="127.0.0.1", port=1, ip_type=4, hotkey="test-hotkey1", coldkey="test-coldkey1", axon_uid=1
-    #     ),
-    #     AxonInfo(
-    #         version=2, ip="127.0.0.1", port=2, ip_type=4, hotkey="test-hotkey2", coldkey="test-coldkey2", axon_uid=2
-    #     ),
-    # ]
+    metagraph.axons = [
+        AxonInfo(
+            version=1,
+            ip="127.0.0.1",
+            port=1,
+            ip_type=4,
+            hotkey="test-hotkey1",
+            coldkey="test-coldkey1",
+            axon_uid=1,
+            incentive=0.004,
+        ),
+        AxonInfo(
+            version=2,
+            ip="127.0.0.1",
+            port=2,
+            ip_type=4,
+            hotkey="test-hotkey2",
+            coldkey="test-coldkey2",
+            axon_uid=2,
+            incentive=0.005,
+        ),
+    ]
     dendrite = None
-    await patched_get_and_store_participant_info(psql_db, metagraph, subtensor, dendrite, sync=True)
+    await patched_get_and_store_participant_info(psql_db, metagraph, subtensor, dendrite, sync=False)
 
 
 if __name__ == "__main__":

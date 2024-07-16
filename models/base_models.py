@@ -32,7 +32,7 @@ class CapacityIncoming(BaseModel): ...
 
 
 class CapacityOutgoing(BaseModel):
-    capacities: Optional[Dict[Task, VolumeForTask]]
+    capacities: dict[Task, VolumeForTask] | None
 
 
 class CapacityBase(CapacityIncoming, CapacityOutgoing): ...
