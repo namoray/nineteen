@@ -58,7 +58,7 @@ services:
     environment:
       DATABASE_URL: postgres://user:password@postgresql:5432/mydb?sslmode=disable
     volumes:
-      - ./vali_new/db:/db
+      - ./validator/db:/db
     command: up
     depends_on:
       postgresql:
