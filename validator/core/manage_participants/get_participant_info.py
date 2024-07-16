@@ -41,7 +41,6 @@ async def store_metagraph_info(psql_db: PSQLDB, metagraph: bt.metagraph) -> list
         await sql.insert_axon_info(connection, axons)
 
 
-
 async def _fetch_available_capacities_for_each_axon(psql_db: PSQLDB, dendrite: bto.dendrite) -> None:
     hotkey_to_query_task = {}
 
@@ -203,18 +202,18 @@ async def main():
     config = configuration.prepare_validator_config_and_logging(validator_config)
     # subtensor = bt.subtensor(config=config)
     subtensor = None
-    metagraph = bt.metagraph(netuid=config.netuid, lite=True, sync=False)
+    metagraph = bt.metagraph(netuid=config.netuid, lite=True, sync=True)
 
     # Don't need to set this, as it's a property derived from the axons
     # metagraph.hotkeys = ["test-hotkey1", "test-hotkey2"]
-    metagraph.axons = [
-        AxonInfo(
-            version=1, ip="127.0.0.1", port=1, ip_type=4, hotkey="test-hotkey1", coldkey="test-coldkey1", axon_uid=1
-        ),
-        AxonInfo(
-            version=2, ip="127.0.0.1", port=2, ip_type=4, hotkey="test-hotkey2", coldkey="test-coldkey2", axon_uid=2
-        ),
-    ]
+    # metagraph.axons = [
+    #     AxonInfo(
+    #         version=1, ip="127.0.0.1", port=1, ip_type=4, hotkey="test-hotkey1", coldkey="test-coldkey1", axon_uid=1
+    #     ),
+    #     AxonInfo(
+    #         version=2, ip="127.0.0.1", port=2, ip_type=4, hotkey="test-hotkey2", coldkey="test-coldkey2", axon_uid=2
+    #     ),
+    # ]
     dendrite = None
     await patched_get_and_store_participant_info(psql_db, metagraph, subtensor, dendrite, sync=False)
 
