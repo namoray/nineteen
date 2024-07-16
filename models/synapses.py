@@ -11,7 +11,7 @@ from starlette.responses import StreamingResponse
 
 
 class Capacity(bt.Synapse, base_models.CapacityBase):
-    def deserialize(self) -> Optional[Dict[Task, base_models.VolumeForTask]]:
+    def deserialize(self) -> Optional[Dict[Task, base_models.CapacityForTask]]:
         return self.capacities
 
 

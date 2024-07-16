@@ -18,7 +18,7 @@ async def execute_query_when_available(redis_db: Redis, dendrite: bto.dendrite, 
     participant_id = redis_db.blpop(keys=[rcst.SYNTHETIC_DATA_KEY])
     participant = await putils.load_participant(redis_db, participant_id)
 
-    asyncio.create_task(execute_synthetic_query(redis_db, participant.hotkey, participant.task, dendrite))
+    asyncio.create_task(execute_synthetic_query(redis_db, participant.miner_hotkey, participant.task, dendrite))
 
 
 async def monitor_for_queries(redis_db: Redis, dendrite: bto.dendrite):

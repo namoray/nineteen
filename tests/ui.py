@@ -160,7 +160,7 @@ with col2:
         run_in_loop(rutils.delete_key_from_redis, rcst.PARTICIPANT_IDS_KEY)
         for participant in edited_participants:
             run_in_loop(
-                get_participant_info.store_participant,
+                get_participant_info.store_participants,
                 task=participant["task"],
                 hotkey=participant["hotkey"],
                 declared_volume=participant["declared_volume"],

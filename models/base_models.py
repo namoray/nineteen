@@ -4,7 +4,7 @@ The naming convention is super important to adhere too!
 Keep it as SynapseNameBase / SynapseNameIncoming / SynapseNameOutgoing
 """
 
-from typing import List, Optional, Dict
+from typing import List, Optional
 from pydantic import BaseModel, Field
 
 from core import constants as cst, Task
@@ -13,8 +13,8 @@ from models import utility_models
 import bittensor as bt
 
 
-class VolumeForTask(BaseModel):
-    volume: float
+class CapacityForTask(BaseModel):
+    capacity: float
 
 
 class BaseSynapse(bt.Synapse):
@@ -32,7 +32,7 @@ class CapacityIncoming(BaseModel): ...
 
 
 class CapacityOutgoing(BaseModel):
-    capacities: dict[Task, VolumeForTask] | None
+    capacities: dict[Task, CapacityForTask] | None
 
 
 class CapacityBase(CapacityIncoming, CapacityOutgoing): ...

@@ -106,7 +106,7 @@ async def query_miner_stream(
     synthetic_query: bool,
     debug: bool = False,
 ) -> AsyncIterator[str]:
-    axon_uid = participant.hotkey
+    axon_uid = participant.miner_hotkey
     axon = participant
 
     time1 = time.time()
@@ -158,7 +158,7 @@ async def query_miner_stream(
             response_time=response_time,
             task=task,
             success=not first_message,
-            miner_hotkey=participant.hotkey,
+            miner_hotkey=participant.miner_hotkey,
             status_code=status_code,
             error_message=error_message,
         )
@@ -184,7 +184,7 @@ async def query_miner_no_stream(
     dendrite: bto.dendrite,
     synthetic_query: bool,
 ) -> utility_models.QueryResult:
-    axon_uid = participant.hotkey
+    axon_uid = participant.miner_hotkey
     axon = participant.axon
     resulting_synapse, response_time = await qutils.query_individual_axon(
         synapse=synapse, dendrite=dendrite, axon=axon, uid=axon_uid, log_requests_and_responses=False
@@ -203,7 +203,7 @@ async def query_miner_no_stream(
             response_time=response_time,
             task=task,
             success=True,
-            miner_hotkey=participant.hotkey,
+            miner_hotkey=participant.miner_hotkey,
             status_code=resulting_synapse.axon.status_code,
             error_message=resulting_synapse.error_message,
         )
@@ -217,7 +217,7 @@ async def query_miner_no_stream(
             response_time=response_time,
             task=task,
             success=False,
-            miner_hotkey=participant.hotkey,
+            miner_hotkey=participant.miner_hotkey,
             status_code=resulting_synapse.axon.status_code,
             error_message=resulting_synapse.error_message,
         )
@@ -232,7 +232,7 @@ async def query_miner_no_stream(
             task=task,
             status_code=resulting_synapse.axon.status_code,
             success=False,
-            miner_hotkey=participant.hotkey,
+            miner_hotkey=participant.miner_hotkey,
         )
         # create_scoring_adjustment_task(query_result, synapse, participant, synthetic_query)
         return query_result

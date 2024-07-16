@@ -2,14 +2,14 @@ import asyncio
 import threading
 
 import bittensor as bt
+import numpy as np
 from core.bittensor_overrides.chain_data import AxonInfo
 from models import config_models
 from dataclasses import asdict
-from redis.asyncio import Redis
 from validator.db.database import PSQLDB
 from validator.models import Participant
-from validator.utils import redis_utils as rutils, query_utils as qutils
-from validator.utils import redis_constants as cst
+from validator.utils import query_utils as qutils
+from core import task_config as tcfg
 from core import constants as ccst
 from collections import defaultdict
 from core import tasks
@@ -74,7 +74,7 @@ async def _fetch_available_capacities_for_each_axon(psql_db: PSQLDB, dendrite: b
         hotkey_to_query_task[axon.hotkey] = task
 
     responses_and_response_times: list[
-        tuple[dict[Task, base_models.VolumeForTask] | None, float]
+        tuple[dict[Task, base_models.CapacityForTask] | None, float]
     ] = await asyncio.gather(*hotkey_to_query_task.values())
 
     all_capacities = [i[0] for i in responses_and_response_times]
@@ -87,44 +87,45 @@ async def _fetch_available_capacities_for_each_axon(psql_db: PSQLDB, dendrite: b
                 continue
 
             allowed_tasks = set([task for task in Task])
-            for task, volume in capacities.items():
+            for task, capacity in capacities.items():
                 # This is to stop people claiming tasks that don't exist
                 if task not in allowed_tasks:
                     continue
                 if hotkey not in capacities_for_tasks[task]:
-                    capacities_for_tasks[task][hotkey] = float(volume.volume)
-        _correct_capacities()
+                    capacities_for_tasks[task][hotkey] = float(capacity.capacity)
     return capacities_for_tasks
 
 
-def _correct_capacities(capacities_for_tasks: dict[Task, dict[str, float]]):
-    return capacities_for_tasks
+def _correct_capacity(task: Task, capacity: float, validator_stake_proportion: float) -> float:
+    max_capacity = tcfg.TASK_TO_MAX_CAPACITY[task]
 
-
-# TODO: replace with psql
-# async def _store_capacities_in_redis(redis_db: Redis, capacities_for_tasks: dict[Task, dict[str, float]]):
-#     await rutils.save_json_to_redis(redis_db, cst.CAPACITIES_KEY, capacities_for_tasks)
+    announced_capacity = min(max(capacity, 0), max_capacity.capacity)
+    return announced_capacity * validator_stake_proportion
 
 
 # TODO: Replace with psql
-async def _store_all_participants_in_redis(
-    redis_db: Redis,
-    capacities_for_tasks: dict[Task, dict[str, float]],
+async def _store_all_participants_in_db(
+    psql_db: PSQLDB, capacities_for_tasks: dict[Task, dict[str, float]], validator_hotkey: str, validator_stake_proportion: float
 ):
+    participants = []
     for task in Task:
-        for hotkey, declared_volume in capacities_for_tasks.get(task, {}).items():
-            volume_to_score, number_of_requests_to_make, delay_between_requests = calculate_synthetic_query_parameters(
-                task, declared_volume
+        for hotkey, declared_capacity in capacities_for_tasks.get(task, {}).items():
+            capacity_to_score, number_of_requests_to_make, delay_between_requests = (
+                calculate_synthetic_query_parameters(task, declared_capacity)
             )
-            await store_participant(
-                redis_db,
-                task,
-                hotkey,
-                declared_volume,
-                volume_to_score,
+            corrected_capacity = _correct_capacity(task, declared_capacity, validator_stake_proportion)
+            participant = Participant(
+                miner_hotkey=hotkey,
+                task=task,
                 synthetic_requests_still_to_make=number_of_requests_to_make,
+                capacity=corrected_capacity,
+                capacity_to_score=capacity_to_score,
+                raw_capacity=declared_capacity,
                 delay_between_synthetic_requests=delay_between_requests,
             )
+            participants.append(participant)
+
+    await store_participants(psql_db, participants, validator_hotkey)
 
 
 def _get_percentage_of_tasks_to_score():
@@ -145,28 +146,14 @@ def calculate_synthetic_query_parameters(task: Task, declared_volume: float):
 
 
 # TODO: replace with psql
-async def store_participant(
-    redis_db: Redis,
-    task: Task,
-    hotkey: str,
-    declared_volume: float,
-    volume_to_score: float,
-    synthetic_requests_still_to_make: int,
-    delay_between_synthetic_requests: float,
+async def store_participants(
+    psql_db: PSQLDB,
+    participants: list[Participant],
+    validator_hotkey: str,
 ):
-    participant = Participant(
-        hotkey=hotkey,
-        task=task,
-        synthetic_requests_still_to_make=synthetic_requests_still_to_make,
-        declared_volume=declared_volume,
-        volume_to_score=volume_to_score,
-        delay_between_synthetic_requests=delay_between_synthetic_requests,
-    )
-    # How should i best do this, with redisJSON perhaps?
-
-    await rutils.save_json_to_redis(redis_db, key=participant.id, json_to_save=participant.model_dump())
-    await rutils.add_to_set_redis(redis_db, cst.PARTICIPANT_IDS_KEY, participant.id)
-    return participant.id
+    async with await psql_db.connection() as connection:
+        await sql.migrate_participants_to_participant_history(connection)
+        await sql.insert_participants(connection, participants, validator_hotkey)
 
 
 async def get_and_store_participant_info(
@@ -178,7 +165,6 @@ async def get_and_store_participant_info(
     await store_metagraph_info(psql_db, metagraph)
     # capacities_for_tasks = await _fetch_available_capacities_for_each_axon(psql_db, dendrite)
     # corrected_capacities = _correct_capacities(capacities_for_tasks)
-    # await _store_capacities_in_redis(corrected_capacities)
     # await _store_all_participants_in_redis(psql_db, capacities_for_tasks)
 
 
@@ -188,6 +174,7 @@ async def patched_get_and_store_participant_info(
     metagraph: bt.metagraph,
     subtensor: bt.subtensor,
     dendrite: bto.dendrite,
+    validator_hotkey: str,
     sync: bool = True,
     number_of_participants: int = 10,
 ):
@@ -197,13 +184,12 @@ async def patched_get_and_store_participant_info(
     await store_metagraph_info(psql_db, metagraph)
     capacities_for_tasks = await _fetch_available_capacities_for_each_axon(psql_db, dendrite)
 
-    # await _store_capacities_in_redis(redis_db, capacities_for_tasks)
-    # await _store_all_participants_in_redis(redis_db, capacities_for_tasks)
+    validator_stake_proportion = metagraph.S[metagraph.hotkeys.index(validator_hotkey)] / metagraph.S.sum()
+    await _store_all_participants_in_db(psql_db, capacities_for_tasks, validator_hotkey, validator_stake_proportion)
 
 
 async def main():
     # Remember to export ENV=test
-    redis_db = Redis()
     psql_db = PSQLDB()
     await psql_db.connect()
     validator_config = config_models.ValidatorConfig()
@@ -211,10 +197,23 @@ async def main():
     # subtensor = bt.subtensor(config=config)
     subtensor = None
     metagraph = bt.metagraph(netuid=config.netuid, lite=True, sync=False)
+    metagraph.S
 
     # Don't need to set this, as it's a property derived from the axons
     # metagraph.hotkeys = ["test-hotkey1", "test-hotkey2"]
     metagraph.axons = [
+        # Vali
+        AxonInfo(
+            version=1,
+            ip="127.0.0.1",
+            port=1,
+            ip_type=4,
+            hotkey="test-vali",
+            coldkey="test-vali-ck",
+            axon_uid=0,
+            incentive=0,
+        ),
+        # Miners
         AxonInfo(
             version=1,
             ip="127.0.0.1",
@@ -236,8 +235,11 @@ async def main():
             incentive=0.005,
         ),
     ]
+    metagraph.total_stake = np.array([50, 30, 20])
     dendrite = None
-    await patched_get_and_store_participant_info(psql_db, metagraph, subtensor, dendrite, sync=False)
+    await patched_get_and_store_participant_info(
+        psql_db, metagraph, subtensor, dendrite, validator_hotkey="test-vali", sync=False
+    )
 
 
 if __name__ == "__main__":

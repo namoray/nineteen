@@ -24,13 +24,14 @@ class Participant(BaseModel):
         # Deprecated?
         # allow_mutation = True
 
-    hotkey: str
+    miner_hotkey: str
     task: Task
     synthetic_requests_still_to_make: int = Field(..., description="Synthetic requests still to make")
     delay_between_synthetic_requests: float = Field(..., description="Delay between synthetic requests")
-    declared_volume: float = Field(..., description="Declared volume for the UID")
-    consumed_volume: float = Field(0, description="Queried volume for the UID")
-    volume_to_score: float = Field(0, description="Volume to score")
+    raw_capacity: float = Field(0, description="Raw capacity straight from the miner")
+    capacity: float = Field(..., description="Declared volume for the UID")
+    consumed_capacity: float = Field(0, description="Queried volume for the UID")
+    capacity_to_score: float = Field(0, description="Volume to score")
     total_requests_made: int = Field(0, description="Total requests made")
     requests_429: int = Field(0, description="HTTP 429 requests")
     requests_500: int = Field(0, description="HTTP 500 requests")
@@ -38,7 +39,7 @@ class Participant(BaseModel):
 
     @property
     def id(self) -> str:
-        participant_id = self.hotkey + '-' + self.task.value
+        participant_id = self.miner_hotkey + '-' + self.task.value
         return participant_id
 
     def calculate_period_score(self) -> float:
@@ -52,13 +53,13 @@ class Participant(BaseModel):
         But if I barely queried your volume, and you still rate limited me loads (429),
         then you're very naughty, you.
         """
-        if self.total_requests_made == 0 or self.declared_volume == 0:
+        if self.total_requests_made == 0 or self.capacity == 0:
             return None
 
-        self.declared_volume = max(self.declared_volume, 1)
-        volume_unqueried = max(self.declared_volume - self.consumed_volume, 0)
+        self.capacity = max(self.capacity, 1)
+        volume_unqueried = max(self.capacity - self.consumed_capacity, 0)
 
-        percentage_of_volume_unqueried = volume_unqueried / self.declared_volume
+        percentage_of_volume_unqueried = volume_unqueried / self.capacity
         percentage_of_429s = self.requests_429 / self.total_requests_made
         percentage_of_500s = self.requests_500 / self.total_requests_made
         percentage_of_good_requests = (
