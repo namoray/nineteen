@@ -58,16 +58,19 @@ services:
     environment:
       DATABASE_URL: postgres://user:password@postgresql:5432/mydb?sslmode=disable
     volumes:
-      - ./db:/db
+      - ./vali_new/db:/db
     command: up
     depends_on:
       postgresql:
         condition: service_healthy
+    networks:
+    - postgres_network
+
 
   query_node:
     build:
-      context: ./query_node
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: dockerfiles/query_node.dockerfile
     deploy:
       replicas: 3
       resources:

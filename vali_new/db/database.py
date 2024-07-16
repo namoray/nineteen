@@ -1,4 +1,3 @@
-from socket import gaierror
 from typing import Any
 
 import asyncpg
@@ -8,6 +7,7 @@ from vali_new.utils import database_utils as dutils
 from core.logging import get_logger
 
 logger = get_logger(__name__)
+
 
 class PSQLDB:
     def __init__(self, from_env: bool = True, connection_string: str | None = None):

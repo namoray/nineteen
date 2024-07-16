@@ -1,3 +1,4 @@
+import datetime
 from vali_new.db.database import PSQLDB
 from core.bittensor_overrides import chain_data
 from core.logging import get_logger
@@ -9,6 +10,11 @@ from vali_new.utils import database_constants as dcst
 logger = get_logger(__name__)
 
 
+# TODO: Include history on here and
+# e.g. created_at, expired_at
+# And have some cron to clean it if we're worried about size
+# Basiaclly's insanely useful for debugging to  be
+# able to get a snapshot at any point in the history
 async def insert_axon_info(psql_db: PSQLDB, axon_info: chain_data.AxonInfo) -> None:
     logger.debug("Inserting axon info")
     await psql_db.execute(
@@ -20,9 +26,10 @@ async def insert_axon_info(psql_db: PSQLDB, axon_info: chain_data.AxonInfo) -> N
             {dcst.IP},
             {dcst.PORT},
             {dcst.IP_TYPE},
-            {dcst.AXON_UID}
+            {dcst.AXON_UID},
+            {dcst.CREATED_AT}
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
         """,
         axon_info.hotkey,
         axon_info.coldkey,
