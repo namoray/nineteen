@@ -11,10 +11,10 @@ Usage:
 python manually_set_weights.py --env_file {youvr_vali_hotkey_env_file_here}
 """
 
-from validation.core_validator import core_validator
-from validation.weight_setting import calculations
+from validator.core_validator import core_validator
+from validator.weight_setting import calculations
 import asyncio
-from validation.db.db_management import db_manager
+from validator.db.db_management import db_manager
 
 async def main():
     await core_validator.resync_metagraph()

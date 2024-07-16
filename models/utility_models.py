@@ -6,7 +6,7 @@ from pydantic import BaseModel
 import bittensor as bt
 
 from core import Task
-from validation.models import AxonUID
+from validator.models import AxonUID
 
 class QueryResult(BaseModel):
     formatted_response: Any

@@ -105,7 +105,7 @@ services:
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: mydb
+      POSTGRES_DB: postgresql
       POSTGRES_PORT: 5432
       POSTGRES_NAME: mydb
     depends_on:
@@ -113,6 +113,8 @@ services:
       - postgresql
     volumes:
       - .:/app
+    networks:
+      - postgres_network
 
 
 

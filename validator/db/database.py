@@ -1,3 +1,4 @@
+import socket
 from typing import Any
 
 import asyncpg
@@ -20,7 +21,16 @@ class PSQLDB:
 
     async def connect(self) -> None:
         logger.debug(f"Connecting to {self.connection_string}")
-        self.pool = await asyncpg.create_pool(self.connection_string)
+        try:
+            self.pool = await asyncpg.create_pool(self.connection_string)
+            if self.pool is None:
+                raise ConnectionError("Failed to create connection pool")
+        except asyncpg.exceptions.PostgresError as e:
+            raise ConnectionError(f"PostgreSQL error: {str(e)}") from e
+        except socket.gaierror as e:
+            raise ConnectionError(f"DNS resolution failed: {str(e)}. Check your host name.") from e
+        except Exception as e:
+            raise ConnectionError(f"Unexpected error while connecting: {str(e)}") from e
 
     async def close(self) -> None:
         if self.pool:

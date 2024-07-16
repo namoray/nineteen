@@ -3,10 +3,10 @@ from typing import Dict, List
 
 from core import Task
 from models import utility_models
-from validation.db.db_management import db_manager
-from validation.models import PeriodScore
-from validation.models import AxonUID
-from validation.models import RewardData
+from validator.db.db_management import db_manager
+from validator.models import PeriodScore
+from validator.models import AxonUID
+from validator.models import RewardData
 
 PERIOD_SCORE_TIME_DECAYING_FACTOR = 0.5
 

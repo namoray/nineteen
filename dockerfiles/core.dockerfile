@@ -9,6 +9,15 @@ COPY setup.py /app/setup.py
 COPY README.md /app/README.md
 RUN pip install --no-cache-dir -e . 
 
-COPY . /app
+COPY core /app/core
+COPY validator /app/validator
+
+# Review below as it needs bittensor in places
+COPY models /app/models
+
+# Review below as don't want config plauging us
+COPY config /app/config
+
+
 
 CMD ["tail", "-f", "/dev/null"]

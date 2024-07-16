@@ -7,7 +7,7 @@ from typing import Optional
 from rich.console import Console
 from rich.table import Table
 from config.create_config import get_config
-from validation.proxy import sql
+from validator.db import sql
 
 cli = typer.Typer(name="Vision CLI")
 
@@ -152,6 +152,7 @@ def show_key_info(key: str):
     """
     Show information about an API key.
     """
+
     async def run():
         async with aiosqlite.connect(sql.DATABASE_PATH) as conn:
             row = sql.get_api_key_info(conn, key)
@@ -167,7 +168,8 @@ def show_key_info(key: str):
             console.print(table)
 
     anyio.run(run)
-    
+
+
 @cli.command()
 def logs_for_key(key: str):
     """
@@ -241,7 +243,7 @@ def logs_summary():
 
         console.print("Endpoint Breakdown:")
         console.print(breakdown_table)
-    
+
     anyio.run(run)
 
 

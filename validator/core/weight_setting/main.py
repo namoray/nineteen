@@ -7,8 +7,8 @@ import bittensor as bt
 import torch
 from core import Task
 from models import utility_models
-from validation.models import AxonUID
-from validation.weight_setting import calculations
+from validator.models import AxonUID
+from validator.weight_setting import calculations
 
 VERSION_KEY = 40_004
 async def start_weight_setting_process(

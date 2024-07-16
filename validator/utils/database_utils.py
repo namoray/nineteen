@@ -1,7 +1,10 @@
 import os
 from dotenv import load_dotenv
+from core.logging import get_logger
 
+logger = get_logger(__name__)
 load_dotenv()
+
 
 def get_connection_string_from_env() -> str:
     username = os.getenv("POSTGRES_USER")
@@ -10,10 +13,11 @@ def get_connection_string_from_env() -> str:
     port = os.getenv("POSTGRES_PORT")
     database = os.getenv("POSTGRES_NAME")
 
+    logger.debug(f"But i got: username; {username}, password; *****, host; {host}, port; {port}, database; {database}")
     if not all([username, password, host, port, database]):
         raise ValueError(
             "All of POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB, POSTGRES_PORT, and POSTGRES_NAME must be set",
-            f"But i got: username; {username}, password; *****, host; {host}, port; {port}, database; {database}"
+            f"But i got: username; {username}, password; *****, host; {host}, port; {port}, database; {database}",
         )
     return get_connection_string(username, password, host, port, database)
 
