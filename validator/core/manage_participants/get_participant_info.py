@@ -4,7 +4,7 @@ import threading
 import bittensor as bt
 from core.bittensor_overrides.chain_data import AxonInfo
 from models import config_models
-
+from dataclasses import asdict
 from redis.asyncio import Redis
 from validator.db.database import PSQLDB
 from validator.models import Participant
@@ -31,6 +31,19 @@ threading_lock = threading.Lock()
 async def _sync_metagraph(metagraph: bt.metagraph, subtensor: bt.subtensor) -> None:
     logger.info("Resyncing the metagraph!")
     await asyncio.to_thread(metagraph.sync, subtensor=subtensor, lite=True)
+    new_axons = []
+    incentives = metagraph.incentive.tolist()
+    logger.debug(f"Incentives: {incentives}")
+    for (
+        axon,
+        uid,
+        incentive,
+    ) in zip(metagraph.axons, metagraph.uids, incentives):
+        new_axon_info = AxonInfo(**asdict(axon), axon_uid=uid, incentive=incentive)
+        logger.debug(f"New axon info: {new_axon_info}")
+        new_axons.append(new_axon_info)
+
+    metagraph.axons = new_axons
 
 
 async def store_metagraph_info(psql_db: PSQLDB, metagraph: bt.metagraph) -> list[str]:
@@ -202,7 +215,7 @@ async def main():
     config = configuration.prepare_validator_config_and_logging(validator_config)
     # subtensor = bt.subtensor(config=config)
     subtensor = None
-    metagraph = bt.metagraph(netuid=config.netuid, lite=True, sync=True)
+    metagraph = bt.metagraph(netuid=config.netuid, lite=True, sync=False)
 
     # Don't need to set this, as it's a property derived from the axons
     # metagraph.hotkeys = ["test-hotkey1", "test-hotkey2"]
@@ -215,7 +228,7 @@ async def main():
     #     ),
     # ]
     dendrite = None
-    await patched_get_and_store_participant_info(psql_db, metagraph, subtensor, dendrite, sync=False)
+    await patched_get_and_store_participant_info(psql_db, metagraph, subtensor, dendrite, sync=True)
 
 
 if __name__ == "__main__":

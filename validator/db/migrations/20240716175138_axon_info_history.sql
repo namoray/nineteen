@@ -8,6 +8,7 @@ CREATE TABLE axon_info_history (
     port INTEGER NOT NULL,
     ip_type INTEGER NOT NULL,
     axon_uid INTEGER NOT NULL,
+    incentive FLOAT,
     created_at TIMESTAMP WITHOUT TIME ZONE,
     expired_at TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC')
 );

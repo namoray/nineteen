@@ -15,6 +15,7 @@ class AxonInfo:
     hotkey: str
     coldkey: str
     axon_uid: int
+    incentive: float | None
     protocol: int = 4
     placeholder1: int = 0
     placeholder2: int = 0
@@ -45,8 +46,22 @@ class AxonInfo:
         return False
 
     def __str__(self):
-        return "AxonInfo( {}, {}, {}, {} )".format(
-            str(self.ip_str()), str(self.hotkey), str(self.coldkey), self.version
+        return (
+            f"AxonInfo(\n"
+            f"  version: {self.version},\n"
+            f"  ip: {self.ip},\n"
+            f"  port: {self.port},\n"
+            f"  ip_type: {self.ip_type},\n"
+            f"  hotkey: {self.hotkey},\n"
+            f"  coldkey: {self.coldkey},\n"
+            f"  axon_uid: {self.axon_uid},\n"
+            f"  incentive: {self.incentive},\n"
+            f"  protocol: {self.protocol},\n"
+            f"  placeholder1: {self.placeholder1},\n"
+            f"  placeholder2: {self.placeholder2},\n"
+            f"  is_serving: {self.is_serving},\n"
+            f"  ip_str: {self.ip_str()}\n"
+            f")"
         )
 
     def __repr__(self):

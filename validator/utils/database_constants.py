@@ -18,6 +18,7 @@ IP_TYPE = "ip_type"
 HOTKEY = "hotkey"
 COLDKEY = "coldkey"
 AXON_UID = "axon_uid"
+INCENTIVE = "incentive"
 CREATED_AT = "created_at"
 
 

@@ -26,9 +26,10 @@ async def insert_axon_info(connection: Connection, axon_infos: list[chain_data.A
             {dcst.PORT},
             {dcst.IP_TYPE},
             {dcst.AXON_UID},
+            {dcst.INCENTIVE},
             {dcst.CREATED_AT}
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
         """,
         [
             (
@@ -39,6 +40,7 @@ async def insert_axon_info(connection: Connection, axon_infos: list[chain_data.A
                 axon_info.port,
                 axon_info.ip_type,
                 axon_info.axon_uid,
+                axon_info.incentive,
             )
             for axon_info in axon_infos
         ],
@@ -56,6 +58,7 @@ async def migrate_axons_to_axon_history(connection: Connection) -> None:  # noqa
             {dcst.PORT},
             {dcst.IP_TYPE},
             {dcst.AXON_UID},
+            {dcst.INCENTIVE},
             {dcst.CREATED_AT}
         )
         SELECT
@@ -66,6 +69,7 @@ async def migrate_axons_to_axon_history(connection: Connection) -> None:  # noqa
             {dcst.PORT},
             {dcst.IP_TYPE},
             {dcst.AXON_UID},
+            {dcst.INCENTIVE},
             {dcst.CREATED_AT}
         FROM {dcst.AXON_INFO_TABLE}
     """
