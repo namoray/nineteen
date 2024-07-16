@@ -159,7 +159,6 @@ async def store_participants(
         await sql.insert_participants(connection, participants, validator_hotkey)
 
 
-
 ## Testing utils
 async def get_and_store_participant_info(
     psql_db: PSQLDB,

@@ -26,7 +26,7 @@ TEXT_PROMPTS = "text_prompts"
 def load_postie_to_pil(image_path: str) -> Image:
     with open(image_path, "rb") as image_file:
         base64_string = base64.b64encode(image_file.read()).decode("utf-8")
-    pil_image = qutils.base64_to_pil(base64_string)
+    pil_image = cutils.base64_to_pil(base64_string)
     return pil_image
 
 
