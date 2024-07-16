@@ -1,10 +1,10 @@
 import datetime
-from vali_new.db.database import PSQLDB
+from validator.db.database import PSQLDB
 from core.bittensor_overrides import chain_data
 from core.logging import get_logger
 
 
-from vali_new.utils import database_constants as dcst
+from validator.utils import database_constants as dcst
 
 
 logger = get_logger(__name__)

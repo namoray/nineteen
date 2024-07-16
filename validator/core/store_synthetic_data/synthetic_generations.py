@@ -12,8 +12,8 @@ from models import base_models, utility_models
 from core import utils as cutils
 from PIL.Image import Image
 from redis.asyncio import Redis
-from vali_new.utils import redis_constants as cst
-from vali_new.utils import redis_utils as rutils, synthetic_utils as sutils, query_utils as qutils
+from validator.utils import redis_constants as cst
+from validator.utils import redis_utils as rutils, synthetic_utils as sutils, query_utils as qutils
 from core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -26,7 +26,7 @@ TEXT_PROMPTS = "text_prompts"
 def load_postie_to_pil(image_path: str) -> Image:
     with open(image_path, "rb") as image_file:
         base64_string = base64.b64encode(image_file.read()).decode("utf-8")
-    pil_image = cutils.base64_to_pil(base64_string)
+    pil_image = qutils.base64_to_pil(base64_string)
     return pil_image
 
 

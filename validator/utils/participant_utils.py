@@ -1,7 +1,7 @@
 import json
-from vali_new.models import Participant
-from vali_new.utils import redis_constants as rcst
-from vali_new.utils import redis_utils as rutils
+from validator.models import Participant
+from validator.utils import redis_constants as rcst
+from validator.utils import redis_utils as rutils
 from redis.asyncio import Redis
 from core.logging import get_logger
 

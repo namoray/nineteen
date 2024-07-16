@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import AsyncMock
-from vali_new.utils.redis_utils import add_json_to_redis_list
+from validator.utils.redis_utils import add_json_to_redis_list
 
 @pytest.mark.asyncio
 async def test_add_json_to_redis_list():

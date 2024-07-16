@@ -7,7 +7,7 @@ from core import Task
 from models import base_models, utility_models
 import bittensor as bt
 from validation.proxy.utils import constants as cst
-from vali_new.models import Participant, AxonUID
+from validator.models import Participant, AxonUID
 from core import bittensor_overrides as bto
 from collections import OrderedDict
 from validation.scoring import scoring_utils

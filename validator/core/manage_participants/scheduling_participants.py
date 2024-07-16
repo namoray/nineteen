@@ -2,9 +2,9 @@ import asyncio
 from datetime import datetime, timedelta
 import random
 
-from vali_new.models import Participant
+from validator.models import Participant
 from redis.asyncio import Redis
-from vali_new.utils import participant_utils as putils, redis_utils as rutils, redis_constants as rcst
+from validator.utils import participant_utils as putils, redis_utils as rutils, redis_constants as rcst
 
 from core.logging import get_logger
 

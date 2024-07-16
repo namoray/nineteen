@@ -4,7 +4,7 @@ from typing import Dict, Any
 
 from core import Task, tasks
 from models import base_models
-from vali_new.utils import redis_utils as rutils, redis_constants as rcst, query_utils as qutils
+from validator.utils import redis_utils as rutils, redis_constants as rcst, query_utils as qutils
 from core import dataclasses as dc
 from redis.asyncio import Redis
 

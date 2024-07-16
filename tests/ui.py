@@ -8,11 +8,11 @@ import streamlit as st  # noqa
 from core import Task  # noqa
 from core.logging import get_logger  # noqa
 from redis.asyncio import Redis  # noqa
-from vali_new.core.store_synthetic_data import synthetic_generations  # noqa
+from validator.core.store_synthetic_data import synthetic_generations  # noqa
 import asyncio  # noqa
-from vali_new.core.manage_participants import get_participant_info, scheduling_participants  # noqa
-from vali_new.utils import participant_utils as putils, redis_utils as rutils  # noqa
-from vali_new.utils import redis_constants as rcst  # noqa
+from validator.core.manage_participants import get_participant_info, scheduling_participants  # noqa
+from validator.utils import participant_utils as putils, redis_utils as rutils  # noqa
+from validator.utils import redis_constants as rcst  # noqa
 import pandas as pd  # noqa
 
 pd.set_option("future.no_silent_downcasting", True)

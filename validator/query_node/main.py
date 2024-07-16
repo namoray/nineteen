@@ -4,10 +4,10 @@ import os
 
 from redis.asyncio import Redis
 from core import Task
-from vali_new.models import Participant
-from vali_new.utils import participant_utils as putils, synthetic_utils as sutils, query_utils as qutils
-from vali_new.utils import redis_constants as rcst
-from vali_new.query_node import utils
+from validator.models import Participant
+from validator.utils import participant_utils as putils, synthetic_utils as sutils, query_utils as qutils
+from validator.utils import redis_constants as rcst
+from validator.query_node import utils
 from core import bittensor_overrides as bto
 
 DEBUG = os.getenv("ENV", "prod") != "prod"

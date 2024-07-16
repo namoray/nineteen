@@ -1,3 +1,6 @@
+import base64
+import binascii
+import io
 from typing import AsyncGenerator
 from core import utils as cutils
 from models import base_models
@@ -5,6 +8,22 @@ from models import base_models
 from PIL import Image
 import random
 import numpy as np
+
+
+def pil_to_base64(image: Image, format: str = "JPEG") -> str:
+    buffered = io.BytesIO()
+    image.save(buffered, format=format)
+    img_str = base64.b64encode(buffered.getvalue()).decode()
+    return img_str
+
+
+def base64_to_pil(image_b64: str) -> Image.Image:
+    try:
+        image_data = base64.b64decode(image_b64)
+        image = Image.open(io.BytesIO(image_data))
+        return image
+    except binascii.Error:
+        return None
 
 
 def alter_image(

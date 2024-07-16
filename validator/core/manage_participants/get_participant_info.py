@@ -6,10 +6,10 @@ from core.bittensor_overrides.chain_data import AxonInfo
 from models import config_models
 
 from redis.asyncio import Redis
-from vali_new.db.database import PSQLDB
-from vali_new.models import Participant
-from vali_new.utils import redis_utils as rutils, query_utils as qutils
-from vali_new.utils import redis_constants as cst
+from validator.db.database import PSQLDB
+from validator.models import Participant
+from validator.utils import redis_utils as rutils, query_utils as qutils
+from validator.utils import redis_constants as cst
 from core import constants as ccst
 from collections import defaultdict
 from core import tasks
@@ -18,7 +18,7 @@ from core import Task
 
 from core import bittensor_overrides as bto
 from models import base_models, synapses
-from vali_new.db import sql
+from validator.db import sql
 from core.logging import get_logger
 
 
