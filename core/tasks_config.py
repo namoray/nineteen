@@ -30,8 +30,8 @@ class OrchestratorServerConfig(BaseModel):
 
 
 class SyntheticGenerationConfig(BaseModel):
-    synthetic_generation_function: str
-    synthetic_generation_params: dict
+    func: str
+    kwargs: dict
 
 
 class FullTaskConfig(BaseModel):
@@ -42,8 +42,9 @@ class FullTaskConfig(BaseModel):
 
     task: Task
     max_capacity: CapacityForTask
-    scoring_config = TaskScoringConfig
+    scoring_config: TaskScoringConfig
     orchestrator_server_config: OrchestratorServerConfig
+    synthetic_generation_config: SyntheticGenerationConfig
 
 
 TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
@@ -63,7 +64,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
             checking_function="check_text_result",
         ),
         synthetic_generation_config=SyntheticGenerationConfig(
-            synthetic_generation_function="generate_chat_synthetic", synthetic_generation_params={"model": "mixtral"}
+            func="generate_chat_synthetic", kwargs={"model": "mixtral"}
         ),
     ),
     Task.chat_llama_3: FullTaskConfig(
@@ -82,7 +83,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
             checking_function="check_text_result",
         ),
         synthetic_generation_config=SyntheticGenerationConfig(
-            synthetic_generation_function="generate_chat_synthetic", synthetic_generation_params={"model": "llama_3"}
+            func="generate_chat_synthetic", kwargs={"model": "llama_3"}
         ),
     ),
     Task.proteus_text_to_image: FullTaskConfig(
@@ -93,12 +94,12 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         ),
         orchestrator_server_config=OrchestratorServerConfig(
             checking_server_needed=ServerType.IMAGE,
-            checking_load_model_config=None,
+            checking_load_model_config={},
             checking_function="check_image_result",
         ),
         synthetic_generation_config=SyntheticGenerationConfig(
-            synthetic_generation_function="generate_text_to_image_synthetic",
-            synthetic_generation_params={"engine": "PROTEUS"},
+            func="generate_text_to_image_synthetic",
+            kwargs={"engine": "proteus"},
         ),
     ),
     Task.playground_text_to_image: FullTaskConfig(
@@ -109,12 +110,12 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         ),
         orchestrator_server_config=OrchestratorServerConfig(
             checking_server_needed=ServerType.IMAGE,
-            checking_load_model_config=None,
+            checking_load_model_config={},
             checking_function="check_image_result",
         ),
         synthetic_generation_config=SyntheticGenerationConfig(
-            synthetic_generation_function="generate_text_to_image_synthetic",
-            synthetic_generation_params={"engine": "PLAYGROUND"},
+            func="generate_text_to_image_synthetic",
+            kwargs={"engine": "playground"},
         ),
     ),
     Task.dreamshaper_text_to_image: FullTaskConfig(
@@ -125,12 +126,12 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         ),
         orchestrator_server_config=OrchestratorServerConfig(
             checking_server_needed=ServerType.IMAGE,
-            checking_load_model_config=None,
+            checking_load_model_config={},
             checking_function="check_image_result",
         ),
         synthetic_generation_config=SyntheticGenerationConfig(
-            synthetic_generation_function="generate_text_to_image_synthetic",
-            synthetic_generation_params={"engine": "DREAMSHAPER"},
+            func="generate_text_to_image_synthetic",
+            kwargs={"engine": "dreamshaper"},
         ),
     ),
     Task.proteus_image_to_image: FullTaskConfig(
@@ -141,12 +142,12 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         ),
         orchestrator_server_config=OrchestratorServerConfig(
             checking_server_needed=ServerType.IMAGE,
-            checking_load_model_config=None,
+            checking_load_model_config={},
             checking_function="check_image_result",
         ),
         synthetic_generation_config=SyntheticGenerationConfig(
-            synthetic_generation_function="generate_image_to_image_synthetic",
-            synthetic_generation_params={"engine": "PROTEUS"},
+            func="generate_image_to_image_synthetic",
+            kwargs={"engine": "proteus"},
         ),
     ),
     Task.playground_image_to_image: FullTaskConfig(
@@ -157,12 +158,12 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         ),
         orchestrator_server_config=OrchestratorServerConfig(
             checking_server_needed=ServerType.IMAGE,
-            checking_load_model_config=None,
+            checking_load_model_config={},
             checking_function="check_image_result",
         ),
         synthetic_generation_config=SyntheticGenerationConfig(
-            synthetic_generation_function="generate_image_to_image_synthetic",
-            synthetic_generation_params={"engine": "PLAYGROUND"},
+            func="generate_image_to_image_synthetic",
+            kwargs={"engine": "playground"},
         ),
     ),
     Task.dreamshaper_image_to_image: FullTaskConfig(
@@ -173,12 +174,12 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         ),
         orchestrator_server_config=OrchestratorServerConfig(
             checking_server_needed=ServerType.IMAGE,
-            checking_load_model_config=None,
+            checking_load_model_config={},
             checking_function="check_image_result",
         ),
         synthetic_generation_config=SyntheticGenerationConfig(
-            synthetic_generation_function="generate_image_to_image_synthetic",
-            synthetic_generation_params={"engine": "DREAMSHAPER"},
+            func="generate_image_to_image_synthetic",
+            kwargs={"engine": "dreamshaper"},
         ),
     ),
     Task.jugger_inpainting: FullTaskConfig(
@@ -189,26 +190,11 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         ),
         orchestrator_server_config=OrchestratorServerConfig(
             checking_server_needed=ServerType.IMAGE,
-            checking_load_model_config=None,
+            checking_load_model_config={},
             checking_function="check_image_result",
         ),
         synthetic_generation_config=SyntheticGenerationConfig(
-            synthetic_generation_function="generate_inpaint_synthetic", synthetic_generation_params={}
-        ),
-    ),
-    Task.clip_image_embeddings: FullTaskConfig(
-        task=Task.clip_image_embeddings,
-        max_capacity=CapacityForTask(capacity=0),  # disabled clip for now
-        scoring_config=TaskScoringConfig(
-            task=Task.clip_image_embeddings, mean=0.5, variance=2, overhead=1.0, task_type=TaskType.CLIP
-        ),
-        orchestrator_server_config=OrchestratorServerConfig(
-            checking_server_needed=ServerType.IMAGE,
-            checking_load_model_config=None,
-            checking_function="check_clip_result",
-        ),
-        synthetic_generation_config=SyntheticGenerationConfig(
-            synthetic_generation_function="generate_clip_synthetic", synthetic_generation_params={}
+            func="generate_inpaint_synthetic", kwargs={}
         ),
     ),
     Task.avatar: FullTaskConfig(
@@ -217,11 +203,26 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         scoring_config=TaskScoringConfig(task=Task.avatar, mean=1, variance=20, overhead=5.0, task_type=TaskType.IMAGE),
         orchestrator_server_config=OrchestratorServerConfig(
             checking_server_needed=ServerType.IMAGE,
-            checking_load_model_config=None,
+            checking_load_model_config={},
             checking_function="check_image_result",
         ),
         synthetic_generation_config=SyntheticGenerationConfig(
-            synthetic_generation_function="generate_avatar_synthetic", synthetic_generation_params={}
+            func="generate_avatar_synthetic", kwargs={}
+    # Task.clip_image_embeddings: FullTaskConfig(
+    #     task=Task.clip_image_embeddings,
+    #     max_capacity=CapacityForTask(capacity=0),  # disabled clip for now
+    #     scoring_config=TaskScoringConfig(
+    #         task=Task.clip_image_embeddings, mean=0.5, variance=2, overhead=1.0, task_type=TaskType.CLIP
+    #     ),
+    #     orchestrator_server_config=OrchestratorServerConfig(
+    #         checking_server_needed=ServerType.IMAGE,
+    #         checking_load_model_config={},
+    #         checking_function="check_clip_result",
+    #     ),
+    #     synthetic_generation_config=SyntheticGenerationConfig(
+    #         func="generate_clip_synthetic", kwargs={}
+    #     ),
+    # ),
         ),
     ),
 }

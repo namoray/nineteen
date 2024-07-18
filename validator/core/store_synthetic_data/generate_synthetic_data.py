@@ -1,25 +1,37 @@
+import asyncio
 import random
+import sys
 
 from models import base_models, utility_models
 from validator.utils import (
     synthetic_utils as sutils,
     synthetic_constants as scst,
+    generic_utils as gutils,
 )
-from core import dataclasses as dc
+from core import Task, dataclasses as dc, tasks_config
 
 import markovify
 import datasets
 import diskcache
 from functools import lru_cache
+from core.logging import get_logger
+
+logger = get_logger(__name__)
+
+
 
 
 # NOTE: any danger here of massively gorwing cache?
 @lru_cache(maxsize=1)
-def markov_model_factory() -> markovify.Text:
-    dataset = datasets.load_dataset("multi-train/coco_captions_1107")
+def get_cached_markov_model():
+    dataset = datasets.load_dataset("caption_data/data")
     text = [i["query"] for i in dataset["train"]]
-    markov_text_generation_model = markovify.Text(" ".join(text))
-    return markov_text_generation_model
+    return markovify.Text(" ".join(text))
+
+
+# Async wrapper to use the cached model
+async def markov_model_factory():
+    return await asyncio.to_thread(get_cached_markov_model)
 
 
 @lru_cache(maxsize=1)
@@ -28,8 +40,8 @@ def image_cache_factory() -> diskcache.Cache:
     return cache
 
 
-def _get_markov_sentence(max_words: int = 10) -> str:
-    markov_text_generation_model = markov_model_factory()
+async def _get_markov_sentence(max_words: int = 10) -> str:
+    markov_text_generation_model = await markov_model_factory()
     text = None
     while text is None:
         text = markov_text_generation_model.make_sentence(max_words=max_words)
@@ -37,19 +49,19 @@ def _get_markov_sentence(max_words: int = 10) -> str:
 
 
 async def generate_chat_synthetic(model: str) -> base_models.ChatIncoming:
-    user_content = _get_markov_sentence(max_words=80)
+    user_content = await _get_markov_sentence(max_words=80)
     messages = [utility_models.Message(content=user_content, role=utility_models.Role.user.value)]
 
     if random.random() < 0.1:
         messages.append(
             utility_models.Message(
-                content=_get_markov_sentence(max_words=80),
+                content=await _get_markov_sentence(max_words=80),
                 role=utility_models.Role.assistant.value,
             )
         )
         messages.append(
             utility_models.Message(
-                content=_get_markov_sentence(max_words=80),
+                content=await _get_markov_sentence(max_words=80),
                 role=utility_models.Role.user.value,
             )
         )
@@ -66,8 +78,8 @@ async def generate_chat_synthetic(model: str) -> base_models.ChatIncoming:
 async def generate_text_to_image_synthetic(
     engine: str,
 ) -> base_models.TextToImageIncoming:
-    positive_text = _get_markov_sentence(max_words=20)
-    text_prompts = [utility_models.TextPrompt(text=positive_text, weight=1.0)]
+    positive_text = await _get_markov_sentence(max_words=20)
+    text_prompts = [dc.TextPrompt(text=positive_text, weight=1.0)]
     seed = random.randint(1, scst.MAX_SEED)
 
     if engine == utility_models.EngineEnum.PLAYGROUND.value:
@@ -104,8 +116,8 @@ async def generate_image_to_image_synthetic(
 ) -> base_models.ImageToImageIncoming:
     cache = image_cache_factory()
 
-    positive_text = _get_markov_sentence(max_words=20)
-    text_prompts = [utility_models.TextPrompt(text=positive_text, weight=1.0)]
+    positive_text = await _get_markov_sentence(max_words=20)
+    text_prompts = [dc.TextPrompt(text=positive_text, weight=1.0)]
     seed = random.randint(1, scst.MAX_SEED)
 
     if engine == utility_models.EngineEnum.PLAYGROUND.value:
@@ -146,7 +158,7 @@ async def generate_image_to_image_synthetic(
 
 async def generate_inpaint_synthetic() -> base_models.InpaintIncoming:
     cache = image_cache_factory()
-    positive_text = _get_markov_sentence(max_words=20)
+    positive_text = await _get_markov_sentence(max_words=20)
     text_prompts = [dc.TextPrompt(text=positive_text, weight=1.0)]
     seed = random.randint(1, scst.MAX_SEED)
 
@@ -167,7 +179,7 @@ async def generate_inpaint_synthetic() -> base_models.InpaintIncoming:
 
 
 async def generate_avatar_synthetic() -> base_models.AvatarIncoming:
-    positive_text = _get_markov_sentence(max_words=20)
+    positive_text = await _get_markov_sentence(max_words=20)
     text_prompts = [dc.TextPrompt(text=positive_text, weight=1.0)]
     seed = random.randint(1, scst.MAX_SEED)
 
@@ -183,6 +195,26 @@ async def generate_avatar_synthetic() -> base_models.AvatarIncoming:
         seed=seed,
         steps=8,
     )
+
+
+async def generate_synthetic_data(task: Task) -> None:
+    """
+    Gets task config and dynamically calls the synthetic generation function
+    Not super clean, but it works
+    """
+    task_config = tasks_config.TASK_TO_CONFIG[task]
+    generative_function_name = task_config.synthetic_generation_config.func
+
+    if generative_function_name not in sys.modules[__name__].__dict__:
+        raise ValueError(
+            f"Function {generative_function_name} not found in generate_synthetic_data, some config is wrong"
+        )
+
+    with gutils.log_time(f"Generating synthetic data for {task}", logger):
+        func = getattr(sys.modules[__name__], generative_function_name)
+        kwargs = task_config.synthetic_generation_config.kwargs
+
+        return await func(**kwargs)
 
 
 # async def generate_clip_synthetic() -> base_models.ClipEmbeddingsIncoming:

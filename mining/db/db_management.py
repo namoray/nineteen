@@ -1,6 +1,6 @@
 import sqlite3
 from typing import Dict
-from core import Task, constants as core_cst, task_config as tcfg
+from core import Task, constants as core_cst, tasks_config as tcfg
 
 
 from mining.db import sql
@@ -16,8 +16,8 @@ DEFUALT_CONCURRENCY_GROUPS = {
     Task.playground_image_to_image: 3,
     Task.dreamshaper_image_to_image: 3,
     Task.jugger_inpainting: 3,
-    Task.clip_image_embeddings: 3,  # disabled clip for now
     Task.avatar: 3,
+    # Task.clip_image_embeddings: 3,  # disabled clip for now
 }
 
 DEFAULT_CONCURRENCY_GROUP_VALUES = {1: 7, 2: 7, 3: 1}

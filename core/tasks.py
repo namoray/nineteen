@@ -1,6 +1,6 @@
 """Would prefer to make this just one dataclass"""
 
-from core import Task, task_config
+from core import Task, tasks_config
 from models import synapses, utility_models
 from typing import Dict, Optional
 import bittensor as bt
@@ -60,9 +60,9 @@ def get_task_from_synapse(synapse: bt.Synapse) -> Optional[Task]:
         return None
 
 
-def get_task_config(task: Task) -> task_config.TaskScoringConfig:
-    if task in task_config.TASK_TO_CONFIG:
-        return task_config.TASK_TO_CONFIG[task].scoring_config
+def get_task_config(task: Task) -> tasks_config.TaskScoringConfig:
+    if task in tasks_config.TASK_TO_CONFIG:
+        return tasks_config.TASK_TO_CONFIG[task].scoring_config
     raise ValueError(f"Task configuration for {task.value} not found")
 
 

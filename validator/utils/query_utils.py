@@ -2,9 +2,8 @@ import base64
 import binascii
 import io
 from typing import AsyncGenerator
-from core import utils as cutils
-from validator.utils import query_constants as qcst
-from core import task_config as tcfg
+from validator.utils import query_constants as qcst, query_utils as qutils
+from core import tasks_config as tcfg
 from models import base_models, synapses
 from core.bittensor_overrides.chain_data import AxonInfo
 from PIL import Image
@@ -43,14 +42,14 @@ def alter_image(
 
         for i in range(3):
             change = random.choice([-1, 1])
-            numpy_image[rand_y, rand_x, i] = np.clip(numpy_image[rand_y, rand_x, i] + change, 0, 255)
+            numpy_image[rand_y, rand_x, i] = np.clip(int(numpy_image[rand_y, rand_x, i]) + change, 0, 255)
 
     pil_image = Image.fromarray(numpy_image)
 
     if pil_image.mode == "RGBA":
         pil_image = pil_image.convert("RGB")
 
-    new_image = cutils.pil_to_base64(pil_image)
+    new_image = qutils.pil_to_base64(pil_image)
     return new_image
 
 
@@ -62,7 +61,7 @@ def alter_clip_body(
 
     new_images = []
     for image in body.image_b64s:
-        pil_image = cutils.base64_to_pil(image)
+        pil_image = qutils.base64_to_pil(image)
         new_image = alter_image(pil_image)
         new_images.append(new_image)
 
@@ -97,7 +96,10 @@ async def query_individual_axon(
     ### HERE TO ASSIST TESTING / DEV
     if "test" in axon.hotkey:
         if isinstance(synapse, synapses.Capacity):
-            response = synapses.Capacity(capacities=tcfg.TASK_TO_MAX_CAPACITY)
+            capacities = {}
+            for task, config in tcfg.TASK_TO_CONFIG.items():
+                capacities[task] = config.max_capacity
+            response = synapses.Capacity(capacities=capacities)
             if deserialize:
                 response = response.capacities
             start_time = start_time - 1.5  # add a lil extra time on

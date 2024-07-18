@@ -6,7 +6,7 @@ So you can more accurately calculate your own volume
 
 from core import Task, tasks
 from core import constants as ccst
-from core.task_config import TaskType
+from core.tasks_config import TaskType
 
 
 def calculate_volume_for_task(

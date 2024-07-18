@@ -20,6 +20,6 @@ TASKS_TO_MINER_OPERATION_MODULES: Dict[Task, Any] = {
     Task.playground_image_to_image: image_to_image_operation,
     Task.dreamshaper_image_to_image: image_to_image_operation,
     Task.jugger_inpainting: inpaint_operation,
-    Task.clip_image_embeddings: clip_embeddings_operation,
     Task.avatar: avatar_operation,
+    # Task.clip_image_embeddings: clip_embeddings_operation,
 }

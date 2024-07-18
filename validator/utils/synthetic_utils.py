@@ -1,7 +1,7 @@
 import random
 from typing import Dict, Any
 
-from core import Task, task_config
+from core import Task, tasks_config
 from models import base_models
 from validator.utils import (
     redis_utils as rutils,
@@ -21,7 +21,9 @@ import diskcache
 from PIL import Image
 import uuid
 import numpy as np
-import cv2
+from core.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 def get_randomly_edited_face_picture_for_avatar() -> str:
@@ -35,7 +37,7 @@ def get_randomly_edited_face_picture_for_avatar() -> str:
     Hence, we can use a single picture and just edit it to generate 2**(1024*1024) unique images
     """
 
-    my_boy_postie = _load_postie_to_pil("validator/core/store_synthetic_data/postie.png")
+    my_boy_postie = _load_postie_to_pil("validator/core/assets/postie.png")
     return _alter_my_boy_postie(my_boy_postie)
 
 
@@ -108,37 +110,34 @@ async def get_random_image_b64(cache: diskcache.Cache) -> str:
     return random_picsum_image
 
 
-def generate_mask_with_circle(image_b64: str) -> np.ndarray:
-    imgdata = base64.b64decode(image_b64)
-    image = Image.open(BytesIO(imgdata))
-    image_np = np.array(image)
+def generate_mask_with_circle(image_b64: str) -> str:
+    image = Image.open(BytesIO(base64.b64decode(image_b64)))
 
-    image_shape = image_np.shape[:2]
+    height, width = image.size
 
-    center_x = np.random.randint(0, image_shape[1])
-    center_y = np.random.randint(0, image_shape[0])
-    center = (center_x, center_y)
+    center_x = np.random.randint(0, width)
+    center_y = np.random.randint(0, height)
+    radius = np.random.randint(20, 100)
 
-    mask = np.zeros(image_shape, np.uint8)
+    y, x = np.ogrid[:height, :width]
 
-    radius = random.randint(20, 100)
+    mask = ((x - center_x) ** 2 + (y - center_y) ** 2 <= radius**2).astype(np.uint8)
 
-    cv2.circle(mask, center, radius, (1), 1)
+    mask_bytes = mask.tobytes()
+    mask_b64 = base64.b64encode(mask_bytes).decode("utf-8")
 
-    mask = cv2.floodFill(mask, None, center, 1)[1]
-    mask_img = Image.fromarray(mask, "L")
-    buffered = BytesIO()
-    mask_img.save(buffered, format="PNG")
-    mask_img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
-    return mask_img_str
+    return mask_b64
 
 
 def construct_synthetic_data_task_key(task: Task) -> str:
     return rcst.SYNTHETIC_DATA_KEY + ":" + task.value
 
 
-async def get_synthetic_data_version(redis_db: Redis, task: Task) -> float:
-    return redis_db.hget(rcst.SYNTHETIC_DATA_VERSIONS_KEY, task.value)
+async def get_synthetic_data_version(redis_db: Redis, task: Task) -> float | None:
+    version = await redis_db.hget(rcst.SYNTHETIC_DATA_VERSIONS_KEY, task.value)
+    if version is not None:
+        return float(version.decode("utf-8"))
+    return None
 
 
 async def fetch_synthetic_data_for_task(redis_db: Redis, task: Task) -> Dict[str, Any]:
@@ -149,14 +148,14 @@ async def fetch_synthetic_data_for_task(redis_db: Redis, task: Task) -> Dict[str
     ), f"Somehow the task is not in synthetic data? task: {task}, synthetic_data: {all_synthetic_data}"
 
     synth_data = all_synthetic_data[task]
-    task_type = task_config.TASK_TO_CONFIG[task].scoring_config.task_type
-    if task_type == task_config.TaskType.IMAGE:
+    task_type = tasks_config.TASK_TO_CONFIG[task].scoring_config.task_type
+    if task_type == tasks_config.TaskType.IMAGE:
         synth_data[scst.SEED] = random.randint(1, 1_000_000_000)
         synth_data[scst.TEXT_PROMPTS] = _get_random_text_prompt()
-    elif task_type == task_config.TaskType.TEXT:
+    elif task_type == tasks_config.TaskType.TEXT:
         synth_data[scst.SEED] = random.randint(1, 1_000_000_000)
         synth_data[scst.TEMPERATURE] = round(random.uniform(0, 1), 2)
-    elif task_type == task_config.TaskType.CLIP:
+    elif task_type == tasks_config.TaskType.CLIP:
         synth_model = base_models.ClipEmbeddingsIncoming(**synth_data)
         synth_model_altered = qutils.alter_clip_body(synth_model)
         synth_data = synth_model_altered.model_dump()

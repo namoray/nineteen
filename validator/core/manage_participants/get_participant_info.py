@@ -9,7 +9,7 @@ from dataclasses import asdict
 from validator.db.database import PSQLDB
 from validator.models import Participant
 from validator.utils import query_utils as qutils
-from core import task_config as tcfg
+from core import tasks_config as tcfg
 from core import constants as ccst
 from collections import defaultdict
 from core import tasks

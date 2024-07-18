@@ -11,8 +11,8 @@ class Task(Enum):
     playground_image_to_image = "playground-image-to-image"
     dreamshaper_image_to_image = "dreamshaper-image-to-image"
     jugger_inpainting = "inpaint"
-    clip_image_embeddings = "clip-image-embeddings"
     avatar = "avatar"
+    # clip_image_embeddings = "clip-image-embeddings"
 
 
 
