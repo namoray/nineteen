@@ -179,19 +179,10 @@ async def get_and_store_participant_info(
     await _store_all_participants_in_db(psql_db, capacities_for_tasks, validator_hotkey, validator_stake_proportion)
 
 
-async def main():
-    # Remember to export ENV=test
-    psql_db = PSQLDB()
-    await psql_db.connect()
-    validator_config = config_models.ValidatorConfig()
-    config = configuration.prepare_validator_config_and_logging(validator_config)
-    # subtensor = bt.subtensor(config=config)
-    subtensor = None
-    metagraph = bt.metagraph(netuid=config.netuid, lite=True, sync=False)
-    metagraph.S
-
+def set_for_dummy_run(metagraph: bt.metagraph) -> None:
     # Don't need to set this, as it's a property derived from the axons
     # metagraph.hotkeys = ["test-hotkey1", "test-hotkey2"]
+
     metagraph.axons = [
         # Vali
         AxonInfo(
@@ -228,8 +219,29 @@ async def main():
     ]
     metagraph.total_stake = np.array([50, 30, 20])
     dendrite = None
+    sync = False
+    return dendrite, sync
+
+
+async def main():
+    # Remember to export ENV=test
+    psql_db = PSQLDB()
+    await psql_db.connect()
+    validator_config = config_models.ValidatorConfig()
+    config = configuration.prepare_validator_config_and_logging(validator_config)
+    subtensor = None
+    metagraph = bt.metagraph(netuid=config.netuid, lite=True, sync=False)
+
+    # Use below to control dummy data
+    RUN_WITH_DUMMY = True
+    if RUN_WITH_DUMMY:
+        dendrite, sync = set_for_dummy_run(metagraph)
+    else:
+        wallet = bt.wallet(name=config.wallet_name, hotkey=config.hotkey_name)
+        dendrite = bto.dendrite(wallet=wallet)
+
     await get_and_store_participant_info(
-        psql_db, metagraph, subtensor, dendrite, validator_hotkey="test-vali", sync=False
+        psql_db, metagraph, subtensor, dendrite, validator_hotkey="test-vali", sync=sync
     )
 
 

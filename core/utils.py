@@ -13,8 +13,8 @@ def load_capacities(hotkey: str) -> Dict[str, Dict[str, float]]:
     return miner_db_manager.load_task_capacities(hotkey)
 
 
-def start_async_loop(func: Callable):
+def start_async_loop(func: Callable, *args, **kwargs):
     """Start the event loop and run the async tasks."""
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    loop.run_until_complete(func())
+    loop.run_until_complete(func(*args, **kwargs))

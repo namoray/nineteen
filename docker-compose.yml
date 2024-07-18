@@ -3,6 +3,19 @@ services:
     image: redis/redis-stack:latest
     ports:
       - "6379:6379"
+    networks:
+      - redis_network
+    
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    ports:
+      - "8081:8081"
+    networks:
+      - redis_network
+    depends_on:
+      - redis
 
   prometheus:
     image: prom/prometheus:latest
@@ -115,11 +128,14 @@ services:
       - .:/app
     networks:
       - postgres_network
+      - redis_network
 
 
 
 networks:
   postgres_network:
+    driver: bridge
+  redis_network:
     driver: bridge
 
 volumes:
