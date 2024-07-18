@@ -36,7 +36,7 @@ async def update_tasks_synthetic_data(slow_sync: bool = True) -> None:
         now = datetime.datetime.now().timestamp()
         synthetic_data_version = await sutils.get_synthetic_data_version(redis_db)
         if now - synthetic_data_version > 5:
-            new_synthetic_data = await sutils.fetch_synthetic_data_for_task(task)
+            new_synthetic_data = await sutils.fetch_synthetic_data_for_task(redis_db, task)
             await _store_synthetic_data_in_redis(redis_db, task, new_synthetic_data)
         if slow_sync:
             await asyncio.sleep(3)

@@ -22,19 +22,6 @@ TASK_IS_STREAM: Dict[Task, bool] = {
     Task.clip_image_embeddings: False,
     Task.avatar: False,
 }
-TASKS_TO_SYNAPSE: Dict[Task, bt.Synapse] = {
-    Task.chat_mixtral: synapses.Chat,
-    Task.chat_llama_3: synapses.Chat,
-    Task.proteus_text_to_image: synapses.TextToImage,
-    Task.playground_text_to_image: synapses.TextToImage,
-    Task.dreamshaper_text_to_image: synapses.TextToImage,
-    Task.proteus_image_to_image: synapses.ImageToImage,
-    Task.playground_image_to_image: synapses.ImageToImage,
-    Task.dreamshaper_image_to_image: synapses.ImageToImage,
-    Task.jugger_inpainting: synapses.Inpaint,
-    Task.clip_image_embeddings: synapses.ClipEmbeddings,
-    Task.avatar: synapses.Avatar,
-}
 
 
 def get_task_from_synapse(synapse: bt.Synapse) -> Optional[Task]:
