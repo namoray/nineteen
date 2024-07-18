@@ -12,6 +12,7 @@ import datasets
 import diskcache
 from functools import lru_cache
 
+
 # NOTE: any danger here of massively gorwing cache?
 @lru_cache(maxsize=1)
 def markov_model_factory() -> markovify.Text:
@@ -19,11 +20,13 @@ def markov_model_factory() -> markovify.Text:
     text = [i["query"] for i in dataset["train"]]
     markov_text_generation_model = markovify.Text(" ".join(text))
     return markov_text_generation_model
-    
+
+
 @lru_cache(maxsize=1)
 def image_cache_factory() -> diskcache.Cache:
     cache = diskcache.Cache("./image_cache")
     return cache
+
 
 def _get_markov_sentence(max_words: int = 10) -> str:
     markov_text_generation_model = markov_model_factory()

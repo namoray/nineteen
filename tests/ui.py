@@ -8,7 +8,7 @@ import streamlit as st  # noqa
 from core import Task  # noqa
 from core.logging import get_logger  # noqa
 from redis.asyncio import Redis  # noqa
-from validator.core.store_synthetic_data import synthetic_generations  # noqa
+from validator.core.store_synthetic_data import synthetic_generation_manager  # noqa
 import asyncio  # noqa
 from validator.core.manage_participants import get_participant_info, scheduling_participants  # noqa
 from validator.utils import participant_utils as putils, redis_utils as rutils  # noqa
@@ -32,7 +32,7 @@ def get_redis():
 
 @st.cache_data
 def get_synthetic_data():
-    return run_in_loop(synthetic_generations.get_stored_synthetic_data)
+    return run_in_loop(synthetic_generation_manager.get_stored_synthetic_data)
 
 
 @st.cache_data(ttl=0.1)
@@ -132,7 +132,7 @@ with col1:
     selected_model = st.selectbox("Select Model", model_options, index=0)
 
     if st.button("Add Synthetic Data"):
-        run_in_loop(synthetic_generations.patched_update_synthetic_data, task=Task(selected_model))
+        run_in_loop(synthetic_generation_manager.patched_update_synthetic_data, task=Task(selected_model))
         st.cache_data.clear()
 
     synthetic_data = get_synthetic_data()

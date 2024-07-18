@@ -1,16 +1,15 @@
 import asyncio
+import datetime
 import random
 import threading
 from flask import json
-
+import time
 from pydantic import BaseModel
-from core import Task, tasks
+from core import Task
 from models import base_models, utility_models
 from core import utils as cutils
 from redis.asyncio import Redis
-from validator.utils import redis_constants as cst
 from validator.utils import (
-    redis_utils as rutils,
     synthetic_utils as sutils,
     redis_constants as rcst,
 )
@@ -32,28 +31,22 @@ async def _store_synthetic_data_in_redis(redis_db: Redis, task: Task, synthetic_
     await pipe.execute()
 
 
-async def _continuously_fetch_synthetic_data_for_tasks(redis_db: Redis, external_server_url: str) -> None:
-    tasks_needing_synthetic_data = [
-        task for task in tasks.Task if task not in await get_stored_synthetic_data(redis_db)
-    ]
-    while tasks_needing_synthetic_data:
-        sync_tasks = []
-        for task in tasks_needing_synthetic_data:
-            sync_tasks.append(asyncio.create_task(_update_synthetic_data_for_task(redis_db, task, external_server_url)))
-
-        await asyncio.gather(*sync_tasks)
-        tasks_needing_synthetic_data = [
-            task for task in tasks.Task if task not in await get_stored_synthetic_data(redis_db)
-        ]
-
-    while True:
-        for task in tasks.Task:
-            await _update_synthetic_data_for_task(redis_db, task, external_server_url)
+async def update_tasks_synthetic_data(slow_sync: bool = True) -> None:
+    for task in Task:
+        now = datetime.datetime.now().timestamp()
+        synthetic_data_version = await sutils.get_synthetic_data_version(redis_db)
+        if now - synthetic_data_version > 5:
+            new_synthetic_data = await sutils.fetch_synthetic_data_for_task(task)
+            await _store_synthetic_data_in_redis(redis_db, task, new_synthetic_data)
+        if slow_sync:
             await asyncio.sleep(3)
 
 
-async def get_stored_synthetic_data(redis_db: Redis):
-    return await rutils.json_load_from_redis(redis_db, cst.SYNTHETIC_DATA_KEY)
+async def _continuously_fetch_synthetic_data_for_tasks(redis_db: Redis, external_server_url: str) -> None:
+    update_tasks_synthetic_data(slow_sync=False)
+
+    while True:
+        update_tasks_synthetic_data(slow_sync=True)
 
 
 class SyntheticDataManager:
