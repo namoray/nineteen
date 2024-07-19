@@ -26,6 +26,8 @@ st.markdown("# Vision [τ, τ] SN19 - Dev Panel")
 logger = get_logger(__name__)
 T = TypeVar("T")
 
+SYNCING_SYNTH_DATA = False
+
 
 async def _get_all_synthetic_data_versions(redis_db: Redis) -> None:
     versions = {}
@@ -43,12 +45,11 @@ def get_redis():
 
 @st.cache_resource
 def get_psql_db():
-    psql_db =  PSQLDB()
-    return psql_db
+    return PSQLDB()
 
 
 @st.cache_data
-def get_synthetic_data():
+def get_synthetic_data_versions():
     return run_in_loop(_get_all_synthetic_data_versions)
 
 
@@ -127,9 +128,11 @@ async def clear_redis(redis_db: Redis):
     await redis_db.flushall()
     st.cache_data.clear()
 
+
 async def clear_psql(psql_db: PSQLDB):
     await psql_db.truncate_all_tables()
     st.cache_data.clear()
+
 
 if "participants_being_scheduled" not in st.session_state:
     st.session_state["participants_being_scheduled"] = {}
@@ -169,16 +172,22 @@ col1, col2 = st.columns(2)
 with col1:
     st.subheader("Synthetic Data Management")
 
-    model_options = [t.value for t in Task]
-    selected_model = st.selectbox("Select Model", model_options, index=0)
 
     if st.button("Add Synthetic Data"):
-        run_in_loop(synthetic_generation_manager.patched_update_synthetic_data, task=Task(selected_model))
+        run_in_loop(
+            synthetic_generation_manager.update_tasks_synthetic_data,
+            with_redis=True,
+            slow_sync=False,
+        )
+
         st.cache_data.clear()
 
-    synthetic_data = get_synthetic_data()
-    if synthetic_data:
-        st.write(synthetic_data)
+        st.subheader("Synthetic data versions:")
+        synthetic_data_versions = get_synthetic_data_versions()
+        if synthetic_data_versions:
+            st.write(synthetic_data_versions)
+
+
 
 ##########################
 ### Participants #######
