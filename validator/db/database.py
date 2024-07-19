@@ -55,3 +55,28 @@ class PSQLDB:
         if not self.pool:
             raise RuntimeError("Database connection not established. Call connect() first.")
         return self.pool.acquire()
+
+    async def truncate_all_tables(self) -> None:
+        if not self.pool:
+            raise RuntimeError("Database connection not established. Call connect() first.")
+
+        async with self.pool.acquire() as connection:
+            try:
+                # Get all table names in the current schema
+                tables = await connection.fetch(
+                    """
+                    SELECT tablename FROM pg_tables
+                    WHERE schemaname = 'public'
+                    """
+                )
+
+                # Disable triggers and truncate each table
+                await connection.execute("SET session_replication_role = 'replica';")
+                for table in tables:
+                    await connection.execute(f'TRUNCATE TABLE "{table["tablename"]}" CASCADE;')
+                await connection.execute("SET session_replication_role = 'origin';")
+
+                logger.info("All tables have been truncated successfully.")
+            except asyncpg.exceptions.PostgresError as e:
+                logger.error(f"PostgreSQL error in truncate_all_tables: {str(e)}")
+                raise

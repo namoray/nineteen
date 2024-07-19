@@ -127,6 +127,9 @@ async def clear_redis(redis_db: Redis):
     await redis_db.flushall()
     st.cache_data.clear()
 
+async def clear_psql(psql_db: PSQLDB):
+    await psql_db.truncate_all_tables()
+    st.cache_data.clear()
 
 if "participants_being_scheduled" not in st.session_state:
     st.session_state["participants_being_scheduled"] = {}
@@ -142,8 +145,15 @@ with st.container():
     top_row_col1, top_row_col2 = st.columns(2)
 
     with top_row_col1:
-        if st.button("Clear Redis"):
-            run_in_loop(clear_redis)
+        col1, col2 = st.columns(2)
+
+        with col1:
+            if st.button("Clear Redis"):
+                run_in_loop(clear_redis)
+
+        with col2:
+            if st.button("Clear PSQL"):
+                run_in_loop(clear_psql, with_psql=True, with_redis=False)
 
     st.markdown("---")
 
