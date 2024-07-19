@@ -1,6 +1,8 @@
 from datetime import datetime, timedelta
 import os
 
+from validator.db.database import PSQLDB
+
 os.environ["ENV"] = "dev"
 
 from typing import Any, Awaitable, Callable, TypeVar  # noqa
@@ -24,17 +26,25 @@ st.markdown("# Vision [τ, τ] SN19 - Dev Panel")
 logger = get_logger(__name__)
 T = TypeVar("T")
 
+
 async def _get_all_synthetic_data_versions(redis_db: Redis) -> None:
     versions = {}
     for task in Task:
-        synthetic_version =  await redis_db.hget(rcst.SYNTHETIC_DATA_VERSIONS_KEY, task.value)
+        synthetic_version = await redis_db.hget(rcst.SYNTHETIC_DATA_VERSIONS_KEY, task.value)
         versions[task.value] = synthetic_version
 
     return versions
 
+
 @st.cache_resource
 def get_redis():
     return Redis(host="localhost", port=6379, db=0)
+
+
+@st.cache_resource
+def get_psql_db():
+    psql_db =  PSQLDB()
+    return psql_db
 
 
 @st.cache_data
@@ -49,7 +59,7 @@ def get_synthetic_scheduling_queue():
 
 @st.cache_data
 def get_participants():
-    participants = run_in_loop(putils.load_participants)
+    participants = run_in_loop(putils.load_participants, with_psql=True, with_redis=False)
     participants = [{**participant.model_dump(), **{"id": participant.id}} for participant in participants]
     for participant in participants:
         participant["task"] = participant["task"].value
@@ -74,6 +84,7 @@ def run_in_loop(
     func: Callable[[Any, Any], Awaitable[T]],
     *args: Any,
     with_redis: bool = True,
+    with_psql: bool = False,
     create_task: bool = False,
     **kwargs: Any,
 ) -> T:
@@ -82,11 +93,15 @@ def run_in_loop(
     if create_task:
         if with_redis:
             return loop.create_task(run_with_redis(func, *args, **kwargs))
+        elif with_psql:
+            return loop.create_task(run_with_psql(func, *args, **kwargs))
         else:
             return loop.create_task(func(*args, **kwargs))
     else:
         if with_redis:
             return loop.run_until_complete(run_with_redis(func, *args, **kwargs))
+        elif with_psql:
+            return loop.run_until_complete(run_with_psql(func, *args, **kwargs))
         else:
             return loop.run_until_complete(func(*args, **kwargs))
 
@@ -97,6 +112,15 @@ async def run_with_redis(func: Callable[[Redis, Any, Any], Awaitable[T]], *args:
         return await func(redis, *args, **kwargs)
     finally:
         await redis.aclose()
+
+
+async def run_with_psql(func: Callable[[Redis, Any, Any], Awaitable[T]], *args: Any, **kwargs: Any) -> T:
+    psql_db = get_psql_db()
+    await psql_db.connect()
+    try:
+        return await func(psql_db, *args, **kwargs)
+    finally:
+        ...
 
 
 async def clear_redis(redis_db: Redis):
@@ -154,10 +178,7 @@ with col2:
 
     number_of_participants = st.number_input("Number of participants", min_value=1, value=1)
     if st.button("Add Fake Participants"):
-        run_in_loop(
-            get_participant_info.patched_get_and_store_participant_info,
-            number_of_participants=number_of_participants,
-        )
+        run_in_loop(get_participant_info.main, with_redis=False)
 
         st.cache_data.clear()
 

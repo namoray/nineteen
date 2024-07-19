@@ -56,7 +56,7 @@ class DatabaseManager:
                 ),
             )
             if not cursor.fetchone():
-                max_capacity = tcfg.TASK_TO_MAX_CAPACITY[task]
+                max_capacity = tcfg.TASK_TO_CONFIG[task].max_capacity
                 default_capcity = max_capacity / 2
                 concurrency_group_id = DEFUALT_CONCURRENCY_GROUPS[task]
                 cursor.execute(

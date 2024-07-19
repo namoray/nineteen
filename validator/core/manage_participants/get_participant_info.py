@@ -97,7 +97,7 @@ async def _fetch_available_capacities_for_each_axon(psql_db: PSQLDB, dendrite: b
 
 
 def _correct_capacity(task: Task, capacity: float, validator_stake_proportion: float) -> float:
-    max_capacity = tcfg.TASK_TO_MAX_CAPACITY[task]
+    max_capacity = tcfg.TASK_TO_CONFIG[task].max_capacity
 
     announced_capacity = min(max(capacity, 0), max_capacity.capacity)
     return announced_capacity * validator_stake_proportion

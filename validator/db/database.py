@@ -2,7 +2,7 @@ import socket
 from typing import Any
 
 import asyncpg
-from asyncpg import Pool, PostgresError
+from asyncpg import Pool
 
 from validator.utils import database_utils as dutils
 from core.logging import get_logger
@@ -28,7 +28,9 @@ class PSQLDB:
         except asyncpg.exceptions.PostgresError as e:
             raise ConnectionError(f"PostgreSQL error: {str(e)}") from e
         except socket.gaierror as e:
-            raise ConnectionError(f"DNS resolution failed: {str(e)}. Check your host name.") from e
+            raise ConnectionError(
+                f"DNS resolution failed: {str(e)}. Check your host name. connection_string: {self.connection_string}"
+            ) from e
         except Exception as e:
             raise ConnectionError(f"Unexpected error while connecting: {str(e)}") from e
 

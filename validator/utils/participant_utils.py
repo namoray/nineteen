@@ -1,4 +1,5 @@
 import json
+from validator.db import sql
 from validator.db.database import PSQLDB
 from validator.models import Participant
 from validator.utils import redis_constants as rcst
@@ -14,20 +15,14 @@ def construct_synthetic_query_message(participant_id: str) -> str:
     return json.dumps({"query_type": "synthetic", "query_payload": {"participant_id": participant_id}})
 
 
-async def load_participant(redis_db: Redis, participant_id: str) -> Participant:
-    participant_raw = await rutils.json_load_from_redis(redis_db, participant_id)
-    participant = Participant(**participant_raw)
-    return participant
+async def load_participant(psql_db: PSQLDB, participant_id: str) -> Participant:
+    async with await psql_db.connection() as connection:
+        return await sql.fetch_participant(connection, participant_id)
 
 
 async def load_participants(psql_db: PSQLDB) -> list[Participant]:
-    participant_ids_set = await redis_db.smembers(rcst.PARTICIPANT_IDS_KEY)
-
-    participants = []
-    for participant_id in (i.decode("utf-8") for i in participant_ids_set):
-        participants.append(await load_participant(redis_db, participant_id))
-
-    return participants
+    async with await psql_db.connection() as connection:
+        return await sql.fetch_all_participants(connection)
 
 
 # TODO: Might be able to get rid of it now
