@@ -2,6 +2,7 @@ import asyncio
 from datetime import datetime, timedelta
 import random
 
+from validator.db.database import PSQLDB
 from validator.models import Participant
 from redis.asyncio import Redis
 from validator.utils import participant_utils as putils, redis_utils as rutils, redis_constants as rcst
@@ -11,29 +12,26 @@ from core.logging import get_logger
 logger = get_logger(__name__)
 
 
-async def schedule_synthetic_queries_for_all_participants(
-    redis_db: Redis,
-) -> None:
-    participants = await putils.load_participants(redis_db)
+async def schedule_synthetic_queries_for_all_participants(psql_db: PSQLDB, redis_db: Redis) -> None:
+    participants = await putils.load_participants(psql_db)
     for participant in participants:
-        await putils.add_synthetic_query_to_queue(redis_db, participant.id)
+        await schedule_synthetic_queries_for_participant(redis_db, participant)
     logger.debug(f"Added {len(participants)} for scheduling")
 
 
-async def schedule_synthetic_queries_for_participant(redis_db: Redis, participant_id: Participant) -> None:
-    participant = await putils.load_participant(redis_db, participant_id)
+async def schedule_synthetic_queries_for_participant(redis_db: Redis, participant: Participant) -> None:
     delay = participant.delay_between_synthetic_requests
 
     for i in range(participant.synthetic_requests_still_to_make):
         now = datetime.now()
         randomised_delay = delay * (0.95 + 0.05 * random.random())
         time_to_execute_query = now + timedelta(seconds=randomised_delay)
-        await schedule_synthetic_query(redis_db, participant_id, time_to_execute_query.timestamp())
+        await schedule_synthetic_query(redis_db, participant, time_to_execute_query.timestamp())
 
 
-async def schedule_synthetic_query(redis_db: Redis, participant_id: Participant, timestamp: float) -> None:
+async def schedule_synthetic_query(redis_db: Redis, participant: Participant, timestamp: float) -> None:
     # Need timestamp to keep it unique
-    json_to_add = {"participant_id": participant_id, "timestamp": timestamp}
+    json_to_add = {"participant_id": participant.id, "timestamp": timestamp}
     await rutils.add_to_sorted_set(redis_db, rcst.SYNTHETIC_SCHEDULING_QUEUE_KEY, data=json_to_add, score=timestamp)
     logger.debug(f"Added {json_to_add} to synthetic scheduling queue")
 
@@ -48,6 +46,7 @@ async def run_schedule_processor(redis_db: Redis, run_once: bool = False) -> Non
 
     run_once is used for testing purposes to only update the queue with one 'batch'
     """
+    logger.debug(f"Scheduling any synthetic queries which are ready. Scheduling just once: {run_once}")
     while (
         earliest_query := await rutils.get_first_from_sorted_set(redis_db, rcst.SYNTHETIC_SCHEDULING_QUEUE_KEY)
     ) is not None:
@@ -66,9 +65,12 @@ async def run_schedule_processor(redis_db: Redis, run_once: bool = False) -> Non
 
 
 async def main():
-    redis_db = Redis()
-    redis_db
-    ...
+    redis_db = Redis(host="redis")
+    psql_db = PSQLDB()
+    await psql_db.connect()
+
+    await schedule_synthetic_queries_for_all_participants(psql_db, redis_db)
+    # await run_schedule_processor(redis_db, run_once=True)
 
 
 if __name__ == "__main__":
