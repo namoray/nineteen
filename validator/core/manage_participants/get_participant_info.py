@@ -223,7 +223,7 @@ def set_for_dummy_run(metagraph: bt.metagraph) -> None:
     return dendrite, sync
 
 
-async def main():
+async def main(run_with_dummy: bool = True):
     # Remember to export ENV=test
     psql_db = PSQLDB()
     await psql_db.connect()
@@ -233,8 +233,8 @@ async def main():
     metagraph = bt.metagraph(netuid=config.netuid, lite=True, sync=False)
 
     # Use below to control dummy data
-    RUN_WITH_DUMMY = True
-    if RUN_WITH_DUMMY:
+
+    if run_with_dummy:
         dendrite, sync = set_for_dummy_run(metagraph)
     else:
         wallet = bt.wallet(name=config.wallet_name, hotkey=config.hotkey_name)

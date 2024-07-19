@@ -24,6 +24,13 @@ st.markdown("# Vision [τ, τ] SN19 - Dev Panel")
 logger = get_logger(__name__)
 T = TypeVar("T")
 
+async def _get_all_synthetic_data_versions(redis_db: Redis) -> None:
+    versions = {}
+    for task in Task:
+        synthetic_version =  await redis_db.hget(rcst.SYNTHETIC_DATA_VERSIONS_KEY, task.value)
+        versions[task.value] = synthetic_version
+
+    return versions
 
 @st.cache_resource
 def get_redis():
@@ -32,7 +39,7 @@ def get_redis():
 
 @st.cache_data
 def get_synthetic_data():
-    return run_in_loop(synthetic_generation_manager.get_stored_synthetic_data)
+    return run_in_loop(_get_all_synthetic_data_versions)
 
 
 @st.cache_data(ttl=0.1)

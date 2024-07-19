@@ -19,8 +19,8 @@ TASK_IS_STREAM: Dict[Task, bool] = {
     Task.playground_image_to_image: False,
     Task.dreamshaper_image_to_image: False,
     Task.jugger_inpainting: False,
-    Task.clip_image_embeddings: False,
     Task.avatar: False,
+    # Task.clip_image_embeddings: False,
 }
 
 
@@ -52,8 +52,8 @@ def get_task_from_synapse(synapse: bt.Synapse) -> Optional[Task]:
             return None
     elif isinstance(synapse, synapses.Inpaint):
         return Task.jugger_inpainting
-    elif isinstance(synapse, synapses.ClipEmbeddings):
-        return Task.clip_image_embeddings
+    # elif isinstance(synapse, synapses.ClipEmbeddings):
+    #     return Task.clip_image_embeddings
     elif isinstance(synapse, synapses.Avatar):
         return Task.avatar
     else:
@@ -80,5 +80,5 @@ TASK_TO_VOLUME_TO_REQUESTS_CONVERSION: Dict[Task, float] = {
     Task.dreamshaper_image_to_image: 10,
     Task.jugger_inpainting: 20,
     Task.avatar: 10,
-    Task.clip_image_embeddings: 1,
+    # Task.clip_image_embeddings: 1,
 }

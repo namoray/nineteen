@@ -1,4 +1,5 @@
 import json
+from validator.db.database import PSQLDB
 from validator.models import Participant
 from validator.utils import redis_constants as rcst
 from validator.utils import redis_utils as rutils
@@ -19,7 +20,7 @@ async def load_participant(redis_db: Redis, participant_id: str) -> Participant:
     return participant
 
 
-async def load_participants(redis_db: Redis) -> list[Participant]:
+async def load_participants(psql_db: PSQLDB) -> list[Participant]:
     participant_ids_set = await redis_db.smembers(rcst.PARTICIPANT_IDS_KEY)
 
     participants = []
