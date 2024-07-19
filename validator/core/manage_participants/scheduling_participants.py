@@ -18,7 +18,10 @@ async def schedule_synthetic_queries_for_all_participants(psql_db: PSQLDB, redis
         await schedule_synthetic_queries_for_participant(redis_db, participant)
     logger.debug(f"Added {len(participants)} for scheduling")
 
-
+# May need to do this without just making tens of millions of redis entries. This wont scale indefinitely either.
+# Instead I should store; delay, number remaining, time_for_next_query  as the score with each participant id
+# then the processor can update the score (time for next query) whenever a quyery si ready
+# Then i only have 0(1) items
 async def schedule_synthetic_queries_for_participant(redis_db: Redis, participant: Participant) -> None:
     delay = participant.delay_between_synthetic_requests
 

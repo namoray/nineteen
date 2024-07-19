@@ -17,7 +17,8 @@ async def execute_query_when_available(redis_db: Redis, dendrite: bto.dendrite, 
     # Does this need to be async, if it's in it's own asyncio task?
     participant_id = redis_db.blpop(keys=[rcst.SYNTHETIC_DATA_KEY])
     participant = await putils.load_participant(redis_db, participant_id)
-
+    
+    # Bad as never awaited
     asyncio.create_task(execute_synthetic_query(redis_db, participant.miner_hotkey, participant.task, dendrite))
 
 
