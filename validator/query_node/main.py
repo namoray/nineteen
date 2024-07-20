@@ -1,57 +1,111 @@
 import asyncio
+import json
+import logging
 import os
-
-
 from redis.asyncio import Redis
-from core import Task
-from validator.models import Participant
+from core import Task, bittensor_overrides as bto
+from validator.db.database import PSQLDB
 from validator.utils import participant_utils as putils, synthetic_utils as sutils, query_utils as qutils
 from validator.utils import redis_constants as rcst
 from validator.query_node import utils
-from core import bittensor_overrides as bto
+
+logger = logging.getLogger(__name__)
 
 DEBUG = os.getenv("ENV", "prod") != "prod"
+JOB_TIMEOUT = 300
 
 
-async def execute_query_when_available(redis_db: Redis, dendrite: bto.dendrite, timeout: float = 0) -> None:
-    # Does this need to be async, if it's in it's own asyncio task?
-    participant_id = redis_db.blpop(keys=[rcst.SYNTHETIC_DATA_KEY])
-    participant = await putils.load_participant(redis_db, participant_id)
-    
-    # Bad as never awaited
-    asyncio.create_task(execute_synthetic_query(redis_db, participant.miner_hotkey, participant.task, dendrite))
+async def process_job(redis_db: Redis, psql_db: PSQLDB, dendrite: bto.dendrite, job_data):
+    # Add separate handling for organics and synthetics
+    participant_id = job_data["participant_id"]
+    participant = await putils.load_participant(psql_db, participant_id)
+
+    await redis_db.hset(f"job:{participant_id}", "state", "processing")
+
+    try:
+        synthetic_synapse = await sutils.fetch_synthetic_data_for_task(redis_db, participant.task)
+        stream = participant.task in [Task.chat_llama_3, Task.chat_mixtral]
+
+        if stream:
+            generator = utils.query_miner_stream(
+                participant, synthetic_synapse, participant.task, dendrite, synthetic_query=True, debug=DEBUG
+            )
+            await qutils.consume_generator(generator)
+
+        await redis_db.hset(f"job:{participant_id}", "state", "completed")
+        logger.info(f"Job {participant_id} completed successfully")
+    except Exception as e:
+        logger.error(f"Job {participant_id} failed: {str(e)}")
+        await redis_db.hset(f"job:{participant_id}", "state", "failed")
+        await redis_db.hset(f"job:{participant_id}", "error", str(e))
 
 
-async def monitor_for_queries(redis_db: Redis, dendrite: bto.dendrite):
+async def process_job_with_timeout(redis_db: Redis, psql_db: PSQLDB, dendrite: bto.dendrite, job_data):
+    try:
+        await asyncio.wait_for(process_job(redis_db, psql_db, dendrite, job_data), timeout=JOB_TIMEOUT)
+    except asyncio.TimeoutError:
+        participant_id = job_data["participant_id"]
+        logger.error(f"Job {participant_id} timed out after {JOB_TIMEOUT} seconds")
+        await redis_db.hset(f"job:{participant_id}", "state", "timeout")
+        await redis_db.hset(f"job:{participant_id}", "error", f"Job timed out after {JOB_TIMEOUT} seconds")
+
+
+async def worker_loop(redis_db: Redis, psql_db: PSQLDB, dendrite: bto.dendrite, queue_name, max_concurrent_jobs=100):
+    active_tasks: set[asyncio.Task] = set()
     while True:
-        await execute_query_when_available(redis_db, dendrite, timeout=0)
+        try:
+            active_tasks = {task for task in active_tasks if not task.done()}
+
+            while len(active_tasks) >= max_concurrent_jobs:
+                done, _ = await asyncio.wait(active_tasks, return_when=asyncio.FIRST_COMPLETED)
+                for task in done:
+                    try:
+                        await task
+                    except Exception as e:
+                        logger.error(f"Task failed with error: {str(e)}")
+                active_tasks = {task for task in active_tasks if not task.done()}
+
+            _, job = await redis_db.blpop(queue_name)
+            job_data = json.loads(job)
+
+            task = asyncio.create_task(process_job_with_timeout(redis_db, psql_db, dendrite, job_data))
+            active_tasks.add(task)
+            task.add_done_callback(lambda t: active_tasks.discard(t))
+
+        except Exception as e:
+            logger.error(f"Error in main loop: {str(e)}")
+            await asyncio.sleep(1)
 
 
-async def execute_synthetic_query(redis_db: Redis, participant: Participant, task: Task, dendrite: bto.dendrite):
-    synthetic_synapse = await sutils.fetch_synthetic_data_for_task(redis_db, task)
-    stream = task in [Task.chat_llama_3, Task.chat_mixtral]
-    if stream:
-        # TODO: Need to update uid queue here
-        generator = utils.query_miner_stream(
-            participant, synthetic_synapse, task, dendrite, synthetic_query=True, debug=DEBUG
-        )
-        # TODO: Log this somewhere so we can see details about every request that is happening.
-        # Probably a job for prom and grafana? or redis and grafana
+async def heartbeat(redis_db: Redis):
+    while True:
+        await redis_db.set("worker_heartbeat", "alive", ex=10)
+        await asyncio.sleep(5)
 
-        # We need to iterate through the generator to consume it - so the request finishes
-        await asyncio.gather(qutils.consume_generator(generator))
-    else:
-        return
-        # asyncio.create_task(
-        #     utils.query_miner_no_stream(
-        #         uid_record, synthetic_synapse, outgoing_model, task, dendrite, synthetic_query=True
-        #     )
-        # )
+
+async def run_worker(redis_db: Redis, psql_db: PSQLDB, dendrite: bto.dendrite, queue_name):
+    try:
+        heartbeat_task = asyncio.create_task(heartbeat(redis_db))
+        await asyncio.gather(worker_loop(redis_db, psql_db, dendrite, queue_name), heartbeat_task)
+    except asyncio.CancelledError:
+        logger.info("Worker cancelled")
+    except Exception as e:
+        logger.error(f"Unexpected error in worker: {str(e)}")
+    finally:
+        heartbeat_task.cancel()
+        try:
+            await heartbeat_task
+        except asyncio.CancelledError:
+            pass
 
 
 async def main():
-    redis_db = Redis()
-    await monitor_for_queries(redis_db)
+    redis_db = Redis(host="redis")
+    psql_db = PSQLDB()
+    await psql_db.connect()
+    dendrite = bto.dendrite()  # Assuming this is how you initialize dendrite
+    queue_name = rcst.SYNTHETIC_DATA_KEY
+    await run_worker(redis_db, dendrite, queue_name)
 
 
 if __name__ == "__main__":

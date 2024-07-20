@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "query_node"
+version = "1.0.0"
+description = "Query node service for the validator"
+dynamic = ["dependencies"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["query_node*"]
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements.txt"] }

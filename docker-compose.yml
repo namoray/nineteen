@@ -85,7 +85,7 @@ services:
       context: .
       dockerfile: dockerfiles/query_node.dockerfile
     deploy:
-      replicas: 3
+      replicas: 1
       resources:
         limits:
           cpus: '0.50'
@@ -101,6 +101,17 @@ services:
     depends_on:
       - redis
       - postgresql
+    volumes:
+      - .:/app
+    networks:
+      - postgres_network
+      - redis_network
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: postgresql
+      POSTGRES_PORT: 5432
+      POSTGRES_NAME: mydb
 
   load_balancer:
     image: nginx:latest
