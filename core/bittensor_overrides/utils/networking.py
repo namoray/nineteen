@@ -1,3 +1,4 @@
+from functools import lru_cache
 import json
 import os
 
@@ -38,7 +39,7 @@ def ip_to_int(str_val: str) -> int:
     """
     return int(netaddr.IPAddress(str_val))
 
-
+@lru_cache(maxsize=None)
 def get_external_ip() -> str:
     r"""Checks CURL/URLLIB/IPIFY/AWS for your external ip.
     Returns:

@@ -20,12 +20,14 @@ class PSQLDB:
         self.pool: Pool | None = None
 
     async def connect(self) -> None:
-        logger.debug(f"Connecting to {self.connection_string}")
+        logger.debug(f"Connecting to {self.connection_string}....")
         if self.pool is None:
             try:
                 self.pool = await asyncpg.create_pool(self.connection_string)
                 if self.pool is None:
                     raise ConnectionError("Failed to create connection pool")
+                else:
+                    logger.debug("Connection pool created successfully")
             except asyncpg.exceptions.PostgresError as e:
                 raise ConnectionError(f"PostgreSQL error: {str(e)}") from e
             except socket.gaierror as e:

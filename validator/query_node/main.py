@@ -1,6 +1,5 @@
 import asyncio
 import json
-import logging
 import os
 from redis.asyncio import Redis
 from core import Task, bittensor_overrides as bt
@@ -8,8 +7,9 @@ from validator.db.database import PSQLDB
 from validator.utils import participant_utils as putils, synthetic_utils as sutils, query_utils as qutils
 from validator.utils import redis_constants as rcst
 from validator.query_node import utils
+from core.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 DEBUG = os.getenv("ENV", "prod") != "prod"
 JOB_TIMEOUT = 300
@@ -102,10 +102,11 @@ async def run_worker(redis_db: Redis, psql_db: PSQLDB, dendrite: bt.dendrite, qu
 
 
 async def main():
-    redis_db = Redis(host="localhost")
+    redis_db = Redis(host="redis")
     psql_db = PSQLDB()
     await psql_db.connect()
-    dendrite = bt.dendrite()  # Assuming this is how you initialize dendrite
+    dendrite = bt.dendrite()
+    logger.warning("Starting worker")
     queue_name = rcst.SYNTHETIC_DATA_KEY
     await run_worker(redis_db, psql_db, dendrite, queue_name)
 

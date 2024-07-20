@@ -8,7 +8,9 @@ import aiohttp
 import httpx
 from pydantic import BaseModel
 from core import bittensor_overrides as bt
+from core.logging import get_logger
 
+logger = get_logger(__name__)
 
 class SigningResponse(BaseModel):
     signature: str
@@ -16,14 +18,8 @@ class SigningResponse(BaseModel):
 
 class dendrite:
     def __init__(self):
-        # Initialize the parent class
-        super(dendrite, self).__init__()
-
         # Unique identifier for the instance
         self.uuid = str(uuid.uuid1())
-
-        # Get the external IP
-        self.external_ip = bt.networking.get_external_ip()  # noqa
 
         self.synapse_history: list = []
 
@@ -54,7 +50,7 @@ class dendrite:
 
         return response.json()["signature"]
 
-    async def close_session(self):
+    async def aclose_session(self):
         if self._session:
             await self._session.close()
             self._session = None
@@ -62,18 +58,14 @@ class dendrite:
             await self._httpx_client.aclose()
             self._httpx_client = None
 
-    async def aclose_session(self):
-        if self._session:
-            await self._session.close()
-            self._session = None
-
     def _get_endpoint_url(self, target_axon: bt.axon, request_name: str) -> str:
         endpoint = f"{target_axon.ip}:{str(target_axon.port)}"
 
         # TODO: COMMENT OUT FOR MAINNET
+        # external_ip = networking.int_to_ip(self.external_ip)
         # endpoint = (
         #     f"0.0.0.0:{str(target_axon.port)}"
-        #     if target_axon.ip == str(self.external_ip)
+        #     if target_axon.ip == str(external_ip)
         #     else f"{target_axon.ip}:{str(target_axon.port)}"
         # )
 
@@ -267,8 +259,9 @@ class dendrite:
         synapse.timeout = timeout_settings.sock_read
 
         # Build the Dendrite headers using the local system's details
+        # TODO: review why I need to add my ip here, and TerminalInfo??
         synapse.dendrite = bt.TerminalInfo(
-            ip=self.external_ip,
+            ip=bt.networking.get_external_ip(),
             version=bt.__version_as_int__,
             nonce=time.monotonic_ns(),
             uuid=self.uuid,
@@ -404,21 +397,3 @@ class dendrite:
             This automatically closes the session by calling :func:`__aexit__` after the context closes.
         """
         await self.aclose_session()
-
-    def __del__(self):
-        """
-        Dendrite destructor.
-
-        This method is invoked when the Dendrite instance is about to be destroyed. The destructor ensures that the
-        aiohttp client session is closed before the instance is fully destroyed, releasing any remaining resources.
-
-        Note:
-            Relying on the destructor for cleanup can be unpredictable. It is recommended to explicitly close sessions using the provided methods or the ``async with`` context manager.
-
-        Usage::
-
-            dendrite = Dendrite()
-            # ... some operations ...
-            del dendrite  # This will implicitly invoke the __del__ method and close the session.
-        """
-        asyncio.run(self.close_session())
