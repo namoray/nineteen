@@ -21,18 +21,16 @@ async def _sync_metagraph(metagraph: bt.metagraph, subtensor: bt.subtensor) -> N
     await asyncio.to_thread(metagraph.sync, subtensor=subtensor, lite=True)
     new_axons = []
     incentives = metagraph.incentive.tolist()
+    stakes = metagraph.S.tolist()
     logger.debug(f"Incentives: {incentives}")
-    for (
-        axon,
-        uid,
-        incentive,
-    ) in zip(metagraph.axons, metagraph.uids, incentives):
+    for axon, uid, incentive, stake in zip(metagraph.axons, metagraph.uids, incentives, stakes):
         new_axon_info = AxonInfo(
             **asdict(axon),
             axon_uid=uid,
             incentive=incentive,
             netuid=metagraph.netuid,
-            testnet=metagraph.network,
+            network=metagraph.network,
+            stake=stake,
         )
         logger.debug(f"New axon info: {new_axon_info}")
         new_axons.append(new_axon_info)
@@ -94,7 +92,8 @@ def set_for_dummy_run(metagraph: bt.metagraph) -> bool:
             axon_uid=0,
             incentive=0,
             netuid=metagraph.netuid,
-            testnet=metagraph.network,
+            network=metagraph.network,
+            stake=50.0,
         ),
         # Miners
         AxonInfo(
@@ -107,7 +106,8 @@ def set_for_dummy_run(metagraph: bt.metagraph) -> bool:
             axon_uid=1,
             incentive=0.004,
             netuid=metagraph.netuid,
-            testnet=metagraph.network,
+            network=metagraph.network,
+            stake=30.0,
         ),
         AxonInfo(
             version=2,
@@ -119,7 +119,8 @@ def set_for_dummy_run(metagraph: bt.metagraph) -> bool:
             axon_uid=2,
             incentive=0.005,
             netuid=metagraph.netuid,
-            testnet=metagraph.network,
+            network=metagraph.network,
+            stake=20,
         ),
     ]
     metagraph.total_stake = np.array([50, 30, 20])
@@ -132,10 +133,11 @@ async def main():
     psql_db = PSQLDB()
     await psql_db.connect()
     subtensor = None
-    metagraph = bt.metagraph(netuid=os.getenv("NETUID", 19), network=os.getenv("NETWORK"), lite=True, sync=False)
+    metagraph = bt.metagraph(
+        netuid=os.getenv("NETUID", 19), network=os.getenv("NETWORK", "finney"), lite=True, sync=False
+    )
     sync = True
 
-    
     dummy = os.getenv("DUMMY", "true").lower() == "true"
     run_once = os.getenv("RUN_ONCE", "true").lower() == "true"
     seconds_between_syncs = int(os.getenv("SECONDS_BETWEEN_SYNCS", 60 * 20))

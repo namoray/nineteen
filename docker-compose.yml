@@ -17,20 +17,6 @@ services:
     depends_on:
       - redis
 
-  prometheus:
-    image: prom/prometheus:latest
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
-
-  grafana:
-    image: grafana/grafana:latest
-    ports:
-      - "3000:3000"
-    depends_on:
-      - prometheus
-
   postgresql:
     image: postgres:latest
     environment:
@@ -134,15 +120,6 @@ services:
       SECONDS_BETWEEN_SYNC: 120
     entrypoint: ["python3.11", "/app/validator/metagraph_syncer/metagraph_syncer.py"]
 
-  
-  load_balancer:
-    image: nginx:latest
-    ports:
-      - "80:80"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-    depends_on:
-      - query_node
 
   core_validator:
     build:
