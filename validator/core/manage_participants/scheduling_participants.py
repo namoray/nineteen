@@ -1,5 +1,6 @@
 import asyncio
 from datetime import datetime, timedelta
+import os
 import random
 import time
 
@@ -40,6 +41,8 @@ def _get_time_to_execute_query(delay: float) -> float:
 
 
 async def schedule_synthetic_queries_for_all_participants(psql_db: PSQLDB, redis_db: Redis) -> None:
+
+    await rutils.clear_sorted_set(redis_db, rcst.SYNTHETIC_SCHEDULING_QUEUE_KEY)
     participants = await putils.load_participants(psql_db)
     for participant in participants:
         await schedule_synthetic_query(redis_db, participant.id, participant.delay_between_synthetic_requests)
@@ -51,7 +54,7 @@ async def schedule_synthetic_queries_for_all_participants(psql_db: PSQLDB, redis
         #         redis_db, participant.id + str(i), participant.delay_between_synthetic_requests
         #     )
 
-    logger.debug(f"Added {len(participants)} for scheduling")
+    logger.debug(f"Scheduled the first query for {len(participants)} ")
 
 
 async def schedule_synthetic_query(redis_db: Redis, participant_id: str, delay: float) -> None:
@@ -77,6 +80,7 @@ async def run_schedule_processor(redis_db: Redis, run_once: bool = False) -> Non
     while (
         schedule_item := await rutils.get_first_from_sorted_set(redis_db, rcst.SYNTHETIC_SCHEDULING_QUEUE_KEY)
     ) is not None:
+        logger.debug(f"Processing item: {schedule_item}")
         details, timestamp = schedule_item
         current_time: float = datetime.now().timestamp()
         time_left_to_execute: float = timestamp - current_time
@@ -87,6 +91,7 @@ async def run_schedule_processor(redis_db: Redis, run_once: bool = False) -> Non
             await schedule_synthetic_query(redis_db, **details)
             processed_items += 1
         else:
+            logger.debug(f"No queries ready; Time left to execute next: {time_left_to_execute}")
             sleep_time: float = min(0.5, time_left_to_execute)
             cumulative_sleep_time += sleep_time
             if run_once:
@@ -96,17 +101,17 @@ async def run_schedule_processor(redis_db: Redis, run_once: bool = False) -> Non
         if processed_items % 10 == 0 and processed_items > 0:
             _log_performance_metrics(processed_items, start_time, cumulative_late_time, cumulative_sleep_time)
 
-        if run_once:
-            break
-
 
 async def main():
     redis_db = Redis(host="redis")
     psql_db = PSQLDB()
+
+    run_once = os.getenv("RUN_ONCE", "true").lower() == "true"
     await psql_db.connect()
 
+    await run_schedule_processor(redis_db, run_once=run_once)
     await schedule_synthetic_queries_for_all_participants(psql_db, redis_db)
-    await run_schedule_processor(redis_db, run_once=False)
+    await run_schedule_processor(redis_db, run_once=run_once)
 
 
 if __name__ == "__main__":

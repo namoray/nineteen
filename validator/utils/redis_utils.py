@@ -55,6 +55,10 @@ async def add_json_to_redis_list(redis_db: Redis, queue: str, json_to_add: Dict[
     await redis_db.rpush(queue, json_string)
 
 
+async def clear_sorted_set(redis_db: Redis, name: str) -> None:
+    await redis_db.delete(name)
+
+
 async def add_to_sorted_set(redis_db: Redis, name: str, data: str | dict[Any, Any], score: float) -> None:
     if isinstance(data, dict):
         json_to_add = _remove_enums(data)

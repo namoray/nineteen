@@ -4,9 +4,9 @@ tasks:
   fetch_participants:
     cmds:
       - docker-compose exec -e ENV=test core_validator python validator/core/manage_participants/fetch_participants.py
-  start_scheduling_synthetics:
+  schedule_synthetics:
     cmds:
-      - docker-compose exec -e ENV=test core_validator python validator/core/manage_participants/scheduling_participants.py
+      - docker-compose exec -e ENV=test core_validator {{.CLI_ARGS}} python validator/core/manage_participants/scheduling_participants.py
   generate_synthetic_data:
     cmds:
       - docker-compose exec -e ENV=test core_validator python validator/core/store_synthetic_data/generate_synthetic_data.py
