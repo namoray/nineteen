@@ -9,8 +9,6 @@ import bittensor as bt
 from config import configuration
 from core import Task, constants as ccst, utils
 from config.miner_config import config as config
-from core import bittensor_overrides as bto
-
 
 T = TypeVar("T", bound=bt.Synapse)
 
@@ -85,14 +83,14 @@ class CoreMiner:
             bt.logging.debug(
                 f"Will start axon on port {self.config.axon.port} and external ip {self.config.axon.external_ip}"
             )
-            self.axon = bto.axon(
+            self.axon = bt.axon(
                 wallet=self.wallet,
                 port=self.config.axon.port,
                 external_ip=self.config.axon.external_ip,
             )
         else:
             bt.logging.debug(f"Will start axon on port {self.config.axon.port}")
-            self.axon = bto.axon(wallet=self.wallet, port=self.config.axon.port)
+            self.axon = bt.axon(wallet=self.wallet, port=self.config.axon.port)
 
         self.should_exit: bool = False
         self.is_running: bool = False

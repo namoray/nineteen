@@ -1,7 +1,6 @@
 import asyncio
 import threading
 
-import bittensor as bt
 import numpy as np
 from core.bittensor_overrides.chain_data import AxonInfo
 from models import config_models
@@ -16,7 +15,7 @@ from core import tasks
 from config import configuration
 from core import Task
 
-from core import bittensor_overrides as bto
+from core import bittensor_overrides as bt
 from models import base_models, synapses
 from validator.db import sql
 from core.logging import get_logger
@@ -54,7 +53,7 @@ async def store_metagraph_info(psql_db: PSQLDB, metagraph: bt.metagraph) -> list
         await sql.insert_axon_info(connection, axons)
 
 
-async def _fetch_available_capacities_for_each_axon(psql_db: PSQLDB, dendrite: bto.dendrite) -> None:
+async def _fetch_available_capacities_for_each_axon(psql_db: PSQLDB, dendrite: bt.dendrite) -> None:
     hotkey_to_query_task = {}
 
     axons = await sql.get_axons(psql_db)
@@ -164,7 +163,7 @@ async def get_and_store_participant_info(
     psql_db: PSQLDB,
     metagraph: bt.metagraph,
     subtensor: bt.subtensor,
-    dendrite: bto.dendrite,
+    dendrite: bt.dendrite,
     validator_hotkey: str,
     sync: bool = True,
     number_of_participants: int = 10,
@@ -240,7 +239,7 @@ async def main(run_with_dummy: bool = True):
         dendrite, sync = set_for_dummy_run(metagraph)
     else:
         wallet = bt.wallet(name=config.wallet_name, hotkey=config.hotkey_name)
-        dendrite = bto.dendrite(wallet=wallet)
+        dendrite = bt.dendrite(wallet=wallet)
 
     await get_and_store_participant_info(
         psql_db, metagraph, subtensor, dendrite, validator_hotkey="test-vali", sync=sync

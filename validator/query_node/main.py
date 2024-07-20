@@ -3,7 +3,7 @@ import json
 import logging
 import os
 from redis.asyncio import Redis
-from core import Task, bittensor_overrides as bto
+from core import Task, bittensor_overrides as bt
 from validator.db.database import PSQLDB
 from validator.utils import participant_utils as putils, synthetic_utils as sutils, query_utils as qutils
 from validator.utils import redis_constants as rcst
@@ -15,7 +15,7 @@ DEBUG = os.getenv("ENV", "prod") != "prod"
 JOB_TIMEOUT = 300
 
 
-async def process_job(redis_db: Redis, psql_db: PSQLDB, dendrite: bto.dendrite, job_data):
+async def process_job(redis_db: Redis, psql_db: PSQLDB, dendrite: bt.dendrite, job_data):
     # Add separate handling for organics and synthetics
     participant_id = job_data["participant_id"]
     participant = await putils.load_participant(psql_db, participant_id)
@@ -40,7 +40,7 @@ async def process_job(redis_db: Redis, psql_db: PSQLDB, dendrite: bto.dendrite, 
         await redis_db.hset(f"job:{participant_id}", "error", str(e))
 
 
-async def process_job_with_timeout(redis_db: Redis, psql_db: PSQLDB, dendrite: bto.dendrite, job_data):
+async def process_job_with_timeout(redis_db: Redis, psql_db: PSQLDB, dendrite: bt.dendrite, job_data):
     try:
         await asyncio.wait_for(process_job(redis_db, psql_db, dendrite, job_data), timeout=JOB_TIMEOUT)
     except asyncio.TimeoutError:
@@ -50,7 +50,7 @@ async def process_job_with_timeout(redis_db: Redis, psql_db: PSQLDB, dendrite: b
         await redis_db.hset(f"job:{participant_id}", "error", f"Job timed out after {JOB_TIMEOUT} seconds")
 
 
-async def worker_loop(redis_db: Redis, psql_db: PSQLDB, dendrite: bto.dendrite, queue_name, max_concurrent_jobs=100):
+async def worker_loop(redis_db: Redis, psql_db: PSQLDB, dendrite: bt.dendrite, queue_name, max_concurrent_jobs=100):
     active_tasks: set[asyncio.Task] = set()
     while True:
         try:
@@ -79,11 +79,13 @@ async def worker_loop(redis_db: Redis, psql_db: PSQLDB, dendrite: bto.dendrite, 
 
 async def heartbeat(redis_db: Redis):
     while True:
+        logger.debug("Worker heartbeat")
         await redis_db.set("worker_heartbeat", "alive", ex=10)
         await asyncio.sleep(5)
 
 
-async def run_worker(redis_db: Redis, psql_db: PSQLDB, dendrite: bto.dendrite, queue_name):
+async def run_worker(redis_db: Redis, psql_db: PSQLDB, dendrite: bt.dendrite, queue_name):
+    logger.debug("Starting worker")
     try:
         heartbeat_task = asyncio.create_task(heartbeat(redis_db))
         await asyncio.gather(worker_loop(redis_db, psql_db, dendrite, queue_name), heartbeat_task)
@@ -100,12 +102,12 @@ async def run_worker(redis_db: Redis, psql_db: PSQLDB, dendrite: bto.dendrite, q
 
 
 async def main():
-    redis_db = Redis(host="redis")
+    redis_db = Redis(host="localhost")
     psql_db = PSQLDB()
     await psql_db.connect()
-    dendrite = bto.dendrite()  # Assuming this is how you initialize dendrite
+    dendrite = bt.dendrite()  # Assuming this is how you initialize dendrite
     queue_name = rcst.SYNTHETIC_DATA_KEY
-    await run_worker(redis_db, dendrite, queue_name)
+    await run_worker(redis_db, psql_db, dendrite, queue_name)
 
 
 if __name__ == "__main__":

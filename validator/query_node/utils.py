@@ -5,9 +5,8 @@ from typing import Any, AsyncIterator, Dict, List, Optional, Union
 from pydantic import BaseModel, ValidationError
 from core import Task
 from models import base_models, utility_models
-import bittensor as bt
 from validator.models import Participant, AxonUID
-from core import bittensor_overrides as bto
+from core import bittensor_overrides as bt
 from collections import OrderedDict
 import json
 from validator.utils import query_utils as qutils
@@ -102,12 +101,11 @@ async def query_miner_stream(
     participant: Participant,
     synapse: bt.Synapse,
     task: Task,
-    dendrite: bto.dendrite,
+    dendrite: bt.dendrite,
     synthetic_query: bool,
     debug: bool = False,
 ) -> AsyncIterator[str]:
     axon_uid = participant.miner_hotkey
-    axon = participant
 
     time1 = time.time()
 
@@ -181,7 +179,7 @@ async def query_miner_no_stream(
     synapse: bt.Synapse,
     outgoing_model: BaseModel,
     task: Task,
-    dendrite: bto.dendrite,
+    dendrite: bt.dendrite,
     synthetic_query: bool,
 ) -> utility_models.QueryResult:
     axon_uid = participant.miner_hotkey
@@ -258,7 +256,7 @@ def _extract_response(resulting_synapse: base_models.BaseSynapse, outgoing_model
 
 # async def query_individual_axon_stream(
 #     dendrite: bt.dendrite,
-#     axon: bto.axon,
+#     axon: bt.axon,
 #     axon_uid: int,
 #     synapse: bt.Synapse,
 #     deserialize: bool = False,

@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 from core import constants as cst, Task
 from core import dataclasses as dc
 from models import utility_models
-import bittensor as bt
+from core import bittensor_overrides as bt
 
 
 class CapacityForTask(BaseModel):
