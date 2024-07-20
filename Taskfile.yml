@@ -3,7 +3,7 @@ version: "3"
 tasks:
   fetch_participants:
     cmds:
-      - docker-compose exec -e ENV=test core_validator python validator/core/manage_participants/get_participant_info.py
+      - docker-compose exec -e ENV=test core_validator python validator/core/manage_participants/fetch_participants.py
   start_scheduling_synthetics:
     cmds:
       - docker-compose exec -e ENV=test core_validator python validator/core/manage_participants/scheduling_participants.py

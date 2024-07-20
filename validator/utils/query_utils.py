@@ -12,6 +12,10 @@ import numpy as np
 import time
 from typing import Tuple
 from core import bittensor_overrides as bt
+from core.logging import get_logger
+
+
+logger = get_logger(__name__)
 
 
 def pil_to_base64(image: Image, format: str = "JPEG") -> str:
@@ -84,21 +88,19 @@ async def query_individual_axon(
 ) -> Tuple[base_models.BaseSynapse, float]:
     operation_name = synapse.__class__.__name__
     if operation_name not in qcst.OPERATION_TIMEOUTS:
-        bt.logging.warning(
-            f"Operation {operation_name} not in operation_to_timeout, this is probably a mistake / bug 🐞"
-        )
+        logger.warning(f"Operation {operation_name} not in operation_to_timeout, this is probably a mistake / bug 🐞")
 
     start_time = time.time()
 
     if log_requests_and_responses:
-        bt.logging.info(f"Querying axon {uid} for {operation_name}")
+        logger.info(f"Querying axon {uid} for {operation_name}")
 
     ### HERE TO ASSIST TESTING / DEV
     if "test" in axon.hotkey:
         if isinstance(synapse, synapses.Capacity):
             capacities = {}
             for task, config in tcfg.TASK_TO_CONFIG.items():
-                capacities[task] = config.max_capacity / 100
+                capacities[task] = base_models.CapacityForTask(capacity=config.max_capacity.capacity / 100)
             response = synapses.Capacity(capacities=capacities)
             if deserialize:
                 response = response.capacities

@@ -12,6 +12,7 @@ from core.logging import get_logger
 
 logger = get_logger(__name__)
 
+
 class SigningResponse(BaseModel):
     signature: str
 
@@ -49,6 +50,16 @@ class dendrite:
         )
 
         return response.json()["signature"]
+
+    def _log_outgoing_request(self, synapse: bt.Synapse):
+        logger.info(
+            f"dendrite | --> | {synapse.get_total_size()} B | {synapse.name} | {synapse.axon.hotkey} | {synapse.axon.ip}:{str(synapse.axon.port)} | 0 | Success"
+        )
+
+    def _log_incoming_response(self, synapse: bt.Synapse):
+        logger.info(
+            f"dendrite | <-- | {synapse.get_total_size()} B | {synapse.name} | {synapse.axon.hotkey} | {synapse.axon.ip}:{str(synapse.axon.port)} | {synapse.dendrite.status_code} | {synapse.dendrite.status_message}"
+        )
 
     async def aclose_session(self):
         if self._session:
@@ -208,7 +219,7 @@ class dendrite:
         url = self._get_endpoint_url(target_axon, request_name=request_name)
 
         # Preprocess synapse for making a request
-        synapse = self.preprocess_synapse_for_request(target_axon, synapse, response_timeout)
+        synapse = await self.preprocess_synapse_for_request(target_axon, synapse, response_timeout)
 
         timeout_settings = aiohttp.ClientTimeout(sock_connect=connect_timeout, sock_read=response_timeout)
 
@@ -245,7 +256,7 @@ class dendrite:
         self,
         target_axon_info: bt.AxonInfo,
         synapse: bt.Synapse,
-        timeout_settings: aiohttp.ClientTimeout,
+        response_timeout: float,
     ) -> bt.Synapse:
         """
         Preprocesses the synapse for making a request. This includes building
@@ -256,7 +267,10 @@ class dendrite:
             bt.Synapse: The preprocessed synapse.
         """
         # Set the timeout for the synapse
-        synapse.timeout = timeout_settings.sock_read
+        synapse.timeout = response_timeout
+
+        # TODO: overwrite
+        return
 
         # Build the Dendrite headers using the local system's details
         # TODO: review why I need to add my ip here, and TerminalInfo??
@@ -340,6 +354,71 @@ class dendrite:
         # Update the status code and status message of the dendrite to match the axon
         local_synapse.dendrite.status_code = local_synapse.axon.status_code  # type: ignore
         local_synapse.dendrite.status_message = local_synapse.axon.status_message  # type: ignore
+
+    async def forward(
+        self,
+        axons: Union[
+            list[Union[bt.AxonInfo, bt.axon]],
+            Union[bt.AxonInfo, bt.axon],
+        ],
+        synapse: bt.Synapse = bt.Synapse(),
+        deserialize: bool = True,
+        run_async: bool = True,
+        streaming: bool = False,
+        # TODO: Add these back in
+        connect_timeout: float = 1.5,
+        response_timeout: float = 30,
+        log_requests_and_responses: bool = True,
+    ) -> list[Union[AsyncGenerator[Any, Any], bt.Synapse, bt.StreamingSynapse]]:
+        is_list = True
+        # If a single axon is provided, wrap it in a list for uniform processing
+        if not isinstance(axons, list):
+            is_list = False
+            axons = [axons]
+
+        # Check if synapse is an instance of the StreamingSynapse class or if streaming flag is set.
+        is_streaming_subclass = issubclass(synapse.__class__, bt.StreamingSynapse)
+        if streaming != is_streaming_subclass:
+            logger.warning(
+                f"Argument streaming is {streaming} while issubclass(synapse, StreamingSynapse) is {synapse.__class__.__name__}. This may cause unexpected behavior."
+            )
+        streaming = is_streaming_subclass or streaming
+
+        async def query_all_axons(
+            is_stream: bool,
+        ) -> Union[AsyncGenerator[Any, Any], bt.Synapse, bt.StreamingSynapse]:
+            async def single_axon_response(
+                target_axon,
+            ) -> Union[AsyncGenerator[Any, Any], bt.Synapse, bt.StreamingSynapse]:
+                if is_stream:
+                    # If in streaming mode, return the async_generator
+                    return self.call_stream(
+                        target_axon=target_axon,
+                        synapse=synapse.copy(),  # type: ignore
+                        response_timeout=response_timeout,
+                        connect_timeout=connect_timeout,
+                        log_requests_and_responses=log_requests_and_responses,
+                        deserialize=deserialize,
+                    )
+                # If not in streaming mode, simply call the axon and get the response.
+                return await self.call(
+                    target_axon=target_axon,
+                    synapse=synapse.copy(),  # type: ignore
+                    response_timeout=response_timeout,
+                    connect_timeout=connect_timeout,
+                    deserialize=deserialize,
+                )
+
+            # If run_async flag is False, get responses one by one.
+            if not run_async:
+                return [await single_axon_response(target_axon) for target_axon in axons]  # type: ignore
+            # If run_async flag is True, get responses concurrently using asyncio.gather().
+            return await asyncio.gather(*(single_axon_response(target_axon) for target_axon in axons))  # type: ignore
+
+        # Get responses for all axons.
+        responses = await query_all_axons(streaming)
+        # Return the single response if only one axon was targeted, else return all responses
+        return responses[0] if len(responses) == 1 and not is_list else responses  # type: ignore
 
     def __str__(self) -> str:
         """

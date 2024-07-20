@@ -116,7 +116,7 @@ services:
       POSTGRES_PORT: 5432
       POSTGRES_NAME: mydb
       RUN_ONCE: false
-      DUMMY: false
+      DUMMY: true
       SECONDS_BETWEEN_SYNC: 120
     entrypoint: ["python3.11", "/app/validator/metagraph_syncer/metagraph_syncer.py"]
 

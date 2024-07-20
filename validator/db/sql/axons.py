@@ -89,8 +89,9 @@ async def migrate_axons_to_axon_history(connection: Connection) -> None:  # noqa
 async def get_axons(psql_db: PSQLDB) -> list[chain_data.AxonInfo]:
     axons = await psql_db.fetchall(
         f"SELECT {dcst.HOTKEY}, {dcst.COLDKEY}, {dcst.AXON_VERSION} as version,"
-        f"{dcst.IP}, {dcst.PORT}, {dcst.IP_TYPE}, {dcst.AXON_UID}, {dcst.INCENTIVE},",
-        f"{dcst.NETUID}, {dcst.NETWORK}, {dcst.STAKE}" f" FROM {dcst.AXON_INFO_TABLE}",
+        f"{dcst.IP}, {dcst.PORT}, {dcst.IP_TYPE}, {dcst.AXON_UID}, {dcst.INCENTIVE},"
+        f"{dcst.NETUID}, {dcst.NETWORK}, {dcst.STAKE}"
+        f" FROM {dcst.AXON_INFO_TABLE}",
     )
     return [chain_data.AxonInfo(**axon) for axon in axons]
 
@@ -99,5 +100,6 @@ async def get_axon_stakes(psql_db: PSQLDB) -> dict[str, float]:
     axons = await psql_db.fetchall(
         f"SELECT {dcst.HOTKEY}, {dcst.STAKE} FROM {dcst.AXON_INFO_TABLE}",
     )
-    hotkey_to_stake = {axon[0]: axon[1] for axon in axons}
+    hotkey_to_stake = {axon[dcst.HOTKEY]: axon[dcst.STAKE] for axon in axons}
 
+    return hotkey_to_stake
