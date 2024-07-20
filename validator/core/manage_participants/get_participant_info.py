@@ -231,8 +231,10 @@ async def main(run_with_dummy: bool = True):
     config = configuration.prepare_validator_config_and_logging(validator_config)
     subtensor = None
     metagraph = bt.metagraph(netuid=config.netuid, lite=True, sync=False)
+    sync = True
 
     # Use below to control dummy data
+    run_with_dummy = True
 
     if run_with_dummy:
         dendrite, sync = set_for_dummy_run(metagraph)

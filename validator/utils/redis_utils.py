@@ -74,7 +74,7 @@ async def get_sorted_set(redis_db: Redis, name: str) -> List[str]:
     return await redis_db.zrevrange(name, 0, -1)
 
 
-async def get_first_from_sorted_set(redis_db: Redis, key: str) -> dict[str, Any] | None:
+async def get_first_from_sorted_set(redis_db: Redis, key: str) -> tuple[dict[str, Any], float] | None:
     """
     Get the first (lowest scored) item from a Redis sorted set.
 
@@ -88,7 +88,7 @@ async def get_first_from_sorted_set(redis_db: Redis, key: str) -> dict[str, Any]
 
     item, score = result[0]
     try:
-        return json.loads(item.decode("utf-8"))
+        return json.loads(item.decode("utf-8")), score
     except json.JSONDecodeError:
         logger.error(f"Failed to decode JSON from Redis: {item}")
         return None

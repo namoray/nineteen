@@ -1,9 +1,9 @@
 import asyncio
 from datetime import datetime, timedelta
+import os
 import random
 
 from validator.db.database import PSQLDB
-from validator.models import Participant
 from redis.asyncio import Redis
 from validator.utils import participant_utils as putils, redis_utils as rutils, redis_constants as rcst
 
@@ -12,31 +12,39 @@ from core.logging import get_logger
 logger = get_logger(__name__)
 
 
+def _log_scheduling_details_in_human_readable(participant_id: str, delay: float, timestamp: float) -> None:
+    if os.getenv("ENV") != "prod":
+        human_readable_time1 = datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d %H:%M:%S")
+        logger.debug(
+            f"Found a query with score: {human_readable_time1}. New synthetic query for participant {participant_id}"
+            f" with delay of {delay}"
+        )
+
+
+def _get_time_to_execute_query(delay: float) -> float:
+    now = datetime.now()
+    randomised_delay = delay * (0.90 + 0.10 * random.random())
+    time_to_execute_query = now + timedelta(seconds=randomised_delay)
+    return time_to_execute_query.timestamp()
+
+
 async def schedule_synthetic_queries_for_all_participants(psql_db: PSQLDB, redis_db: Redis) -> None:
     participants = await putils.load_participants(psql_db)
     for participant in participants:
-        await schedule_synthetic_queries_for_participant(redis_db, participant)
+        await schedule_synthetic_query(redis_db, participant.id, participant.delay_between_synthetic_requests)
     logger.debug(f"Added {len(participants)} for scheduling")
 
-# May need to do this without just making tens of millions of redis entries. This wont scale indefinitely either.
-# Instead I should store; delay, number remaining, time_for_next_query  as the score with each participant id
-# then the processor can update the score (time for next query) whenever a quyery si ready
-# Then i only have 0(1) items
-async def schedule_synthetic_queries_for_participant(redis_db: Redis, participant: Participant) -> None:
-    delay = participant.delay_between_synthetic_requests
 
-    for i in range(participant.synthetic_requests_still_to_make):
-        now = datetime.now()
-        randomised_delay = delay * (0.95 + 0.05 * random.random())
-        time_to_execute_query = now + timedelta(seconds=randomised_delay)
-        await schedule_synthetic_query(redis_db, participant, time_to_execute_query.timestamp())
-
-
-async def schedule_synthetic_query(redis_db: Redis, participant: Participant, timestamp: float) -> None:
+async def schedule_synthetic_query(redis_db: Redis, participant_id: str, delay: float) -> None:
     # Need timestamp to keep it unique
-    json_to_add = {"participant_id": participant.id, "timestamp": timestamp}
-    await rutils.add_to_sorted_set(redis_db, rcst.SYNTHETIC_SCHEDULING_QUEUE_KEY, data=json_to_add, score=timestamp)
-    logger.debug(f"Added {json_to_add} to synthetic scheduling queue")
+    json_to_add = {
+        "participant_id": participant_id,
+        "delay": delay,
+    }
+    time_to_execute_query = _get_time_to_execute_query(delay)
+    await rutils.add_to_sorted_set(
+        redis_db, rcst.SYNTHETIC_SCHEDULING_QUEUE_KEY, data=json_to_add, score=time_to_execute_query
+    )
 
 
 async def run_schedule_processor(redis_db: Redis, run_once: bool = False) -> None:
@@ -51,15 +59,19 @@ async def run_schedule_processor(redis_db: Redis, run_once: bool = False) -> Non
     """
     logger.debug(f"Scheduling any synthetic queries which are ready. Scheduling just once: {run_once}")
     while (
-        earliest_query := await rutils.get_first_from_sorted_set(redis_db, rcst.SYNTHETIC_SCHEDULING_QUEUE_KEY)
+        schedule_item := await rutils.get_first_from_sorted_set(redis_db, rcst.SYNTHETIC_SCHEDULING_QUEUE_KEY)
     ) is not None:
+        details, timestamp = schedule_item
         current_time = datetime.now().timestamp()
-        time_left_to_execute = earliest_query["timestamp"] - current_time
+        time_left_to_execute = timestamp - current_time
 
         if time_left_to_execute <= 0:
-            await rutils.remove_from_sorted_set(redis_db, rcst.SYNTHETIC_SCHEDULING_QUEUE_KEY, earliest_query)
-            await putils.add_synthetic_query_to_queue(redis_db, earliest_query["participant_id"])
-            logger.debug(f"Added to the query queue for participant {earliest_query['participant_id']}")
+            await putils.add_synthetic_query_to_queue(redis_db, details["participant_id"])
+
+            _log_scheduling_details_in_human_readable(details["participant_id"], details["delay"], timestamp)
+
+            await schedule_synthetic_query(redis_db, **details)
+            logger.debug(f"Added to the query queue for participant {details['participant_id']}")
         else:
             sleep_time = min(0.5, time_left_to_execute + 0.01)
             if run_once:
@@ -73,7 +85,7 @@ async def main():
     await psql_db.connect()
 
     await schedule_synthetic_queries_for_all_participants(psql_db, redis_db)
-    # await run_schedule_processor(redis_db, run_once=True)
+    await run_schedule_processor(redis_db, run_once=False)
 
 
 if __name__ == "__main__":
