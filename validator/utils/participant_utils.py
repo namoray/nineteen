@@ -15,6 +15,7 @@ def construct_synthetic_query_message(participant_id: str) -> str:
     return json.dumps({"query_type": "synthetic", "query_payload": {"participant_id": participant_id}})
 
 
+# Consistently about 1ms
 async def load_participant(psql_db: PSQLDB, participant_id: str) -> Participant:
     async with await psql_db.connection() as connection:
         return await sql.fetch_participant(connection, participant_id)

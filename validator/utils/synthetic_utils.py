@@ -139,9 +139,9 @@ async def get_synthetic_data_version(redis_db: Redis, task: Task) -> float | Non
         return float(version.decode("utf-8"))
     return None
 
-
+# Takes anywhere from 1ms to 10ms
 async def fetch_synthetic_data_for_task(redis_db: Redis, task: Task) -> dict[str, Any]:
-    # TODO: replace with redisJSON stuff
+
     synthetic_data = await rutils.json_load_from_redis(redis_db, key=construct_synthetic_data_task_key(task))
 
     task_type = tasks_config.TASK_TO_CONFIG[task].scoring_config.task_type

@@ -6,7 +6,12 @@ import uuid
 from redis.asyncio import Redis
 from core import Task, bittensor_overrides as bt
 from validator.db.database import PSQLDB
-from validator.utils import participant_utils as putils, synthetic_utils as sutils, query_utils as qutils
+from validator.utils import (
+    participant_utils as putils,
+    synthetic_utils as sutils,
+    query_utils as qutils,
+    generic_utils as gutils,
+)
 from validator.utils import redis_constants as rcst
 from validator.query_node import utils
 from core.logging import get_logger
@@ -70,7 +75,6 @@ async def worker_loop(redis_db: Redis, psql_db: PSQLDB, dendrite: bt.dendrite, m
                 active_tasks = {task for task in active_tasks if not task.done()}
 
             _, job = await redis_db.blpop(rcst.QUERY_QUEUE_KEY)
-            logger.debug(f"Job received: {job}")
             job_data = json.loads(job)
 
             task = asyncio.create_task(process_job_with_timeout(redis_db, psql_db, dendrite, job_data))

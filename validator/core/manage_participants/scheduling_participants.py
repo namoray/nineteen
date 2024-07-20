@@ -6,8 +6,11 @@ import time
 
 from validator.db.database import PSQLDB
 from redis.asyncio import Redis
-from validator.utils import participant_utils as putils, redis_utils as rutils, redis_constants as rcst
-
+from validator.utils import (
+    participant_utils as putils,
+    redis_utils as rutils,
+    redis_constants as rcst,
+)
 from core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -41,8 +44,8 @@ def _get_time_to_execute_query(delay: float) -> float:
 
 
 async def schedule_synthetic_queries_for_all_participants(psql_db: PSQLDB, redis_db: Redis) -> None:
-
     await rutils.clear_sorted_set(redis_db, rcst.SYNTHETIC_SCHEDULING_QUEUE_KEY)
+
     participants = await putils.load_participants(psql_db)
     for participant in participants:
         await schedule_synthetic_query(redis_db, participant.id, participant.delay_between_synthetic_requests)
@@ -80,7 +83,6 @@ async def run_schedule_processor(redis_db: Redis, run_once: bool = False) -> Non
     while (
         schedule_item := await rutils.get_first_from_sorted_set(redis_db, rcst.SYNTHETIC_SCHEDULING_QUEUE_KEY)
     ) is not None:
-        logger.debug(f"Processing item: {schedule_item}")
         details, timestamp = schedule_item
         current_time: float = datetime.now().timestamp()
         time_left_to_execute: float = timestamp - current_time

@@ -52,7 +52,7 @@ def get_logger(name: str):
     logger.handlers.clear()
 
     format_string = (
-        "$BLUE%(asctime)s$RESET | "
+        "$BLUE%(asctime)s.%(msecs)03d$RESET | "
         "$COLOR$BOLD%(levelname)-8s$RESET | "
         "$BLUE%(name)s$RESET:"
         "$BLUE%(funcName)s$RESET:"
