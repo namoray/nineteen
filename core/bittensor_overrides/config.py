@@ -1,5 +1,7 @@
 """
 Implementation of the config class, which manages the configuration of different Bittensor modules.
+
+# TODO: Replace all this ~~amazing~~ code
 """
 
 # The MIT License (MIT)
@@ -132,7 +134,7 @@ class config(DefaultMunch):
         # 1.1 Optionally load defaults if the --config is set.
         try:
             config_file_path = str(os.getcwd()) + "/" + vars(parser.parse_known_args(args)[0])["config"]
-        except Exception as e:
+        except Exception:
             config_file_path = None
 
         # Parse args not strict

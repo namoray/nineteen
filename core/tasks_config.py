@@ -193,9 +193,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
             checking_load_model_config={},
             checking_function="check_image_result",
         ),
-        synthetic_generation_config=SyntheticGenerationConfig(
-            func="generate_inpaint_synthetic", kwargs={}
-        ),
+        synthetic_generation_config=SyntheticGenerationConfig(func="generate_inpaint_synthetic", kwargs={}),
     ),
     Task.avatar: FullTaskConfig(
         task=Task.avatar,
@@ -207,22 +205,23 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
             checking_function="check_image_result",
         ),
         synthetic_generation_config=SyntheticGenerationConfig(
-            func="generate_avatar_synthetic", kwargs={}
-    # Task.clip_image_embeddings: FullTaskConfig(
-    #     task=Task.clip_image_embeddings,
-    #     max_capacity=CapacityForTask(capacity=0),  # disabled clip for now
-    #     scoring_config=TaskScoringConfig(
-    #         task=Task.clip_image_embeddings, mean=0.5, variance=2, overhead=1.0, task_type=TaskType.CLIP
-    #     ),
-    #     orchestrator_server_config=OrchestratorServerConfig(
-    #         checking_server_needed=ServerType.IMAGE,
-    #         checking_load_model_config={},
-    #         checking_function="check_clip_result",
-    #     ),
-    #     synthetic_generation_config=SyntheticGenerationConfig(
-    #         func="generate_clip_synthetic", kwargs={}
-    #     ),
-    # ),
+            func="generate_avatar_synthetic",
+            kwargs={},
+            # Task.clip_image_embeddings: FullTaskConfig(
+            #     task=Task.clip_image_embeddings,
+            #     max_capacity=CapacityForTask(capacity=0),  # disabled clip for now
+            #     scoring_config=TaskScoringConfig(
+            #         task=Task.clip_image_embeddings, mean=0.5, variance=2, overhead=1.0, task_type=TaskType.CLIP
+            #     ),
+            #     orchestrator_server_config=OrchestratorServerConfig(
+            #         checking_server_needed=ServerType.IMAGE,
+            #         checking_load_model_config={},
+            #         checking_function="check_clip_result",
+            #     ),
+            #     synthetic_generation_config=SyntheticGenerationConfig(
+            #         func="generate_clip_synthetic", kwargs={}
+            #     ),
+            # ),
         ),
     ),
 }
