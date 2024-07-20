@@ -3,7 +3,6 @@ import threading
 
 import numpy as np
 from core.bittensor_overrides.chain_data import AxonInfo
-from models import config_models
 from dataclasses import asdict
 from validator.db.database import PSQLDB
 from validator.models import Participant
@@ -12,7 +11,6 @@ from core import tasks_config as tcfg
 from core import constants as ccst
 from collections import defaultdict
 from core import tasks
-from config import configuration
 from core import Task
 
 from core import bittensor_overrides as bt
@@ -168,10 +166,6 @@ async def get_and_store_participant_info(
     sync: bool = True,
     number_of_participants: int = 10,
 ):
-    if sync:
-        await _sync_metagraph(metagraph, subtensor)
-
-    await store_metagraph_info(psql_db, metagraph)
     capacities_for_tasks = await _fetch_available_capacities_for_each_axon(psql_db, dendrite)
 
     validator_stake_proportion = metagraph.S[metagraph.hotkeys.index(validator_hotkey)] / metagraph.S.sum()
@@ -226,22 +220,9 @@ async def main(run_with_dummy: bool = True):
     # Remember to export ENV=test
     psql_db = PSQLDB()
     await psql_db.connect()
-    validator_config = config_models.ValidatorConfig()
-    subtensor = None
     dendrite = bt.dendrite()
-    sync = True
 
-    # Use below to control dummy data
-    run_with_dummy = True
-
-    if run_with_dummy:
-        dendrite, sync = set_for_dummy_run(metagraph)
-    else:
-        
-
-    await get_and_store_participant_info(
-        psql_db, metagraph, subtensor, dendrite, validator_hotkey="test-vali", sync=sync
-    )
+    await get_and_store_participant_info(psql_db, dendrite, validator_hotkey="test-vali")
 
 
 if __name__ == "__main__":

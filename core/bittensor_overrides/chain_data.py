@@ -17,7 +17,8 @@ class AxonInfo:
     axon_uid: int
     incentive: float | None
     netuid: int
-    testnet: bool
+    network: str
+    stake: float
     protocol: int = 4
     placeholder1: int = 0
     placeholder2: int = 0

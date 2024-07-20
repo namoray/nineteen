@@ -1,5 +1,5 @@
 import random
-from typing import Dict, Any
+from typing import Any
 
 from core import Task, tasks_config
 from models import base_models

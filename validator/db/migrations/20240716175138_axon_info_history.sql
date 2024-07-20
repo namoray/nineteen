@@ -11,6 +11,7 @@ CREATE TABLE axon_info_history (
     incentive FLOAT,
     netuid INTEGER NOT NULL,
     network TEXT NOT NULL,
+    stake FLOAT NOT NULL,
     created_at TIMESTAMP WITHOUT TIME ZONE,
     expired_at TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC')
 );

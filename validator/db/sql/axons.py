@@ -22,6 +22,9 @@ async def insert_axon_info(connection: Connection, axon_infos: list[chain_data.A
             {dcst.IP_TYPE},
             {dcst.AXON_UID},
             {dcst.INCENTIVE},
+            {dcst.NETUID},
+            {dcst.NETWORK},
+            {dcst.STAKE},
             {dcst.CREATED_AT}
         )
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
@@ -36,6 +39,9 @@ async def insert_axon_info(connection: Connection, axon_infos: list[chain_data.A
                 axon_info.ip_type,
                 axon_info.axon_uid,
                 axon_info.incentive,
+                axon_info.netuid,
+                axon_info.network,
+                axon_info.stake,
             )
             for axon_info in axon_infos
         ],
@@ -54,6 +60,9 @@ async def migrate_axons_to_axon_history(connection: Connection) -> None:  # noqa
             {dcst.IP_TYPE},
             {dcst.AXON_UID},
             {dcst.INCENTIVE},
+            {dcst.NETUID},
+            {dcst.NETWORK},
+            {dcst.STAKE},
             {dcst.CREATED_AT}
         )
         SELECT
@@ -65,6 +74,9 @@ async def migrate_axons_to_axon_history(connection: Connection) -> None:  # noqa
             {dcst.IP_TYPE},
             {dcst.AXON_UID},
             {dcst.INCENTIVE},
+            {dcst.NETUID},
+            {dcst.NETWORK},
+            {dcst.STAKE},
             {dcst.CREATED_AT}
         FROM {dcst.AXON_INFO_TABLE}
     """
@@ -77,7 +89,7 @@ async def migrate_axons_to_axon_history(connection: Connection) -> None:  # noqa
 async def get_axons(psql_db: PSQLDB) -> list[chain_data.AxonInfo]:
     axons = await psql_db.fetchall(
         f"SELECT {dcst.HOTKEY}, {dcst.COLDKEY}, {dcst.AXON_VERSION} as version,"
-        f"{dcst.IP}, {dcst.PORT}, {dcst.IP_TYPE}, {dcst.AXON_UID}, {dcst.INCENTIVE}"
-        f" FROM {dcst.AXON_INFO_TABLE}"
+        f"{dcst.IP}, {dcst.PORT}, {dcst.IP_TYPE}, {dcst.AXON_UID}, {dcst.INCENTIVE},",
+        f"{dcst.NETUID}, {dcst.NETWORK}, {dcst.STAKE}" f" FROM {dcst.AXON_INFO_TABLE}",
     )
     return [chain_data.AxonInfo(**axon) for axon in axons]
