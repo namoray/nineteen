@@ -2,24 +2,24 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y \
-    libgl1-mesa-glx \
-    libglib2.0-0
-
-COPY requirements/core.txt /app/requirements.txt
-COPY setup.py /app/setup.py
-COPY README.md /app/README.md
-RUN pip install --no-cache-dir -e . 
-
+# Install core package
 COPY core /app/core
+WORKDIR /app/core
+RUN pip install --no-cache-dir -e .
+
+# Install query_node service
 COPY validator /app/validator
+WORKDIR /app/validator/core
+RUN pip install --no-cache-dir -e .
 
-# Review below as it needs bittensor in places
+# Copy models and config
 COPY models /app/models
-
-# Review below as don't want config plauging us
 COPY config /app/config
 
+# Set the working directory back to /app
+WORKDIR /app
 
+# Set PYTHONPATH to include /app
+ENV PYTHONPATH=/app:$PYTHONPATH
 
 CMD ["tail", "-f", "/dev/null"]

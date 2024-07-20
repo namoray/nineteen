@@ -2,8 +2,6 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-
-
 # Install core package
 COPY core /app/core
 WORKDIR /app/core

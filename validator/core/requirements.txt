@@ -7,4 +7,6 @@ redis~=5.0
 pillow==10.4.0
 datasets==2.20.0
 markovify==0.9.4
+colorama==0.4.6
+asyncpg==0.29.0
 # numpy==1.26.4

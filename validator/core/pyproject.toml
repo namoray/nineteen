@@ -3,14 +3,14 @@ requires = ["setuptools>=45", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "metagraph_syncer"
+name = "validator_core"
 version = "1.0.0"
-description = "Syncs metagraph every X minutes"
+description = "Core stuff for the validator; does not need horizontal scaling"
 dynamic = ["dependencies"]
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["metagraph_syncer*"]
+include = ["core*"]
 
 [tool.setuptools.dynamic]
 dependencies = { file = ["requirements.txt"] }
