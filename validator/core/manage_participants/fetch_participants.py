@@ -1,9 +1,6 @@
 import asyncio
 import threading
 
-import numpy as np
-from core.bittensor_overrides.chain_data import AxonInfo
-from dataclasses import asdict
 from validator.db.database import PSQLDB
 from validator.models import Participant
 from validator.utils import query_utils as qutils
@@ -25,30 +22,17 @@ logger = get_logger(__name__)
 threading_lock = threading.Lock()
 
 
-async def _sync_metagraph(metagraph: bt.metagraph, subtensor: bt.subtensor) -> None:
-    logger.info("Resyncing the metagraph!")
-    await asyncio.to_thread(metagraph.sync, subtensor=subtensor, lite=True)
-    new_axons = []
-    incentives = metagraph.incentive.tolist()
-    logger.debug(f"Incentives: {incentives}")
-    for (
-        axon,
-        uid,
-        incentive,
-    ) in zip(metagraph.axons, metagraph.uids, incentives):
-        new_axon_info = AxonInfo(**asdict(axon), axon_uid=uid, incentive=incentive)
-        logger.debug(f"New axon info: {new_axon_info}")
-        new_axons.append(new_axon_info)
-
-    metagraph.axons = new_axons
+def _get_percentage_of_tasks_to_score():
+    return 1
 
 
-async def store_metagraph_info(psql_db: PSQLDB, metagraph: bt.metagraph) -> list[str]:
-    axons = metagraph.axons
+async def _get_validator_stake_proportion(
+    psql_db: PSQLDB,
+    validator_hotkey: str,
+):
+    hotkey_to_stake = await sql.get_axon_stakes(psql_db)
 
-    async with await psql_db.connection() as connection:
-        await sql.migrate_axons_to_axon_history(connection)
-        await sql.insert_axon_info(connection, axons)
+    return hotkey_to_stake[validator_hotkey] / sum(hotkey_to_stake.values())
 
 
 async def _fetch_available_capacities_for_each_axon(psql_db: PSQLDB, dendrite: bt.dendrite) -> None:
@@ -76,7 +60,7 @@ async def _fetch_available_capacities_for_each_axon(psql_db: PSQLDB, dendrite: b
 
     all_capacities = [i[0] for i in responses_and_response_times]
 
-    bt.logging.info(f"Got capacities from {len([i for i in all_capacities if i is not None])} axons!")
+    logger.info(f"Got capacities from {len([i for i in all_capacities if i is not None])} axons!")
     with threading_lock:
         capacities_for_tasks = defaultdict(lambda: {})
         for hotkey, capacities in zip([axon.hotkey for axon in axons], all_capacities):
@@ -128,10 +112,6 @@ async def _store_all_participants_in_db(
     await store_participants(psql_db, participants, validator_hotkey)
 
 
-def _get_percentage_of_tasks_to_score():
-    return 1
-
-
 def calculate_synthetic_query_parameters(task: Task, declared_volume: float):
     assert (
         task in tasks.TASK_TO_VOLUME_TO_REQUESTS_CONVERSION
@@ -145,7 +125,6 @@ def calculate_synthetic_query_parameters(task: Task, declared_volume: float):
     return volume_to_score, number_of_requests_to_make, delay_between_requests
 
 
-# TODO: replace with psql
 async def store_participants(
     psql_db: PSQLDB,
     participants: list[Participant],
@@ -159,61 +138,14 @@ async def store_participants(
 ## Testing utils
 async def get_and_store_participant_info(
     psql_db: PSQLDB,
-    metagraph: bt.metagraph,
-    subtensor: bt.subtensor,
     dendrite: bt.dendrite,
     validator_hotkey: str,
-    sync: bool = True,
-    number_of_participants: int = 10,
 ):
     capacities_for_tasks = await _fetch_available_capacities_for_each_axon(psql_db, dendrite)
 
-    validator_stake_proportion = metagraph.S[metagraph.hotkeys.index(validator_hotkey)] / metagraph.S.sum()
+    validator_stake_proportion = await _get_validator_stake_proportion(psql_db, validator_hotkey)
+
     await _store_all_participants_in_db(psql_db, capacities_for_tasks, validator_hotkey, validator_stake_proportion)
-
-
-def set_for_dummy_run(metagraph: bt.metagraph) -> None:
-    # Don't need to set this, as it's a property derived from the axons
-    # metagraph.hotkeys = ["test-hotkey1", "test-hotkey2"]
-
-    metagraph.axons = [
-        # Vali
-        AxonInfo(
-            version=1,
-            ip="127.0.0.1",
-            port=1,
-            ip_type=4,
-            hotkey="test-vali",
-            coldkey="test-vali-ck",
-            axon_uid=0,
-            incentive=0,
-        ),
-        # Miners
-        AxonInfo(
-            version=1,
-            ip="127.0.0.1",
-            port=1,
-            ip_type=4,
-            hotkey="test-hotkey1",
-            coldkey="test-coldkey1",
-            axon_uid=1,
-            incentive=0.004,
-        ),
-        AxonInfo(
-            version=2,
-            ip="127.0.0.1",
-            port=2,
-            ip_type=4,
-            hotkey="test-hotkey2",
-            coldkey="test-coldkey2",
-            axon_uid=2,
-            incentive=0.005,
-        ),
-    ]
-    metagraph.total_stake = np.array([50, 30, 20])
-    dendrite = None
-    sync = False
-    return dendrite, sync
 
 
 async def main(run_with_dummy: bool = True):
