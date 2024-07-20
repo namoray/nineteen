@@ -1,0 +1,3 @@
+bittensor==7.3.0
+colorama==0.4.6
+asyncpg==0.29.0

@@ -23,6 +23,11 @@ def int_to_ip(int_val: int) -> str:
     return str(netaddr.IPAddress(int_val))
 
 
+def ip__str__(ip_type: int, ip_str: str, port: int):
+    """Return a formatted ip string"""
+    return "/ipv%i/%s:%i" % (ip_type, ip_str, port)
+
+
 def ip_to_int(str_val: str) -> int:
     r"""Maps an ip-string to a unique integer.
     arg:
@@ -38,6 +43,7 @@ def ip_to_int(str_val: str) -> int:
             Raised when the passed str_val is not a valid ip string value.
     """
     return int(netaddr.IPAddress(str_val))
+
 
 @lru_cache(maxsize=None)
 def get_external_ip() -> str:

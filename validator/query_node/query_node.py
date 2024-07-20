@@ -16,6 +16,7 @@ logger = get_logger(__name__)
 DEBUG = os.getenv("ENV", "prod") != "prod"
 JOB_TIMEOUT = 300
 
+
 # TODO: Better handle storing jobs as each participant will do *many*. the redis stuff isnt ideal here
 async def process_job(redis_db: Redis, psql_db: PSQLDB, dendrite: bt.dendrite, job_data):
     # Add separate handling for organics and synthetics
@@ -75,10 +76,6 @@ async def worker_loop(redis_db: Redis, psql_db: PSQLDB, dendrite: bt.dendrite, m
             task = asyncio.create_task(process_job_with_timeout(redis_db, psql_db, dendrite, job_data))
             active_tasks.add(task)
             task.add_done_callback(lambda t: active_tasks.discard(t))
-
-            logger.debug("Temp sleeping for a sec")
-            await asyncio.sleep(1)
-
         except Exception as e:
             logger.error(f"Error in main loop: {str(e)}")
             await asyncio.sleep(1)

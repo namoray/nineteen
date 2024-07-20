@@ -1,0 +1,24 @@
+version: "3"
+
+tasks:
+  fetch_participants:
+    cmds:
+      - docker-compose exec -e ENV=test core_validator python validator/core/manage_participants/get_participant_info.py
+  start_scheduling_synthetics:
+    cmds:
+      - docker-compose exec -e ENV=test core_validator python validator/core/manage_participants/scheduling_participants.py
+  generate_synthetic_data:
+    cmds:
+      - docker-compose exec -e ENV=test core_validator python validator/core/store_synthetic_data/generate_synthetic_data.py
+  run_query_node:
+    cmds:
+      - docker-compose exec -e ENV=test core_validator python validator/query_node/query_node.py
+  metagraph_sync:
+    cmds:
+      - >
+        docker-compose exec -e ENV=test -e RUN_ONCE=false {{.CLI_ARGS}} metagraph_syncer
+        python validator/metagraph_syncer/metagraph_syncer.py
+
+  metagraph_sync_once:
+    cmds:
+      - docker-compose exec -e ENV=test metagraph_syncer python validator/metagraph_syncer/metagraph_syncer.py once

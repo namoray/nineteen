@@ -19,8 +19,6 @@ from core.logging import get_logger
 logger = get_logger(__name__)
 
 
-
-
 # NOTE: any danger here of massively gorwing cache?
 @lru_cache(maxsize=1)
 def get_cached_markov_model():

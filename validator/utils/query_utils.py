@@ -98,7 +98,7 @@ async def query_individual_axon(
         if isinstance(synapse, synapses.Capacity):
             capacities = {}
             for task, config in tcfg.TASK_TO_CONFIG.items():
-                capacities[task] = config.max_capacity
+                capacities[task] = config.max_capacity / 100
             response = synapses.Capacity(capacities=capacities)
             if deserialize:
                 response = response.capacities

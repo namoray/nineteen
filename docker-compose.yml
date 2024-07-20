@@ -113,6 +113,28 @@ services:
       POSTGRES_PORT: 5432
       POSTGRES_NAME: mydb
 
+  metagraph_syncer:
+    build:
+      context: .
+      dockerfile: dockerfiles/metagraph_syncer.dockerfile
+    depends_on:
+      - postgresql
+    volumes:
+      - .:/app
+    networks:
+      - postgres_network
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: postgresql
+      POSTGRES_PORT: 5432
+      POSTGRES_NAME: mydb
+      RUN_ONCE: false
+      DUMMY: false
+      SECONDS_BETWEEN_SYNC: 120
+    entrypoint: ["python3.11", "/app/validator/metagraph_syncer/metagraph_syncer.py"]
+
+  
   load_balancer:
     image: nginx:latest
     ports:

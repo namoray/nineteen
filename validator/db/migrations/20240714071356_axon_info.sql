@@ -9,6 +9,8 @@ CREATE TABLE axon_info (
 --  Extras to axon info by us
     axon_uid INTEGER NOT NULL,
     incentive FLOAT,
+    netuid INTEGER NOT NULL,
+    network TEXT NOT NULL,
     created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC')
 );
 

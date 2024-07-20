@@ -107,8 +107,6 @@ async def query_miner_stream(
 ) -> AsyncIterator[str]:
     axon_uid = participant.miner_hotkey
 
-
-
     if debug:
         text_generator = _get_debug_text_generator()
         async for text in text_generator:
