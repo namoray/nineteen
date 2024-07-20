@@ -3,7 +3,7 @@ import threading
 import time
 import traceback
 from typing import Any, Callable, Dict, Optional, Tuple, TypeVar
-import bittensor as bt
+from core import bittensor_overrides as bt
 
 # import base miner class which takes care of most of the boilerplate
 from config import configuration

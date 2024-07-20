@@ -1,6 +1,6 @@
 from typing import Tuple, TypeVar
 
-import bittensor as bt
+from core import bittensor_overrides as bt
 
 from mining.proxy import core_miner
 from mining.proxy.operations import abstract_operation

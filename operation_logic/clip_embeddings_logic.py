@@ -1,4 +1,4 @@
-import bittensor as bt
+from core import bittensor_overrides as bt
 
 import httpx
 from models import base_models

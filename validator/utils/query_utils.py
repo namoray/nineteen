@@ -11,7 +11,7 @@ import random
 import numpy as np
 import time
 from typing import Tuple
-import bittensor as bt
+from core import bittensor_overrides as bt
 
 
 def pil_to_base64(image: Image, format: str = "JPEG") -> str:

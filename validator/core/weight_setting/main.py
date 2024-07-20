@@ -3,7 +3,7 @@ import asyncio
 import time
 from typing import Dict, List, Tuple, Union
 
-import bittensor as bt
+from core import bittensor_overrides as bt
 import torch
 from core import Task
 from models import utility_models

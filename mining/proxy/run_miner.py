@@ -2,7 +2,7 @@ import importlib
 import time
 import tracemalloc
 
-import bittensor as bt
+from core import bittensor_overrides as bt
 from core import utils, Task
 from mining.proxy import core_miner
 from config.miner_config import config

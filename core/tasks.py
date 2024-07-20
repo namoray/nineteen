@@ -3,7 +3,7 @@
 from core import Task, tasks_config
 from models import synapses, utility_models
 from typing import Dict, Optional
-import bittensor as bt
+from core import bittensor_overrides as bt
 
 # I don't love this being here. How else should I do it though?
 # I don't want to rely on any extra third party service for fetching this info...

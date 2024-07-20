@@ -1,6 +1,6 @@
 from core import Task
 from models import base_models
-import bittensor as bt
+from core import bittensor_overrides as bt
 import httpx
 import json
 from typing import AsyncGenerator

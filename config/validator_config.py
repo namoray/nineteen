@@ -1,6 +1,6 @@
 from dotenv import load_dotenv
 import os
-import bittensor as bt
+from core import bittensor_overrides as bt
 import argparse
 from models import config_models
 

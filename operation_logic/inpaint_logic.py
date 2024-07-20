@@ -1,5 +1,5 @@
 
-import bittensor as bt
+from core import bittensor_overrides as bt
 
 
 from models import base_models

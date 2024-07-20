@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 from models import config_models
 import os
-import bittensor as bt
+from core import bittensor_overrides as bt
 import argparse
 
 

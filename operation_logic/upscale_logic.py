@@ -2,7 +2,7 @@
 
 from operation_logic import utils as operation_utils
 from models import base_models
-import bittensor as bt
+from core import bittensor_overrides as bt
 
 MAX_PIX_COUNT = 4194304
 POST_ENDPOINT = "upscale"

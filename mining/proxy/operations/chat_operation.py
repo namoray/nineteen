@@ -1,6 +1,6 @@
 from typing import Tuple, TypeVar, AsyncIterator
 
-import bittensor as bt
+from core import bittensor_overrides as bt
 
 from core import tasks
 from mining.proxy import core_miner

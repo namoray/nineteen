@@ -2,7 +2,7 @@ from models import utility_models
 from pydantic import BaseModel
 from config.miner_config import config as config
 import httpx
-import bittensor as bt
+from core import bittensor_overrides as bt
 
 
 

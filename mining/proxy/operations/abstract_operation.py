@@ -1,10 +1,11 @@
 import abc
 from typing import Any, Tuple, TypeVar
 
-import bittensor as bt
+from core import bittensor_overrides as bt
 from fastapi.responses import JSONResponse
 
-from core import tasks, utils
+from core import tasks
+from mining.proxy import utils
 from mining.proxy import core_miner
 from mining.proxy.core_miner import miner_requests_stats
 from config.miner_config import config as config
