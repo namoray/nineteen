@@ -1,6 +1,8 @@
 import asyncio
 import json
 import os
+import traceback
+import uuid
 from redis.asyncio import Redis
 from core import Task, bittensor_overrides as bt
 from validator.db.database import PSQLDB
@@ -14,10 +16,10 @@ logger = get_logger(__name__)
 DEBUG = os.getenv("ENV", "prod") != "prod"
 JOB_TIMEOUT = 300
 
-
+# TODO: Better handle storing jobs as each participant will do *many*. the redis stuff isnt ideal here
 async def process_job(redis_db: Redis, psql_db: PSQLDB, dendrite: bt.dendrite, job_data):
     # Add separate handling for organics and synthetics
-    participant_id = job_data["participant_id"]
+    participant_id = job_data["query_payload"]["participant_id"]
     participant = await putils.load_participant(psql_db, participant_id)
 
     await redis_db.hset(f"job:{participant_id}", "state", "processing")
@@ -33,9 +35,10 @@ async def process_job(redis_db: Redis, psql_db: PSQLDB, dendrite: bt.dendrite, j
             await qutils.consume_generator(generator)
 
         await redis_db.hset(f"job:{participant_id}", "state", "completed")
-        logger.info(f"Job {participant_id} completed successfully")
+        logger.debug(f"Job {participant_id} completed successfully")
     except Exception as e:
-        logger.error(f"Job {participant_id} failed: {str(e)}")
+        full_traceback = traceback.format_exc()
+        logger.error(f"Job {participant_id} failed. Full traceback:\n{full_traceback}")
         await redis_db.hset(f"job:{participant_id}", "state", "failed")
         await redis_db.hset(f"job:{participant_id}", "error", str(e))
 
@@ -50,7 +53,7 @@ async def process_job_with_timeout(redis_db: Redis, psql_db: PSQLDB, dendrite: b
         await redis_db.hset(f"job:{participant_id}", "error", f"Job timed out after {JOB_TIMEOUT} seconds")
 
 
-async def worker_loop(redis_db: Redis, psql_db: PSQLDB, dendrite: bt.dendrite, queue_name, max_concurrent_jobs=100):
+async def worker_loop(redis_db: Redis, psql_db: PSQLDB, dendrite: bt.dendrite, max_concurrent_jobs=100):
     active_tasks: set[asyncio.Task] = set()
     while True:
         try:
@@ -65,12 +68,16 @@ async def worker_loop(redis_db: Redis, psql_db: PSQLDB, dendrite: bt.dendrite, q
                         logger.error(f"Task failed with error: {str(e)}")
                 active_tasks = {task for task in active_tasks if not task.done()}
 
-            _, job = await redis_db.blpop(queue_name)
+            _, job = await redis_db.blpop(rcst.QUERY_QUEUE_KEY)
+            logger.debug(f"Job received: {job}")
             job_data = json.loads(job)
 
             task = asyncio.create_task(process_job_with_timeout(redis_db, psql_db, dendrite, job_data))
             active_tasks.add(task)
             task.add_done_callback(lambda t: active_tasks.discard(t))
+
+            logger.debug("Temp sleeping for a sec")
+            await asyncio.sleep(1)
 
         except Exception as e:
             logger.error(f"Error in main loop: {str(e)}")
@@ -78,9 +85,10 @@ async def worker_loop(redis_db: Redis, psql_db: PSQLDB, dendrite: bt.dendrite, q
 
 
 async def heartbeat(redis_db: Redis):
+    worker_id = str(uuid.uuid4())[:8]
     while True:
         logger.debug("Worker heartbeat")
-        await redis_db.set("worker_heartbeat", "alive", ex=10)
+        await redis_db.set(f"worker_heartbeat:{worker_id}", "alive", ex=10)
         await asyncio.sleep(5)
 
 
@@ -88,7 +96,7 @@ async def run_worker(redis_db: Redis, psql_db: PSQLDB, dendrite: bt.dendrite, qu
     logger.debug("Starting worker")
     try:
         heartbeat_task = asyncio.create_task(heartbeat(redis_db))
-        await asyncio.gather(worker_loop(redis_db, psql_db, dendrite, queue_name), heartbeat_task)
+        await asyncio.gather(worker_loop(redis_db, psql_db, dendrite), heartbeat_task)
     except asyncio.CancelledError:
         logger.info("Worker cancelled")
     except Exception as e:

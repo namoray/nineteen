@@ -93,7 +93,7 @@ async def run_schedule_processor(redis_db: Redis, run_once: bool = False) -> Non
                 break
             await asyncio.sleep(sleep_time)
 
-        if processed_items % 100 == 0 and processed_items > 0:
+        if processed_items % 10 == 0 and processed_items > 0:
             _log_performance_metrics(processed_items, start_time, cumulative_late_time, cumulative_sleep_time)
 
         if run_once:

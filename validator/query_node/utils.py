@@ -107,59 +107,62 @@ async def query_miner_stream(
 ) -> AsyncIterator[str]:
     axon_uid = participant.miner_hotkey
 
-    time1 = time.time()
+
 
     if debug:
-        text_generator = await _get_debug_text_generator()
+        text_generator = _get_debug_text_generator()
+        async for text in text_generator:
+            yield text
     else:
         # text_generator = await query_individual_axon_stream(
         #     synapse=synapse, dendrite=dendrite, axon=axon, axon_uid=axon_uid, log_requests_and_responses=False
         # )
         ...
-    text_jsons = []
-    status_code = 200
-    error_message = None
-    if text_generator is not None:
-        first_message = True
-        async for text in text_generator:
-            if isinstance(text, str):
-                try:
-                    loaded_jsons = _load_sse_jsons(text)
-                    if isinstance(loaded_jsons, dict):
-                        status_code = loaded_jsons.get("status_code")
-                        error_message = loaded_jsons.get("message")
+        time1 = time.time()
+        text_jsons = []
+        status_code = 200
+        error_message = None
+        if text_generator is not None:
+            first_message = True
+            async for text in text_generator:
+                if isinstance(text, str):
+                    try:
+                        loaded_jsons = _load_sse_jsons(text)
+                        if isinstance(loaded_jsons, dict):
+                            status_code = loaded_jsons.get("status_code")
+                            error_message = loaded_jsons.get("message")
+                            break
+
+                    except (IndexError, json.JSONDecodeError) as e:
+                        bt.logging.warning(f"Error {e} when trying to load text: {text}")
                         break
 
-                except (IndexError, json.JSONDecodeError) as e:
-                    bt.logging.warning(f"Error {e} when trying to load text: {text}")
-                    break
+                    text_jsons.extend(loaded_jsons)
+                    for text_json in loaded_jsons:
+                        content = text_json.get("text", "")
+                        if content == "":
+                            continue
+                        dumped_payload = _get_formatted_payload(content, first_message)
+                        first_message = False
+                        yield f"data: {dumped_payload}\n\n"
 
-                text_jsons.extend(loaded_jsons)
-                for text_json in loaded_jsons:
-                    content = text_json.get("text", "")
-                    if content == "":
-                        continue
-                    dumped_payload = _get_formatted_payload(content, first_message)
-                    first_message = False
-                    yield f"data: {dumped_payload}\n\n"
+            if len(text_jsons) > 0:
+                last_payload = _get_formatted_payload("", False, add_finish_reason=True)
+                yield f"data: {last_payload}\n\n"
+                yield "data: [DONE]\n\n"
+                bt.logging.info(f"✅ Successfully queried axon: {axon_uid} for task: {task}")
 
-        if len(text_jsons) > 0:
-            last_payload = _get_formatted_payload("", False, add_finish_reason=True)
-            yield f"data: {last_payload}\n\n"
-            yield "data: [DONE]\n\n"
-            bt.logging.info(f"✅ Successfully queried axon: {axon_uid} for task: {task}")
-
-        response_time = time.time() - time1
-        query_result = utility_models.QueryResult(
-            formatted_response=text_jsons if len(text_jsons) > 0 else None,
-            axon_uid=axon_uid,
-            response_time=response_time,
-            task=task,
-            success=not first_message,
-            miner_hotkey=participant.miner_hotkey,
-            status_code=status_code,
-            error_message=error_message,
-        )
+            response_time = time.time() - time1
+            query_result = utility_models.QueryResult(
+                formatted_response=text_jsons if len(text_jsons) > 0 else None,
+                axon_uid=axon_uid,
+                response_time=response_time,
+                task=task,
+                success=not first_message,
+                miner_hotkey=participant.miner_hotkey,
+                status_code=status_code,
+                error_message=error_message,
+            )
 
         # create_scoring_adjustment_task(query_result, synapse, participant, synthetic_query)
 

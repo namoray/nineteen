@@ -140,24 +140,22 @@ async def get_synthetic_data_version(redis_db: Redis, task: Task) -> float | Non
     return None
 
 
-async def fetch_synthetic_data_for_task(redis_db: Redis, task: Task) -> Dict[str, Any]:
+async def fetch_synthetic_data_for_task(redis_db: Redis, task: Task) -> dict[str, Any]:
     # TODO: replace with redisJSON stuff
-    all_synthetic_data = await rutils.json_load_from_redis(redis_db, key=rcst.SYNTHETIC_DATA_KEY)
-    assert (
-        task in all_synthetic_data
-    ), f"Somehow the task is not in synthetic data? task: {task}, synthetic_data: {all_synthetic_data}"
+    synthetic_data = await rutils.json_load_from_redis(redis_db, key=construct_synthetic_data_task_key(task))
 
-    synth_data = all_synthetic_data[task]
     task_type = tasks_config.TASK_TO_CONFIG[task].scoring_config.task_type
     if task_type == tasks_config.TaskType.IMAGE:
-        synth_data[scst.SEED] = random.randint(1, 1_000_000_000)
-        synth_data[scst.TEXT_PROMPTS] = _get_random_text_prompt()
+        synthetic_data[scst.SEED] = random.randint(1, 1_000_000_000)
+        synthetic_data[scst.TEXT_PROMPTS] = _get_random_text_prompt()
     elif task_type == tasks_config.TaskType.TEXT:
-        synth_data[scst.SEED] = random.randint(1, 1_000_000_000)
-        synth_data[scst.TEMPERATURE] = round(random.uniform(0, 1), 2)
+        synthetic_data[scst.SEED] = random.randint(1, 1_000_000_000)
+        synthetic_data[scst.TEMPERATURE] = round(random.uniform(0, 1), 2)
     elif task_type == tasks_config.TaskType.CLIP:
-        synth_model = base_models.ClipEmbeddingsIncoming(**synth_data)
+        synth_model = base_models.ClipEmbeddingsIncoming(**synthetic_data)
         synth_model_altered = qutils.alter_clip_body(synth_model)
-        synth_data = synth_model_altered.model_dump()
+        synthetic_data = synth_model_altered.model_dump()
+    else:
+        raise ValueError(f"Unknown task type: {task_type}")
 
-    return synth_data
+    return synthetic_data
