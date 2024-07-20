@@ -22,3 +22,13 @@ tasks:
   metagraph_sync_once:
     cmds:
       - docker-compose exec -e ENV=test metagraph_syncer python validator/metagraph_syncer/metagraph_syncer.py once
+    
+  dbmate-up:
+    cmds:
+      - docker-compose run --rm dbmate up
+  dbmate-down:
+    cmds:
+      - docker-compose run --rm dbmate down
+  dbmate-drop:
+    cmds: 
+      - docker-compose run --rm dbmate drop

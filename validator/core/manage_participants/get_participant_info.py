@@ -227,9 +227,8 @@ async def main(run_with_dummy: bool = True):
     psql_db = PSQLDB()
     await psql_db.connect()
     validator_config = config_models.ValidatorConfig()
-    config = configuration.prepare_validator_config_and_logging(validator_config)
     subtensor = None
-    metagraph = bt.metagraph(netuid=config.netuid, lite=True, sync=False)
+    dendrite = bt.dendrite()
     sync = True
 
     # Use below to control dummy data
@@ -238,8 +237,7 @@ async def main(run_with_dummy: bool = True):
     if run_with_dummy:
         dendrite, sync = set_for_dummy_run(metagraph)
     else:
-        wallet = bt.wallet(name=config.wallet_name, hotkey=config.hotkey_name)
-        dendrite = bt.dendrite(wallet=wallet)
+        
 
     await get_and_store_participant_info(
         psql_db, metagraph, subtensor, dendrite, validator_hotkey="test-vali", sync=sync
