@@ -10,7 +10,6 @@ from validator.utils import (
     participant_utils as putils,
     synthetic_utils as sutils,
     query_utils as qutils,
-    generic_utils as gutils,
 )
 from validator.utils import redis_constants as rcst
 from validator.query_node import utils

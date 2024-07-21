@@ -6,12 +6,13 @@ services:
     networks:
       - redis_network
     
-  redis-commander:
-    image: rediscommander/redis-commander:latest
-    environment:
-      - REDIS_HOSTS=local:redis:6379
+  redisinsight:
+    image: redislabs/redisinsight:1.14.0
+    container_name: redisinsight
     ports:
-      - "8081:8081"
+      - "8001:8001"
+    volumes:
+      - ./redisinsight-data:/db
     networks:
       - redis_network
     depends_on:
@@ -140,6 +141,21 @@ services:
       - postgres_network
       - redis_network
 
+  signing_service:
+    build:
+      context: .
+      dockerfile: dockerfiles/signing_service.dockerfile
+    depends_on:
+      - redis
+    volumes:
+      - ./validator/signing_service:/app/validator/signing_service
+      - ~/.bittensor:/root/.bittensor
+    # Below needs to be from config somehow
+    environment:
+      WALLET_NAME: new_test
+      HOTKEY_NAME: 1
+    networks:
+      - redis_network
 
 
 networks:
@@ -151,3 +167,4 @@ networks:
 volumes:
   postgres_data:
   pgadmin-data:
+  redisinsight:

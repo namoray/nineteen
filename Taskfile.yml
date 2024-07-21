@@ -22,6 +22,10 @@ tasks:
   metagraph_sync_once:
     cmds:
       - docker-compose exec -e ENV=test metagraph_syncer python validator/metagraph_syncer/metagraph_syncer.py once
+
+  signing_service:
+    cmds:
+      - docker-compose run --rm -e ENV=test signing_service  python validator/signing_service/signing_service.py
     
   dbmate-up:
     cmds:

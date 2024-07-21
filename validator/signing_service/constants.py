@@ -1,0 +1,10 @@
+SIGNING_QUEUE_KEY = "SIGNING_QUEUE"
+SIGNED_MESSAGE_KEY = "SIGNED_MESSAGE"
+DENDRITE_TYPE = "dendrite"
+WEIGHTS_TYPE = "weights"
+
+TYPE = "type"
+MESSAGE = "message"
+JOB_ID = "job_id"
+
+SIGNED_MESSAGE = "signed_message"

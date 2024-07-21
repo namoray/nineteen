@@ -1,0 +1,3 @@
+# Want to minimise dependencies here
+substrate-interface==1.7.10
+redis==5.0
