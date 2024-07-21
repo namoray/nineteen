@@ -7,6 +7,7 @@ So you can more accurately calculate your own volume
 from core import Task, tasks
 from core import constants as ccst
 from core.tasks_config import TaskType
+from core import tasks_config
 
 
 def calculate_volume_for_task(
@@ -14,20 +15,20 @@ def calculate_volume_for_task(
 ) -> int:
     vol_in_seconds = gpus_with_server_on * concurrent_requests_each_gpu_server_can_handle * ccst.SCORING_PERIOD_TIME
 
-    task_config = tasks.get_task_config(task)
+    scoring_config = tasks_config.TASK_TO_CONFIG[task].scoring_config
 
     # You can change this if you have better/worse hardware
-    mean = task_config.mean
+    mean = scoring_config.mean
 
     # In the case of llm, this will get the number of characters we can do
-    if task_config.task_type == TaskType.TEXT:
+    if scoring_config.task_type == TaskType.TEXT:
         vol_in_chars = vol_in_seconds / mean
         vol_in_tokens = vol_in_chars / 4
         vol = vol_in_tokens
-    elif task_config.task_type == TaskType.IMAGE:
+    elif scoring_config.task_type == TaskType.IMAGE:
         vol_in_steps = vol_in_seconds / mean
         vol = vol_in_steps
-    elif task_config.task_type == TaskType.CLIP:
+    elif scoring_config.task_type == TaskType.CLIP:
         vol_in_images = vol_in_seconds / mean
         vol = vol_in_images
 

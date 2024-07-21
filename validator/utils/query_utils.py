@@ -135,7 +135,7 @@ async def query_individual_axon_stream(
         axons=axon,
         synapse=synapse,
         connect_timeout=0.3,
-        response_timeout=5,  # if X seconds without any data, its boinked
+        response_timeout=qcst.OPERATION_TIMEOUTS.get(synapse_name, 5),  # if X seconds without any data, its boinked
         deserialize=deserialize,
         log_requests_and_responses=log_requests_and_responses,
         streaming=True,

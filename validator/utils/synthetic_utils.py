@@ -11,7 +11,7 @@ from validator.utils import (
 )
 from core import dataclasses as dc
 from redis.asyncio import Redis
-
+from models import synapses
 from core import bittensor_overrides as bt
 import base64
 from io import BytesIO
@@ -186,7 +186,11 @@ async def get_synthetic_data_version(redis_db: Redis, task: Task) -> float | Non
 
 # Takes anywhere from 1ms to 10ms
 async def fetch_synthetic_data_for_task(redis_db: Redis, task: Task) -> dict[str, Any]:
-    synthetic_data = await rutils.json_load_from_redis(redis_db, key=construct_synthetic_data_task_key(task))
+    synthetic_data = await rutils.json_load_from_redis(
+        redis_db, key=construct_synthetic_data_task_key(task), default=None
+    )
+    if synthetic_data is None:
+        raise ValueError(f"No synthetic data found for task: {task}")
 
     task_type = tasks_config.TASK_TO_CONFIG[task].scoring_config.task_type
     if task_type == tasks_config.TaskType.IMAGE:
@@ -202,10 +206,13 @@ async def fetch_synthetic_data_for_task(redis_db: Redis, task: Task) -> dict[str
     else:
         raise ValueError(f"Unknown task type: {task_type}")
 
-    return synthetic_data
+    return convert_synthetic_data_to_synapse(synthetic_data, task)
 
 
 def convert_synthetic_data_to_synapse(synthetic_data: dict[str, Any], task: Task) -> bt.Synapse:
     # dynamically get synapse from models.synapses using the task
-    synapse = tasks_config.TASK_TO_CONFIG[task].synapse
+    synapse_name = tasks_config.TASK_TO_CONFIG[task].synapse
+
+    synapse = getattr(synapses, synapse_name)
+    logger.debug(f"Synapse name for task  {task} is {synapse_name}. synapse is: {synapse}.")
     return synapse(**synthetic_data)

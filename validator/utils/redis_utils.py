@@ -27,7 +27,7 @@ async def delete_key_from_redis(redis_db: Redis, key: str) -> None:
     await redis_db.delete(key)
 
 
-async def json_load_from_redis(redis_db: Redis, key: str, default: Any = {}) -> Dict[Any, Any]:
+async def json_load_from_redis(redis_db: Redis, key: str, default: Any) -> Dict[Any, Any]:
     raw_json = await redis_db.get(key)
     if raw_json is None:
         json_obj = default

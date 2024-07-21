@@ -8,7 +8,6 @@ from validator.utils import query_utils as qutils
 from core import tasks_config as tcfg
 from core import constants as ccst
 from collections import defaultdict
-from core import tasks
 from core import Task
 
 from core import bittensor_overrides as bt
@@ -117,12 +116,8 @@ async def _store_all_participants_in_db(
 
 
 def calculate_synthetic_query_parameters(task: Task, declared_volume: float):
-    assert (
-        task in tasks.TASK_TO_VOLUME_TO_REQUESTS_CONVERSION
-    ), f"Task {task} not in TASK_TO_VOLUME_CONVERSION, it will not be scored. This should not happen."
-
     volume_to_score = declared_volume * _get_percentage_of_tasks_to_score()
-    volume_to_requests_conversion = tasks.TASK_TO_VOLUME_TO_REQUESTS_CONVERSION[task]
+    volume_to_requests_conversion = tcfg.TASK_TO_CONFIG[task].volume_to_requests_conversion
     number_of_requests_to_make = max(int(volume_to_score / volume_to_requests_conversion), 1)
     delay_between_requests = (ccst.SCORING_PERIOD_TIME * 0.98) // (number_of_requests_to_make)
 

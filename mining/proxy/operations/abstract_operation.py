@@ -4,12 +4,12 @@ from typing import Any, Tuple, TypeVar
 from core import bittensor_overrides as bt
 from fastapi.responses import JSONResponse
 
-from core import tasks
 from mining.proxy import utils
 from mining.proxy import core_miner
 from mining.proxy.core_miner import miner_requests_stats
 from config.miner_config import config as config
 from functools import wraps
+from core.tasks import tasks_config
 
 T = TypeVar("T", bound=bt.Synapse)
 
@@ -20,18 +20,15 @@ operation_name = "Operation"
 class Operation(core_miner.CoreMiner):
     @staticmethod
     @abc.abstractmethod
-    async def forward(synapse: Any) -> Any:
-        ...
+    async def forward(synapse: Any) -> Any: ...
 
     @staticmethod
     @abc.abstractmethod
-    def blacklist(synapse: Any) -> Tuple[bool, str]:
-        ...
+    def blacklist(synapse: Any) -> Tuple[bool, str]: ...
 
     @staticmethod
     @abc.abstractmethod
-    def priority(synapse: Any) -> float:
-        ...
+    def priority(synapse: Any) -> float: ...
 
 
 def enforce_concurrency_limits(func):
@@ -41,9 +38,9 @@ def enforce_concurrency_limits(func):
         Applies concurrency limits to the operations
         """
 
-        task = tasks.get_task_from_synapse(synapse)
+        task = utils.get_task_from_synapse(synapse)
         task_value = task.value if task is not None else None
-        task_is_stream = tasks.TASK_IS_STREAM.get(task, False)
+        task_is_stream = tasks_config.TASK_TO_CONFIG[task].is_stream
 
         capacity_config = utils.load_capacities(config.hotkey_name)
         concurrency_groups = utils.load_concurrency_groups(config.hotkey_name)
