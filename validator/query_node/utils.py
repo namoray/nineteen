@@ -4,12 +4,16 @@ import time
 from typing import Any, AsyncIterator, Dict, List, Optional, Union
 from pydantic import BaseModel, ValidationError
 from core import Task
+from core.bittensor_overrides.chain_data import AxonInfo
 from models import base_models, utility_models
 from validator.models import Participant, AxonUID
 from core import bittensor_overrides as bt
 from collections import OrderedDict
 import json
 from validator.utils import query_utils as qutils
+from core.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 class UIDQueue:
@@ -98,24 +102,24 @@ async def _get_debug_text_generator():
 
 
 async def query_miner_stream(
-    participant: Participant,
+    axon: AxonInfo,
     synapse: bt.Synapse,
     task: Task,
     dendrite: bt.dendrite,
     synthetic_query: bool,
     debug: bool = False,
 ) -> AsyncIterator[str]:
-    axon_uid = participant.miner_hotkey
+    axon_uid = axon.axon_uid
 
     if debug:
         text_generator = _get_debug_text_generator()
         async for text in text_generator:
             yield text
     else:
-        # text_generator = await query_individual_axon_stream(
-        #     synapse=synapse, dendrite=dendrite, axon=axon, axon_uid=axon_uid, log_requests_and_responses=False
-        # )
-        ...
+        text_generator = await qutils.query_individual_axon_stream(
+            synapse=synapse, dendrite=dendrite, axon=axon, axon_uid=axon_uid, log_requests_and_responses=False
+        )
+
         time1 = time.time()
         text_jsons = []
         status_code = 200
@@ -132,7 +136,7 @@ async def query_miner_stream(
                             break
 
                     except (IndexError, json.JSONDecodeError) as e:
-                        bt.logging.warning(f"Error {e} when trying to load text: {text}")
+                        logger.warning(f"Error {e} when trying to load text: {text}")
                         break
 
                     text_jsons.extend(loaded_jsons)
@@ -148,7 +152,7 @@ async def query_miner_stream(
                 last_payload = _get_formatted_payload("", False, add_finish_reason=True)
                 yield f"data: {last_payload}\n\n"
                 yield "data: [DONE]\n\n"
-                bt.logging.info(f"✅ Successfully queried axon: {axon_uid} for task: {task}")
+                logger.info(f"✅ Successfully queried axon: {axon_uid} for task: {task}")
 
             response_time = time.time() - time1
             query_result = utility_models.QueryResult(
@@ -157,7 +161,7 @@ async def query_miner_stream(
                 response_time=response_time,
                 task=task,
                 success=not first_message,
-                miner_hotkey=participant.miner_hotkey,
+                miner_hotkey=axon.hotkey,
                 status_code=status_code,
                 error_message=error_message,
             )

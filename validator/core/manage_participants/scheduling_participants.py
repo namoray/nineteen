@@ -109,10 +109,14 @@ async def main():
     psql_db = PSQLDB()
 
     run_once = os.getenv("RUN_ONCE", "true").lower() == "true"
+    test = os.getenv("ENV", "prod").lower() == "test"
     await psql_db.connect()
 
     await run_schedule_processor(redis_db, run_once=run_once)
     await schedule_synthetic_queries_for_all_participants(psql_db, redis_db)
+    if test:
+        logger.debug("Sleeping for a few secs to let some synthetics build up...")
+        await asyncio.sleep(3)
     await run_schedule_processor(redis_db, run_once=run_once)
 
 

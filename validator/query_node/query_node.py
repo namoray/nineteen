@@ -21,7 +21,7 @@ DEBUG = os.getenv("ENV", "prod") != "prod"
 JOB_TIMEOUT = 300
 
 
-# TODO: Better handle storing jobs as each participant will do *many*. the redis stuff isnt ideal here
+# TODO: Better handle storing the status of jobs, as each participant will do *many* jobs. the redis stuff isnt ideal here
 async def process_job(redis_db: Redis, psql_db: PSQLDB, dendrite: bt.dendrite, job_data):
     # Add separate handling for organics and synthetics
     participant_id = job_data["query_payload"]["participant_id"]
@@ -96,7 +96,8 @@ async def run_worker(redis_db: Redis, psql_db: PSQLDB, dendrite: bt.dendrite, qu
     logger.debug("Starting worker")
     try:
         heartbeat_task = asyncio.create_task(heartbeat(redis_db))
-        await asyncio.gather(worker_loop(redis_db, psql_db, dendrite), heartbeat_task)
+        worker_task = asyncio.create_task(worker_loop(redis_db, psql_db, dendrite))
+        await asyncio.gather(worker_task, heartbeat_task)
     except asyncio.CancelledError:
         logger.info("Worker cancelled")
     except Exception as e:
@@ -113,9 +114,11 @@ async def main():
     redis_db = Redis(host="redis")
     psql_db = PSQLDB()
     await psql_db.connect()
+
     dendrite = bt.dendrite()
     logger.warning("Starting worker")
     queue_name = rcst.SYNTHETIC_DATA_KEY
+
     await run_worker(redis_db, psql_db, dendrite, queue_name)
 
 

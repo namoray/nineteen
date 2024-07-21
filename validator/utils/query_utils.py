@@ -116,3 +116,28 @@ async def query_individual_axon(
             streaming=False,
         )
     return response, time.time() - start_time
+
+
+async def query_individual_axon_stream(
+    dendrite: bt.dendrite,
+    axon: AxonInfo,
+    axon_uid: int,
+    synapse: bt.Synapse,
+    deserialize: bool = False,
+    log_requests_and_responses: bool = True,
+):
+    synapse_name = synapse.__class__.__name__
+    if synapse_name not in qcst.OPERATION_TIMEOUTS:
+        logger.warning(f"Operation {synapse_name} not in operation_to_timeout, this is probably a mistake / bug 🐞")
+    if log_requests_and_responses:
+        logger.info(f"Querying axon {axon_uid} for {synapse_name}")
+    response = await dendrite.forward(
+        axons=axon,
+        synapse=synapse,
+        connect_timeout=0.3,
+        response_timeout=5,  # if X seconds without any data, its boinked
+        deserialize=deserialize,
+        log_requests_and_responses=log_requests_and_responses,
+        streaming=True,
+    )
+    return response

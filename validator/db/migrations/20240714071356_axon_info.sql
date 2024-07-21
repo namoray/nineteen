@@ -6,7 +6,7 @@ CREATE TABLE axon_info (
     ip TEXT NOT NULL,
     port INTEGER NOT NULL,
     ip_type INTEGER NOT NULL,
---  Extras to axon info by us
+    --  Extras to axon info by us
     axon_uid INTEGER NOT NULL,
     incentive FLOAT,
     netuid INTEGER NOT NULL,
@@ -14,6 +14,8 @@ CREATE TABLE axon_info (
     stake FLOAT NOT NULL,
     created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC')
 );
+
+CREATE INDEX idx_axon_info_netuid ON axon_info(netuid);
 
 -- migrate:down
 DROP TABLE IF EXISTS axon_info;

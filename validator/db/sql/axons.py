@@ -103,3 +103,8 @@ async def get_axon_stakes(psql_db: PSQLDB) -> dict[str, float]:
     hotkey_to_stake = {axon[dcst.HOTKEY]: axon[dcst.STAKE] for axon in axons}
 
     return hotkey_to_stake
+
+async def get_axon(psql_db: PSQLDB, hotkey: str, netuid: int) -> chain_data.AxonInfo:
+    axons = await psql_db.fetchall(
+        
+    )
