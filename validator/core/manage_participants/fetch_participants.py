@@ -30,8 +30,9 @@ def _get_percentage_of_tasks_to_score():
 async def _get_validator_stake_proportion(
     psql_db: PSQLDB,
     validator_hotkey: str,
+    netuid: int,
 ):
-    hotkey_to_stake = await sql.get_axon_stakes(psql_db)
+    hotkey_to_stake = await sql.get_axon_stakes(psql_db, netuid)
 
     return hotkey_to_stake[validator_hotkey] / sum(hotkey_to_stake.values())
 
@@ -147,7 +148,7 @@ async def get_and_store_participant_info(
 ):
     capacities_for_tasks = await _fetch_available_capacities_for_each_axon(psql_db, dendrite, netuid)
 
-    validator_stake_proportion = await _get_validator_stake_proportion(psql_db, validator_hotkey)
+    validator_stake_proportion = await _get_validator_stake_proportion(psql_db, validator_hotkey, netuid)
 
     await _store_all_participants_in_db(psql_db, capacities_for_tasks, validator_hotkey, validator_stake_proportion)
 
@@ -158,7 +159,7 @@ async def main():
     await psql_db.connect()
     dendrite = bt.dendrite()
 
-    netuid = os.getenv("NETUID", 19)
+    netuid = int(os.getenv("NETUID", 19))
 
     await get_and_store_participant_info(psql_db, dendrite, validator_hotkey="test-vali", netuid=netuid)
 

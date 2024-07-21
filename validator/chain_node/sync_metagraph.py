@@ -133,13 +133,14 @@ async def main():
     psql_db = PSQLDB()
     await psql_db.connect()
     subtensor = None
+    netuid = int(os.getenv("NETUID", 19))
+    dummy = os.getenv("DUMMY", "true").lower() == "true"
+    run_once = os.getenv("RUN_ONCE", "true").lower() == "true"
     metagraph = bt.metagraph(
-        netuid=os.getenv("NETUID", 19), network=os.getenv("NETWORK", "finney"), lite=True, sync=False
+        netuid=netuid, network=os.getenv("NETWORK", "finney"), lite=True, sync=False
     )
     sync = True
 
-    dummy = os.getenv("DUMMY", "true").lower() == "true"
-    run_once = os.getenv("RUN_ONCE", "true").lower() == "true"
     seconds_between_syncs = int(os.getenv("SECONDS_BETWEEN_SYNCS", 60 * 20))
 
     logger.warning(
