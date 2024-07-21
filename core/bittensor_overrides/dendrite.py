@@ -311,28 +311,31 @@ class dendrite:
 
         # TODO: review why I need to add my ip here, and TerminalInfo??
 
-        # synapse.dendrite = bt.TerminalInfo(
-        #     ip=bt.networking.get_external_ip(),
-        #     version=bt.__version_as_int__,
-        #     nonce=time.monotonic_ns(),
-        #     uuid=self.uuid,
-        #     hotkey="5Hddm3iBFD2GLT5ik7LZnT3XJUnRnN8PoeCFgGQgawUVKNm8",
-        # )
+        synapse.dendrite = bt.TerminalInfo(
+            ip=bt.networking.get_external_ip(),
+            version=bt.__version_as_int__,
+            nonce=time.monotonic_ns(),
+            uuid=self.uuid,
+            hotkey="5Hddm3iBFD2GLT5ik7LZnT3XJUnRnN8PoeCFgGQgawUVKNm8",
+        )
 
-        # # Build the Axon headers using the target axon's details
-        # synapse.axon = bt.TerminalInfo(
-        #     ip=target_axon_info.ip,
-        #     port=target_axon_info.port,
-        #     hotkey=target_axon_info.hotkey,
-        # )
+        # Build the Axon headers using the target axon's details
+        synapse.axon = bt.TerminalInfo(
+            ip=target_axon_info.ip,
+            port=target_axon_info.port,
+            hotkey=target_axon_info.hotkey,
+        )
 
         # Sign the request using the dendrite, axon info, and the synapse body hash
         # check the below values for htkey, axon hotkey, and stuff
         message = f"{synapse.dendrite.nonce}.{synapse.dendrite.hotkey}.{synapse.axon.hotkey}.{synapse.dendrite.uuid}.{synapse.body_hash}"  # noqa
 
-        signed_message = await self._sign_mesage(message)
+        logger.debug(f"message {message}")
+        signature = await self._sign_mesage(message)
 
-        synapse.dendrite.signature = signed_message
+        synapse.dendrite.signature = signature
+
+        logger.debug(f"signature {synapse.dendrite.signature}")
 
         return synapse
 
