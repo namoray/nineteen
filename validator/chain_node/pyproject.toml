@@ -3,14 +3,14 @@ requires = ["setuptools>=45", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "metagraph_syncer"
+name = "chain_node"
 version = "1.0.0"
-description = "Syncs metagraph every X minutes"
+description = "Interacts with the chain - without holding any private key information"
 dynamic = ["dependencies"]
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["metagraph_syncer*"]
+include = ["chain_node*"]
 
 [tool.setuptools.dynamic]
 dependencies = { file = ["requirements.txt"] }

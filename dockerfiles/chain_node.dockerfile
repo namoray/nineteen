@@ -9,7 +9,7 @@ RUN pip install --no-cache-dir -e .
 
 # Install query_node service
 COPY validator /app/validator
-WORKDIR /app/validator/metagraph_syncer
+WORKDIR /app/validator/chain_node
 RUN pip install --no-cache-dir -e .
 
 # Copy models and config
@@ -22,4 +22,5 @@ WORKDIR /app
 # Set PYTHONPATH to include /app
 ENV PYTHONPATH=/app:$PYTHONPATH
 
-CMD ["python3.11", "/app/validator/metagraph_syncer/metagraph_syncer.py"]
+
+CMD ["python", "-u", "/app/validator/chain_node/main.py"]

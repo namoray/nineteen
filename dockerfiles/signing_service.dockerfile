@@ -14,3 +14,4 @@ WORKDIR /app
 # Set PYTHONPATH to include /app
 ENV PYTHONPATH=/app:$PYTHONPATH
 
+CMD ["python", "-u", "/app/validator/signing_service/main.py"]

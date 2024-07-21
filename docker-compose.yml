@@ -5,14 +5,13 @@ services:
       - "6379:6379"
     networks:
       - redis_network
-    
-  redisinsight:
-    image: redislabs/redisinsight:1.14.0
-    container_name: redisinsight
+
+  redis-commander:
+    image: ghcr.io/joeferner/redis-commander:latest
+    environment:
+      - REDIS_HOSTS=local:redis:6379
     ports:
-      - "8001:8001"
-    volumes:
-      - ./redisinsight-data:/db
+      - '8081:8081'
     networks:
       - redis_network
     depends_on:
@@ -100,16 +99,19 @@ services:
       POSTGRES_PORT: 5432
       POSTGRES_NAME: mydb
 
-  metagraph_syncer:
+  chain_node:
     build:
       context: .
-      dockerfile: dockerfiles/metagraph_syncer.dockerfile
+      dockerfile: dockerfiles/chain_node.dockerfile
     depends_on:
       - postgresql
+      - redis
+      - signing_service
     volumes:
       - .:/app
     networks:
       - postgres_network
+      - redis_network
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
@@ -119,7 +121,7 @@ services:
       RUN_ONCE: false
       DUMMY: true
       SECONDS_BETWEEN_SYNC: 120
-    entrypoint: ["python3.11", "/app/validator/metagraph_syncer/metagraph_syncer.py"]
+    entrypoint: ["python", "-u", "/app/validator/chain_node/main.py"]
 
 
   core_validator:
@@ -140,6 +142,7 @@ services:
     networks:
       - postgres_network
       - redis_network
+    entrypoint: ["python", "-u", "/app/validator/core/main.py"]
 
   signing_service:
     build:
@@ -156,6 +159,7 @@ services:
       HOTKEY_NAME: 1
     networks:
       - redis_network
+    entrypoint: ["python", "-u", "/app/validator/signing_service/main.py"]
 
 
 networks:
@@ -167,4 +171,4 @@ networks:
 volumes:
   postgres_data:
   pgadmin-data:
-  redisinsight:
+

@@ -16,17 +16,22 @@ tasks:
   metagraph_sync:
     cmds:
       - >
-        docker-compose exec -e ENV=test -e RUN_ONCE=false {{.CLI_ARGS}} metagraph_syncer
-        python validator/metagraph_syncer/metagraph_syncer.py
+        docker-compose exec -e ENV=test -e RUN_ONCE=false {{.CLI_ARGS}} chain_node
+        python validator/chain_node/sync_metagraph.py
 
   metagraph_sync_once:
     cmds:
-      - docker-compose exec -e ENV=test metagraph_syncer python validator/metagraph_syncer/metagraph_syncer.py once
+      - docker-compose exec -e ENV=test  -e RUN_ONCE=true chain_node python validator/chain_node/sync_metagraph.py
 
-  sign_dendrite_messages:
+  test_sign_dendrite_message:
     cmds:
-      - docker-compose run --rm -e ENV=test signing_service  python validator/signing_service/dendrite.py
-
+      - docker-compose run --rm -e ENV=test -e RUN_ONCE=true signing_service  python validator/signing_service/dendrite.py
+  test_keypair:
+    cmds:
+      - docker-compose exec -e ENV=test chain_node  python validator/chain_node/keypair.py
+  test_weight_set:
+    cmds:
+      - docker-compose exec -e ENV=test chain_node  python validator/chain_node/set_weights.py
   dbmate-up:
     cmds:
       - docker-compose run --rm dbmate up

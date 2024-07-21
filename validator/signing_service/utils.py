@@ -6,7 +6,7 @@ from validator.signing_service import constants as cst
 from substrateinterface import Keypair
 import random
 import time
-
+from dataclasses import dataclass
 
 ANSI_COLOR_CODES = {
     "$BLUE": "\033[34m",
@@ -56,10 +56,16 @@ def get_logger(name: str) -> logging.Logger:
 logger = get_logger(__name__)
 
 
-logging_logger = logging.getLogger(__name__)
-
-
-def retry(f, exceptions=Exception, tries=-1, delay=0, max_delay=None, backoff=1, jitter=0, logger=logging_logger):
+def retry(
+    f,
+    logger,
+    exceptions=Exception,
+    tries=-1,
+    delay=0,
+    max_delay=None,
+    backoff=1,
+    jitter=0,
+):
     """
     Executes a function and retries it if it failed.
 
@@ -99,12 +105,34 @@ def retry(f, exceptions=Exception, tries=-1, delay=0, max_delay=None, backoff=1,
                 _delay = min(_delay, max_delay)
 
 
+def format_weights_error_message(error_message: dict) -> str:
+    """
+    Formats an error message from the Subtensor error information to using in extrinsics.
+
+    Args:
+        error_message (dict): A dictionary containing the error information from Subtensor.
+
+    Returns:
+        str: A formatted error message string.
+    """
+    err_type = "UnknownType"
+    err_name = "UnknownError"
+    err_description = "Unknown Description"
+
+    if isinstance(error_message, dict):
+        err_type = error_message.get("type", err_type)
+        err_name = error_message.get("name", err_name)
+        err_docs = error_message.get("docs", [])
+        err_description = err_docs[0] if len(err_docs) > 0 else err_description
+    return f"Subtensor returned `{err_name} ({err_type})` error. This means: `{err_description}`"
+
+
 def construct_wallet_path(wallet_name: str, hotkey_name: str) -> str:
     return f"/root/.bittensor/wallets/{wallet_name}/hotkeys/{hotkey_name}"
 
 
 def construct_signed_message_key(job_id: str) -> str:
-    return f"{cst.SIGNED_MESSAGE_KEY}:{job_id}"
+    return f"{cst.SIGNED_MESSAGES_KEY}:{job_id}"
 
 
 def load_keypair_from_file(file_path: str):
@@ -116,3 +144,10 @@ def load_keypair_from_file(file_path: str):
         return keypair
     except Exception as e:
         raise ValueError(f"Failed to load keypair: {str(e)}")
+
+@dataclass
+class PublicKeypairInfo:
+    ss58_address: str
+    ss58_format: int
+    crypto_type: str
+    public_key: str
