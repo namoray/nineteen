@@ -111,16 +111,24 @@ async def query_miner_stream(
 ) -> AsyncIterator[str]:
     axon_uid = axon.axon_uid
 
-    logger.debug(f"Querying axon {axon_uid} for a stream, and task: {task}. Debug: {debug}. Synthetic: {synthetic_query}.")
+    logger.debug(
+        f"Querying axon {axon_uid} for a stream, and task: {task}. Debug: {bool(debug)}. Synthetic: {synthetic_query}."
+    )
 
     if debug:
         text_generator = _get_debug_text_generator()
         async for text in text_generator:
             yield text
     else:
+        logger.debug("getting axon stream")
         text_generator = await qutils.query_individual_axon_stream(
             synapse=synapse, dendrite=dendrite, axon=axon, axon_uid=axon_uid, log_requests_and_responses=False
         )
+
+        logger.debug(f"Text generator: {text_generator}")
+        async for text in text_generator:
+            logger.info(f"Text: {text}")
+        logger.info("emptied text!")
 
         time1 = time.time()
         text_jsons = []
@@ -157,6 +165,7 @@ async def query_miner_stream(
                 logger.info(f"✅ Successfully queried axon: {axon_uid} for task: {task}")
 
             response_time = time.time() - time1
+            logger.debug(f"Got query result!. Success: {not first_message}. Response time: {response_time}")
             query_result = utility_models.QueryResult(
                 formatted_response=text_jsons if len(text_jsons) > 0 else None,
                 axon_uid=axon_uid,

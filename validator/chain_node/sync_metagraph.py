@@ -134,7 +134,7 @@ async def main():
     await psql_db.connect()
     subtensor = None
     netuid = int(os.getenv("NETUID", 19))
-    dummy = os.getenv("DUMMY", "true").lower() == "true"
+    test_env = os.getenv("ENV", "test").lower() == "test"
     run_once = os.getenv("RUN_ONCE", "true").lower() == "true"
     metagraph = bt.metagraph(
         netuid=netuid, network=os.getenv("NETWORK", "finney"), lite=True, sync=False
@@ -147,7 +147,7 @@ async def main():
         f"run_once: {run_once}",
     )
 
-    if dummy:
+    if test_env:
         sync = set_for_dummy_run(metagraph)
 
     await get_and_store_metagraph_info(

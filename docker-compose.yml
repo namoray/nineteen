@@ -153,6 +153,7 @@ services:
     volumes:
       - ./validator/signing_service:/app/validator/signing_service
       - ~/.bittensor:/root/.bittensor
+      
     # Below needs to be from config somehow
     environment:
       WALLET_NAME: new_test

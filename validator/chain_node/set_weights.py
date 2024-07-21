@@ -6,7 +6,7 @@ import time
 from redis.asyncio import Redis
 from redis import Redis as SyncRedis
 import numpy as np
-from validator.utils import redis_constants as rcst
+from validator.utils import redis_constants as rcst, generic_utils as gutils
 from validator.chain_node.keypair import RedisGappedKeypair
 from core.logging import get_logger
 import bittensor as bt
@@ -14,15 +14,6 @@ from validator.utils import redis_dataclasses as rdc
 from bittensor.utils import weight_utils
 
 logger = get_logger(__name__)
-
-
-async def get_public_keypair_info(redis_db: Redis) -> rdc.PublicKeypairInfo:
-    logger.info("Getting public key config from Redis...")
-    info = await redis_db.get(rcst.PUBLIC_KEYPAIR_INFO_KEY)
-    if info is None:
-        raise RuntimeError("Could not get public key config from Redis")
-    logger.info("Got public key config from Redis!")
-    return rdc.PublicKeypairInfo(**json.loads(info))
 
 
 MAX_ATTEMPTS = 10
@@ -91,7 +82,7 @@ async def poll_for_weights_then_set(
 async def main():
     redis_db = Redis(host="redis")
     sync_redis = SyncRedis(host="redis")
-    public_keypair_info = await get_public_keypair_info(redis_db)
+    public_keypair_info = await gutils.get_public_keypair_info(redis_db)
     keypair = RedisGappedKeypair(
         redis_db=sync_redis,
         ss58_address=public_keypair_info.ss58_address,

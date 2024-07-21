@@ -9,12 +9,12 @@ from core import tasks_config as tcfg
 from core import constants as ccst
 from collections import defaultdict
 from core import Task
-
+from redis.asyncio import Redis
 from core import bittensor_overrides as bt
 from models import base_models, synapses
 from validator.db import sql
 from core.logging import get_logger
-
+from validator.utils import generic_utils as gutils
 
 logger = get_logger(__name__)
 
@@ -32,6 +32,9 @@ async def _get_validator_stake_proportion(
     netuid: int,
 ):
     hotkey_to_stake = await sql.get_axon_stakes(psql_db, netuid)
+
+    if validator_hotkey not in hotkey_to_stake:
+        raise Exception(f"Hotkey {validator_hotkey} not found in stake info in the db.")
 
     return hotkey_to_stake[validator_hotkey] / sum(hotkey_to_stake.values())
 
@@ -150,13 +153,24 @@ async def get_and_store_participant_info(
 
 async def main():
     # Remember to export ENV=test
-    psql_db = PSQLDB()
-    await psql_db.connect()
-    dendrite = bt.dendrite()
+    try:
+        psql_db = PSQLDB()
+        await psql_db.connect()
+        redis_db = Redis(host="redis")
+        dendrite = bt.dendrite(redis_db)
 
-    netuid = int(os.getenv("NETUID", 19))
+        public_keypair_info = await gutils.get_public_keypair_info(redis_db)
 
-    await get_and_store_participant_info(psql_db, dendrite, validator_hotkey="test-vali", netuid=netuid)
+        netuid = int(os.getenv("NETUID", 19))
+
+        await get_and_store_participant_info(
+            psql_db, dendrite, validator_hotkey=public_keypair_info.ss58_address, netuid=netuid
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error in fetching participants: {str(e)}")
+        await psql_db.close()
+        await redis_db.aclose()
+        raise e
 
 
 if __name__ == "__main__":

@@ -1,3 +1,4 @@
+"""TODO: Move this out from the main validator"""
 import asyncio
 import json
 from substrateinterface import Keypair

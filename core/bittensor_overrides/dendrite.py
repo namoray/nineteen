@@ -1,34 +1,72 @@
 import asyncio
-import os
+import json
 import time
 from typing import Any, AsyncGenerator, Union
 import uuid
 
 import aiohttp
-import httpx
-from pydantic import BaseModel
+from redis.asyncio import Redis
 from core import bittensor_overrides as bt
 from core.logging import get_logger
+from dataclasses import dataclass
+import base64
 
 logger = get_logger(__name__)
 
+### NOTE: This is repeated throughout, how to better organise?
+SIGNING_WEIGHTS_QUEUE_KEY = "SIGNING_WEIGHTS_QUEUE"
+SIGNED_MESSAGES_KEY = "SIGNED_MESSAGES"
 
-class SigningResponse(BaseModel):
+
+@dataclass
+class SigningPayload:
+    message: bytes | str
+    job_id: str
+    is_b64encoded: bool
+
+    def to_dict(self):
+        if isinstance(self.message, bytes):
+            return {
+                "message": base64.b64encode(self.message).decode("utf-8"),
+                "job_id": self.job_id,
+                "is_b64encoded": True,
+            }
+        elif isinstance(self.message, str):
+            return {"message": self.message, "job_id": self.job_id, "is_b64encoded": False}
+        else:
+            raise TypeError("message must be either bytes or str")
+
+    @classmethod
+    def from_dict(cls, data):
+        is_b64encoded = data["is_b64encoded"]
+        message = data["message"]
+        if is_b64encoded:
+            message = base64.b64decode(message)
+        return cls(message=message, job_id=data["job_id"], is_b64encoded=is_b64encoded)
+
+
+@dataclass
+class SignedPayload:
     signature: str
+    job_id: str
+
+
+def _construct_signed_message_key(job_id: str) -> str:
+    return f"{SIGNED_MESSAGES_KEY}:{job_id}"
+
+
+### END OF NOTE
 
 
 class dendrite:
-    def __init__(self):
+    def __init__(self, redis_db: Redis) -> None:
         # Unique identifier for the instance
         self.uuid = str(uuid.uuid1())
 
         self.synapse_history: list = []
 
         self._session: aiohttp.ClientSession | None = None
-        self._httpx_client: httpx.AsyncClient | None = None
-        self._signing_headers = {
-            "Authorization": os.getenv("SIGNING_API_KEY"),
-        }
+        self.redis_db = redis_db
 
     @property
     async def session(self) -> aiohttp.ClientSession:
@@ -36,20 +74,20 @@ class dendrite:
             self._session = aiohttp.ClientSession()
         return self._session
 
-    @property
-    async def httpx_client(self) -> httpx.AsyncClient:
-        if self._httpx_client is None:
-            self._httpx_client = httpx.AsyncClient(timeout=10)
-        return self._httpx_client
-
-    async def _sign_mesage(self, message: str):
-        response = await (await self.httpx_client).post(
-            "https://signing-service.onrender.com/endpoints/sign_payload",
-            json={"message": message},
-            headers=self._signing_headers,
+    async def _sign_mesage(self, message: str) -> str:
+        job_id = str(uuid.uuid4())
+        await self.redis_db.rpush(
+            SIGNING_WEIGHTS_QUEUE_KEY,
+            json.dumps(SigningPayload(message=message, job_id=job_id, is_b64encoded=False).to_dict()),
         )
 
-        return response.json()["signature"]
+        job_results_key = _construct_signed_message_key(job_id)
+
+        _, payload_raw = await self.redis_db.blpop(job_results_key, 10)
+
+        payload = SignedPayload(**json.loads(payload_raw))
+
+        return payload.signature
 
     def _log_outgoing_request(self, synapse: bt.Synapse):
         logger.info(
@@ -65,9 +103,6 @@ class dendrite:
         if self._session:
             await self._session.close()
             self._session = None
-        if self._httpx_client:
-            await self._httpx_client.aclose()
-            self._httpx_client = None
 
     def _get_endpoint_url(self, target_axon: bt.axon, request_name: str) -> str:
         endpoint = f"{target_axon.ip}:{str(target_axon.port)}"
@@ -109,7 +144,7 @@ class dendrite:
     async def call_stream(
         self,
         target_axon: Union[bt.AxonInfo, bt.axon],
-        synapse: bt.Synapse = bt.Synapse(),
+        synapse: bt.StreamingSynapse,
         connect_timeout: float = 2.0,
         response_timeout: float = 3.0,
         deserialize: bool = True,
@@ -147,7 +182,7 @@ class dendrite:
             async with (await self.session).post(
                 url,
                 headers=synapse.to_headers(),
-                json=synapse.dict(),
+                json=synapse.model_dump(),
                 timeout=timeout_settings,
             ) as response:
                 # Use synapse subclass' process_streaming_response method to yield the response chunks
@@ -244,7 +279,7 @@ class dendrite:
 
         finally:
             # Log synapse event history
-            self.synapse_history.append(bt.Synapse.from_headers(synapse.to_headers()))
+            # self.synapse_history.append(bt.Synapse.from_headers(synapse.to_headers()))
 
             # Return the updated synapse object after deserializing if requested
             if deserialize:
@@ -269,25 +304,24 @@ class dendrite:
         # Set the timeout for the synapse
         synapse.timeout = response_timeout
 
-        # TODO: overwrite
-        return synapse
-
         # Build the Dendrite headers using the local system's details
-        # TODO: review why I need to add my ip here, and TerminalInfo??
-        synapse.dendrite = bt.TerminalInfo(
-            ip=bt.networking.get_external_ip(),
-            version=bt.__version_as_int__,
-            nonce=time.monotonic_ns(),
-            uuid=self.uuid,
-            hotkey="5Hddm3iBFD2GLT5ik7LZnT3XJUnRnN8PoeCFgGQgawUVKNm8",
-        )
 
-        # Build the Axon headers using the target axon's details
-        synapse.axon = bt.TerminalInfo(
-            ip=target_axon_info.ip,
-            port=target_axon_info.port,
-            hotkey=target_axon_info.hotkey,
-        )
+        # TODO: review why I need to add my ip here, and TerminalInfo??
+
+        # synapse.dendrite = bt.TerminalInfo(
+        #     ip=bt.networking.get_external_ip(),
+        #     version=bt.__version_as_int__,
+        #     nonce=time.monotonic_ns(),
+        #     uuid=self.uuid,
+        #     hotkey="5Hddm3iBFD2GLT5ik7LZnT3XJUnRnN8PoeCFgGQgawUVKNm8",
+        # )
+
+        # # Build the Axon headers using the target axon's details
+        # synapse.axon = bt.TerminalInfo(
+        #     ip=target_axon_info.ip,
+        #     port=target_axon_info.port,
+        #     hotkey=target_axon_info.hotkey,
+        # )
 
         # Sign the request using the dendrite, axon info, and the synapse body hash
         # check the below values for htkey, axon hotkey, and stuff
@@ -394,7 +428,7 @@ class dendrite:
                     # If in streaming mode, return the async_generator
                     return self.call_stream(
                         target_axon=target_axon,
-                        synapse=synapse.copy(),  # type: ignore
+                        synapse=synapse.model_copy(),  # type: ignore
                         response_timeout=response_timeout,
                         connect_timeout=connect_timeout,
                         log_requests_and_responses=log_requests_and_responses,
@@ -419,15 +453,6 @@ class dendrite:
         responses = await query_all_axons(streaming)
         # Return the single response if only one axon was targeted, else return all responses
         return responses[0] if len(responses) == 1 and not is_list else responses  # type: ignore
-
-    def __str__(self) -> str:
-        """
-        Returns a string representation of the Dendrite object.
-
-        Returns:
-            str: The string representation of the Dendrite object in the format :func:`dendrite(<user_wallet_address>)`.
-        """
-        return "dendrite({})".format(self.keypair.ss58_address)
 
     def __repr__(self) -> str:
         """

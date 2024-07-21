@@ -4,7 +4,8 @@ import os
 import traceback
 import uuid
 from redis.asyncio import Redis
-from core import Task, bittensor_overrides as bt
+from core import bittensor_overrides as bt
+from core import tasks_config as tcfg
 from validator.db.database import PSQLDB
 from validator.db import sql
 from validator.utils import (
@@ -27,6 +28,7 @@ async def process_job(
 ):
     participant_id = job_data["query_payload"]["participant_id"]
     participant = await putils.load_participant(psql_db, participant_id)
+    task = participant.task
     axon = await sql.get_axon(
         psql_db,
         participant.miner_hotkey,
@@ -36,8 +38,8 @@ async def process_job(
     await redis_db.hset(f"job:{participant_id}", "state", "processing")
 
     try:
-        synthetic_synapse = await sutils.fetch_synthetic_data_for_task(redis_db, participant.task)
-        stream = participant.task in [Task.chat_llama_3, Task.chat_mixtral]
+        synthetic_synapse = await sutils.fetch_synthetic_data_for_task(redis_db, task=participant.task)
+        stream = tcfg.TASK_TO_CONFIG[task].is_stream
 
         if stream:
             generator = utils.query_miner_stream(
@@ -127,7 +129,7 @@ async def main():
     psql_db = PSQLDB()
     await psql_db.connect()
 
-    dendrite = bt.dendrite()
+    dendrite = bt.dendrite(redis_db)
     debug = os.getenv("ENV", "test") == "test"
     netuid = int(os.getenv("NETUID", 19))  # Default to 1 if not set
 

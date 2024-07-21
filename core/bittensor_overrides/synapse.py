@@ -607,7 +607,7 @@ class Synapse(pydantic.BaseModel):
             )
 
         # Getting the fields of the instance
-        instance_fields = self.dict()
+        instance_fields = self.model_dump_json()
 
         # Iterating over the fields of the instance
         for field, value in instance_fields.items():
