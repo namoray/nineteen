@@ -160,6 +160,7 @@ async def main():
         dendrite = bt.dendrite(redis_db)
 
         public_keypair_info = await gutils.get_public_keypair_info(redis_db)
+        logger.error(f"Got public keypair info: {public_keypair_info}")
 
         netuid = int(os.getenv("NETUID", 19))
 
@@ -171,7 +172,8 @@ async def main():
         await psql_db.close()
         await redis_db.aclose()
         raise e
-
+    finally:
+        await dendrite.aclose_session()
 
 if __name__ == "__main__":
     asyncio.run(main())
