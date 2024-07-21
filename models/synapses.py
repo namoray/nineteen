@@ -1,16 +1,15 @@
 from typing import Dict, List, Optional
-from core import bittensor_overrides as bt
+from core import Task, bittensor_overrides as bt
 
 from models import base_models
 
 from typing import AsyncIterator
-from core import Task
 
 from starlette.responses import StreamingResponse
 
 
 class Capacity(bt.Synapse, base_models.CapacityBase):
-    def deserialize(self) -> Optional[Dict[Task, base_models.CapacityForTask]]:
+    def deserialize(self) -> dict[Task | str, base_models.CapacityForTask]:
         return self.capacities
 
 

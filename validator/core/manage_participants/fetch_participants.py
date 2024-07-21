@@ -1,6 +1,5 @@
 import asyncio
 import os
-import threading
 
 from validator.db.database import PSQLDB
 from validator.models import Participant
@@ -17,9 +16,6 @@ from core.logging import get_logger
 from validator.utils import generic_utils as gutils
 
 logger = get_logger(__name__)
-
-# Replace with some global threading lock?
-threading_lock = threading.Lock()
 
 
 def _get_percentage_of_tasks_to_score():
@@ -44,46 +40,55 @@ async def _fetch_available_capacities_for_each_axon(psql_db: PSQLDB, dendrite: b
 
     axons = await sql.get_axons(psql_db, netuid=netuid)
 
-    # TODO: remove the 3
-    for axon in axons[:3]:
+    logger.info(f"Fetching capacities for {len(axons)} axons...")
+
+    # TODO: big bug, for some reason the success rate of these
+    # Capacity operations is extremely highly dependent
+    # On the connect timeout and response timeouts.
+    # It definitely should not be...
+    for axon in axons[:10]:
         task = asyncio.create_task(
             qutils.query_individual_axon(
                 synapse=synapses.Capacity(capacities=None),
                 dendrite=dendrite,
                 axon=axon,
                 uid=axon.axon_uid,
-                deserialize=False,
-                log_requests_and_responses=False,
+                deserialize=True,
+                log_requests_and_responses=True,
             )
         )
 
         hotkey_to_query_task[axon.hotkey] = task
 
     responses_and_response_times: list[
-        tuple[dict[Task, base_models.CapacityForTask] | None, float]
+        tuple[dict[str, base_models.CapacityForTask] | None, float]
     ] = await asyncio.gather(*hotkey_to_query_task.values())
 
     all_capacities = [i[0] for i in responses_and_response_times]
 
     logger.info(f"Got capacities from {len([i for i in all_capacities if i is not None])} axons!")
-    with threading_lock:
-        capacities_for_tasks = defaultdict(lambda: {})
-        for hotkey, capacities in zip([axon.hotkey for axon in axons], all_capacities):
-            if capacities is None:
+
+    capacities_for_tasks = defaultdict(lambda: {})
+    for hotkey, capacities in zip([axon.hotkey for axon in axons], all_capacities):
+        if capacities is None:
+            continue
+
+        allowed_tasks = set([task for task in Task])
+        allowed_task_values = set([task.value for task in Task])
+        for task, capacity in capacities.items():
+            if isinstance(task, str) and task in allowed_task_values:
+                task = Task(task)
+            # This is to stop people claiming tasks that don't exist
+            elif task not in allowed_tasks:
                 continue
 
-            allowed_tasks = set([task for task in Task])
-            for task, capacity in capacities.items():
-                # This is to stop people claiming tasks that don't exist
-                if task not in allowed_tasks:
-                    continue
-                if hotkey not in capacities_for_tasks[task]:
-                    capacities_for_tasks[task][hotkey] = float(capacity.capacity)
+            if hotkey not in capacities_for_tasks[task]:
+                capacities_for_tasks[task][hotkey] = float(capacity.volume)
     return capacities_for_tasks
 
 
 def _correct_capacity(task: Task, capacity: float, validator_stake_proportion: float) -> float:
-    max_capacity = tcfg.TASK_TO_CONFIG[task].max_capacity.capacity
+    max_capacity = tcfg.TASK_TO_CONFIG[task].max_capacity.volume
 
     announced_capacity = min(max(capacity, 0), max_capacity)
     return announced_capacity * validator_stake_proportion
@@ -174,6 +179,8 @@ async def main():
         await redis_db.aclose()
         raise e
     finally:
+        await psql_db.close()
+        await redis_db.aclose()
         await dendrite.aclose_session()
 
 

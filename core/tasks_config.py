@@ -48,7 +48,7 @@ class FullTaskConfig(BaseModel):
 TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
     Task.chat_mixtral: FullTaskConfig(
         task=Task.chat_mixtral,
-        max_capacity=CapacityForTask(capacity=576_000),
+        max_capacity=CapacityForTask(volume=576_000),
         scoring_config=TaskScoringConfig(
             task=Task.chat_mixtral, mean=1 / 80, variance=100, overhead=1.0, task_type=TaskType.TEXT
         ),
@@ -70,7 +70,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
     ),
     Task.chat_llama_3: FullTaskConfig(
         task=Task.chat_llama_3,
-        max_capacity=CapacityForTask(capacity=576_000),
+        max_capacity=CapacityForTask(volume=576_000),
         scoring_config=TaskScoringConfig(
             task=Task.chat_llama_3, mean=1 / 80, variance=100, overhead=1.0, task_type=TaskType.TEXT
         ),

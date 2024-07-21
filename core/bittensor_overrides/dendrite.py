@@ -256,39 +256,59 @@ class dendrite:
         # Preprocess synapse for making a request
         synapse = await self.preprocess_synapse_for_request(target_axon, synapse, response_timeout)
 
-        logger.debug(f"Making request to {url} with axon: {target_axon} and synapse: {synapse}")
-
         timeout_settings = aiohttp.ClientTimeout(sock_connect=connect_timeout, sock_read=response_timeout)
 
-        # try:
+        # NOTE: Comment out below for easier debugging
+
+        # async with (await self.session).post(
+        #     url,
+        #     headers=synapse.to_headers(),
+        #     json=synapse.model_dump(),
+        #     timeout=timeout_settings,
+        # ) as response:
+        #     # Extract the JSON response from the server
+        #     json_response = await response.json()
+        #     logger.debug(f"Raw json response: {json_response}")
+        #     # Process the server response and fill synapse
+        #     self.process_server_response(response, json_response, synapse)
+
+        # # Set process time and log the response
+        # synapse.dendrite.process_time = str(time.time() - start_time)
+
+        # if deserialize:
+        #     return synapse.deserialize()  # noqa: B012
+        # else:
+        #     return synapse
+
+        try:
             # Make the HTTP POST request
-        async with (await self.session).post(
-            url,
-            headers=synapse.to_headers(),
-            json=synapse.model_dump(),
-            timeout=timeout_settings,
-        ) as response:
-            # Extract the JSON response from the server
-            json_response = await response.json()
-            logger.debug(f"Response: {json_response}")
-            # Process the server response and fill synapse
-            self.process_server_response(response, json_response, synapse)
+            async with (await self.session).post(
+                url,
+                headers=synapse.to_headers(),
+                json=synapse.model_dump(),
+                timeout=timeout_settings,
+            ) as response:
+                # Extract the JSON response from the server
+                json_response = await response.json()
 
-        # Set process time and log the response
-        synapse.dendrite.process_time = str(time.time() - start_time)
+                # Process the server response and fill synapse
+                self.process_server_response(response, json_response, synapse)
 
-        # except Exception as e:
-        #     self._handle_request_errors(synapse, request_name, e, connect_timeout, response_timeout)
+            # Set process time and log the response
+            synapse.dendrite.process_time = str(time.time() - start_time)
 
-        # finally:
-        #     # Log synapse event history
-        #     # self.synapse_history.append(bt.Synapse.from_headers(synapse.to_headers()))
+        except Exception as e:
+            self._handle_request_errors(synapse, request_name, e, connect_timeout, response_timeout)
 
-        #     # Return the updated synapse object after deserializing if requested
-        #     if deserialize:
-        #         return synapse.deserialize()  # noqa: B012
-        #     else:
-        #         return synapse
+        finally:
+            # Log synapse event history
+            # self.synapse_history.append(bt.Synapse.from_headers(synapse.to_headers()))
+
+            # Return the updated synapse object after deserializing if requested
+            if deserialize:
+                return synapse.deserialize()  # noqa: B012
+            else:
+                return synapse
 
     async def preprocess_synapse_for_request(
         self,
@@ -330,12 +350,9 @@ class dendrite:
         # check the below values for htkey, axon hotkey, and stuff
         message = f"{synapse.dendrite.nonce}.{synapse.dendrite.hotkey}.{synapse.axon.hotkey}.{synapse.dendrite.uuid}.{synapse.body_hash}"  # noqa
 
-        logger.debug(f"message {message}")
         signature = await self._sign_mesage(message)
 
         synapse.dendrite.signature = signature
-
-        logger.debug(f"signature {synapse.dendrite.signature}")
 
         return synapse
 
@@ -363,7 +380,7 @@ class dendrite:
             # server's state only if the protocol allows mutation. To prevent overwrites,
             # the protocol must set allow_mutation = False
             server_synapse = local_synapse.__class__(**json_response)
-            for key in local_synapse.dict():
+            for key in local_synapse.model_dump():
                 try:  # noqa
                     # Set the attribute in the local synapse from the corresponding
                     # attribute in the server synapse
@@ -378,16 +395,16 @@ class dendrite:
         # Merge dendrite headers
         local_synapse.dendrite.__dict__.update(
             {
-                **local_synapse.dendrite.dict(exclude_none=True),  # type: ignore
-                **server_headers.dendrite.dict(exclude_none=True),  # type: ignore
+                **local_synapse.dendrite.model_dump(exclude_none=True),  # type: ignore
+                **server_headers.dendrite.model_dump(exclude_none=True),  # type: ignore
             }
         )
 
         # Merge axon headers
         local_synapse.axon.__dict__.update(
             {
-                **local_synapse.axon.dict(exclude_none=True),  # type: ignore
-                **server_headers.axon.dict(exclude_none=True),  # type: ignore
+                **local_synapse.axon.model_dump(exclude_none=True),  # type: ignore
+                **server_headers.axon.model_dump(exclude_none=True),  # type: ignore
             }
         )
 
@@ -395,6 +412,9 @@ class dendrite:
         local_synapse.dendrite.status_code = local_synapse.axon.status_code  # type: ignore
         local_synapse.dendrite.status_message = local_synapse.axon.status_message  # type: ignore
 
+    # TODO:  This needs reviewing as we call the same .forward() method from a dendrite in lots
+    # of places. What is that doing to our async ability? can we get rid of the dendrite class
+    # and be functional instead?
     async def forward(
         self,
         axons: Union[

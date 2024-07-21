@@ -90,6 +90,8 @@ async def query_individual_axon(
     if operation_name not in qcst.OPERATION_TIMEOUTS:
         logger.warning(f"Operation {operation_name} not in operation_to_timeout, this is probably a mistake / bug 🐞")
 
+    timeouts = qcst.OPERATION_TIMEOUTS.get(operation_name, qcst.Timeouts(connect_timeout=15, response_timeout=15))
+
     start_time = time.time()
 
     if log_requests_and_responses:
@@ -100,7 +102,7 @@ async def query_individual_axon(
         if isinstance(synapse, synapses.Capacity):
             capacities = {}
             for task, config in tcfg.TASK_TO_CONFIG.items():
-                capacities[task] = base_models.CapacityForTask(capacity=config.max_capacity.capacity / 2)
+                capacities[task] = base_models.CapacityForTask(volume=config.max_capacity.volume / 2)
             response = synapses.Capacity(capacities=capacities)
             if deserialize:
                 response = response.capacities
@@ -109,14 +111,13 @@ async def query_individual_axon(
         response = await dendrite.forward(
             axons=axon,
             synapse=synapse,
-            connect_timeout=1.0,
-            response_timeout=qcst.OPERATION_TIMEOUTS.get(operation_name, 15),
+            connect_timeout=timeouts.connect_timeout,
+            response_timeout=timeouts.response_timeout,
             deserialize=deserialize,
             log_requests_and_responses=log_requests_and_responses,
             streaming=False,
         )
 
-    logger.debug(f"Got response of {response} from axon {uid} for {operation_name}")
     return response, time.time() - start_time
 
 
