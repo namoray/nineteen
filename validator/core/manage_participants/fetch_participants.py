@@ -44,14 +44,15 @@ async def _fetch_available_capacities_for_each_axon(psql_db: PSQLDB, dendrite: b
 
     axons = await sql.get_axons(psql_db, netuid=netuid)
 
-    for axon in axons:
+    # TODO: remove the 3
+    for axon in axons[:3]:
         task = asyncio.create_task(
             qutils.query_individual_axon(
                 synapse=synapses.Capacity(capacities=None),
                 dendrite=dendrite,
                 axon=axon,
                 uid=axon.axon_uid,
-                deserialize=True,
+                deserialize=False,
                 log_requests_and_responses=False,
             )
         )
@@ -160,7 +161,7 @@ async def main():
         dendrite = bt.dendrite(redis_db)
 
         public_keypair_info = await gutils.get_public_keypair_info(redis_db)
-        logger.error(f"Got public keypair info: {public_keypair_info}")
+        logger.debug(f"Got public keypair info: {public_keypair_info}")
 
         netuid = int(os.getenv("NETUID", 19))
 
@@ -174,6 +175,7 @@ async def main():
         raise e
     finally:
         await dendrite.aclose_session()
+
 
 if __name__ == "__main__":
     asyncio.run(main())

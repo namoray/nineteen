@@ -115,6 +115,8 @@ async def query_individual_axon(
             log_requests_and_responses=log_requests_and_responses,
             streaming=False,
         )
+
+    logger.debug(f"Got response of {response} from axon {uid} for {operation_name}")
     return response, time.time() - start_time
 
 
@@ -131,7 +133,7 @@ async def query_individual_axon_stream(
         logger.warning(f"Operation {synapse_name} not in operation_to_timeout, this is probably a mistake / bug 🐞")
     if log_requests_and_responses:
         logger.info(f"Querying axon {axon_uid} for {synapse_name}")
-    
+
     logger.debug(f"Querying axon {axon} for {synapse_name}")
     response = await dendrite.forward(
         axons=axon,

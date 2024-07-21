@@ -256,36 +256,39 @@ class dendrite:
         # Preprocess synapse for making a request
         synapse = await self.preprocess_synapse_for_request(target_axon, synapse, response_timeout)
 
+        logger.debug(f"Making request to {url} with axon: {target_axon} and synapse: {synapse}")
+
         timeout_settings = aiohttp.ClientTimeout(sock_connect=connect_timeout, sock_read=response_timeout)
 
-        try:
+        # try:
             # Make the HTTP POST request
-            async with (await self.session).post(
-                url,
-                headers=synapse.to_headers(),
-                json=synapse.dict(),
-                timeout=timeout_settings,
-            ) as response:
-                # Extract the JSON response from the server
-                json_response = await response.json()
-                # Process the server response and fill synapse
-                self.process_server_response(response, json_response, synapse)
+        async with (await self.session).post(
+            url,
+            headers=synapse.to_headers(),
+            json=synapse.model_dump(),
+            timeout=timeout_settings,
+        ) as response:
+            # Extract the JSON response from the server
+            json_response = await response.json()
+            logger.debug(f"Response: {json_response}")
+            # Process the server response and fill synapse
+            self.process_server_response(response, json_response, synapse)
 
-            # Set process time and log the response
-            synapse.dendrite.process_time = str(time.time() - start_time)
+        # Set process time and log the response
+        synapse.dendrite.process_time = str(time.time() - start_time)
 
-        except Exception as e:
-            self._handle_request_errors(synapse, request_name, e, connect_timeout, response_timeout)
+        # except Exception as e:
+        #     self._handle_request_errors(synapse, request_name, e, connect_timeout, response_timeout)
 
-        finally:
-            # Log synapse event history
-            # self.synapse_history.append(bt.Synapse.from_headers(synapse.to_headers()))
+        # finally:
+        #     # Log synapse event history
+        #     # self.synapse_history.append(bt.Synapse.from_headers(synapse.to_headers()))
 
-            # Return the updated synapse object after deserializing if requested
-            if deserialize:
-                return synapse.deserialize()  # noqa: B012
-            else:
-                return synapse
+        #     # Return the updated synapse object after deserializing if requested
+        #     if deserialize:
+        #         return synapse.deserialize()  # noqa: B012
+        #     else:
+        #         return synapse
 
     async def preprocess_synapse_for_request(
         self,
@@ -437,7 +440,7 @@ class dendrite:
                 # If not in streaming mode, simply call the axon and get the response.
                 return await self.call(
                     target_axon=target_axon,
-                    synapse=synapse.copy(),  # type: ignore
+                    synapse=synapse.model_copy(),  # type: ignore
                     response_timeout=response_timeout,
                     connect_timeout=connect_timeout,
                     deserialize=deserialize,
