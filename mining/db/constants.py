@@ -7,5 +7,3 @@ TASK_NAME = "task_name"
 VOLUME = "volume"
 MINER_HOTKEY = "miner_hotkey"
 CONCURRENCY_GROUP_ID = "concurrency_group_id"
-
-

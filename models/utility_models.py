@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from core import Task
 from validator.models import AxonUID
 
+
 class QueryResult(BaseModel):
     formatted_response: Any
     axon_uid: Optional[int]

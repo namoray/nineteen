@@ -42,11 +42,55 @@ def get_randomly_edited_face_picture_for_avatar() -> str:
 
 
 def _get_random_text_prompt() -> dc.TextPrompt:
-    nouns = ['king', 'man', 'woman', 'joker', 'queen', 'child', 'doctor', 'teacher', 'soldier', 'merchant']  # fmt: off
-    locations = ['forest', 'castle', 'city', 'village', 'desert', 'oceanside', 'mountain', 'garden', 'library', 'market']  # fmt: off
-    looks = ['happy', 'sad', 'angry', 'worried', 'curious', 'lost', 'busy', 'relaxed', 'fearful', 'thoughtful']  # fmt: off
-    actions = ['running', 'walking', 'reading', 'talking', 'sleeping', 'dancing', 'working', 'playing', 'watching', 'singing']  # fmt: off
-    times = ['in the morning', 'at noon', 'in the afternoon', 'in the evening', 'at night', 'at midnight', 'at dawn', 'at dusk', 'during a storm', 'during a festival']  # fmt: off
+    nouns = ["king", "man", "woman", "joker", "queen", "child", "doctor", "teacher", "soldier", "merchant"]  # fmt: off
+    locations = [
+        "forest",
+        "castle",
+        "city",
+        "village",
+        "desert",
+        "oceanside",
+        "mountain",
+        "garden",
+        "library",
+        "market",
+    ]  # fmt: off
+    looks = [
+        "happy",
+        "sad",
+        "angry",
+        "worried",
+        "curious",
+        "lost",
+        "busy",
+        "relaxed",
+        "fearful",
+        "thoughtful",
+    ]  # fmt: off
+    actions = [
+        "running",
+        "walking",
+        "reading",
+        "talking",
+        "sleeping",
+        "dancing",
+        "working",
+        "playing",
+        "watching",
+        "singing",
+    ]  # fmt: off
+    times = [
+        "in the morning",
+        "at noon",
+        "in the afternoon",
+        "in the evening",
+        "at night",
+        "at midnight",
+        "at dawn",
+        "at dusk",
+        "during a storm",
+        "during a festival",
+    ]  # fmt: off
 
     noun = random.choice(nouns)
     location = random.choice(locations)
@@ -139,9 +183,9 @@ async def get_synthetic_data_version(redis_db: Redis, task: Task) -> float | Non
         return float(version.decode("utf-8"))
     return None
 
+
 # Takes anywhere from 1ms to 10ms
 async def fetch_synthetic_data_for_task(redis_db: Redis, task: Task) -> dict[str, Any]:
-
     synthetic_data = await rutils.json_load_from_redis(redis_db, key=construct_synthetic_data_task_key(task))
 
     task_type = tasks_config.TASK_TO_CONFIG[task].scoring_config.task_type

@@ -39,7 +39,7 @@ class Participant(BaseModel):
 
     @property
     def id(self) -> str:
-        participant_id = self.miner_hotkey + '-' + self.task.value
+        participant_id = self.miner_hotkey + "-" + self.task.value
         return participant_id
 
     def calculate_period_score(self) -> float:

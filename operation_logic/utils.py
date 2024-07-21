@@ -5,7 +5,6 @@ import httpx
 from core import bittensor_overrides as bt
 
 
-
 async def get_image_from_server(body: BaseModel, post_endpoint: str, timeout: float = 20.0):
     endpoint = config.image_worker_url + post_endpoint
     async with httpx.AsyncClient(timeout=timeout) as client:

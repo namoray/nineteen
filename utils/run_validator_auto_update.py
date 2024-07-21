@@ -39,7 +39,7 @@ def run_auto_updater():
         else:
             print("Repo is up-to-date.")
 
-        time.sleep(60) 
+        time.sleep(60)
 
 
 if __name__ == "__main__":

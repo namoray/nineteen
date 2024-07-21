@@ -28,14 +28,16 @@ class BaseOutgoing(BaseModel):
 # AVAILABLE OPERATIONS
 
 
-class CapacityIncoming(BaseModel): ...
+class CapacityIncoming(BaseModel):
+    ...
 
 
 class CapacityOutgoing(BaseModel):
     capacities: dict[Task, CapacityForTask] | None
 
 
-class CapacityBase(CapacityIncoming, CapacityOutgoing): ...
+class CapacityBase(CapacityIncoming, CapacityOutgoing):
+    ...
 
 
 # Generic image gen
@@ -72,10 +74,12 @@ class TextToImageIncoming(ImageGenerationBase):
     width: int = Field(cst.DEFAULT_WIDTH, description="Width of the generated image")
 
 
-class TextToImageOutgoing(ImageResponseBase): ...
+class TextToImageOutgoing(ImageResponseBase):
+    ...
 
 
-class TextToImageBase(TextToImageIncoming, TextToImageOutgoing): ...
+class TextToImageBase(TextToImageIncoming, TextToImageOutgoing):
+    ...
 
 
 # IMAGE TO IMAGE
@@ -90,10 +94,12 @@ class ImageToImageIncoming(ImageGenerationBase):
     width: Optional[int] = Field(None, description="Width of the generated image")
 
 
-class ImageToImageOutgoing(ImageResponseBase): ...
+class ImageToImageOutgoing(ImageResponseBase):
+    ...
 
 
-class ImageToImageBase(ImageToImageIncoming, ImageToImageOutgoing): ...
+class ImageToImageBase(ImageToImageIncoming, ImageToImageOutgoing):
+    ...
 
 
 # Inpaint
@@ -113,10 +119,12 @@ class InpaintIncoming(BaseModel):
         use_enum_values = True
 
 
-class InpaintOutgoing(ImageResponseBase): ...
+class InpaintOutgoing(ImageResponseBase):
+    ...
 
 
-class InpaintBase(InpaintIncoming, InpaintOutgoing): ...
+class InpaintBase(InpaintIncoming, InpaintOutgoing):
+    ...
 
 
 class AvatarIncoming(BaseModel):
@@ -136,10 +144,12 @@ class AvatarIncoming(BaseModel):
         use_enum_values = True
 
 
-class AvatarOutgoing(ImageResponseBase): ...
+class AvatarOutgoing(ImageResponseBase):
+    ...
 
 
-class AvatarBase(AvatarIncoming, AvatarOutgoing): ...
+class AvatarBase(AvatarIncoming, AvatarOutgoing):
+    ...
 
 
 # class ScribbleIncoming(ImageGenerationBase):
@@ -168,10 +178,12 @@ class UpscaleIncoming(BaseModel):
     image: Optional[str] = Field(..., description="The base64 encoded image", title="image")
 
 
-class UpscaleOutgoing(ImageResponseBase): ...
+class UpscaleOutgoing(ImageResponseBase):
+    ...
 
 
-class UpscaleBase(UpscaleIncoming, UpscaleOutgoing): ...
+class UpscaleBase(UpscaleIncoming, UpscaleOutgoing):
+    ...
 
 
 # CLIP EMBEDDINGS
@@ -189,7 +201,8 @@ class ClipEmbeddingsOutgoing(BaseOutgoing):
     )
 
 
-class ClipEmbeddingsBase(ClipEmbeddingsIncoming, ClipEmbeddingsOutgoing): ...
+class ClipEmbeddingsBase(ClipEmbeddingsIncoming, ClipEmbeddingsOutgoing):
+    ...
 
 
 class ChatIncoming(BaseModel):
@@ -221,7 +234,9 @@ class ChatIncoming(BaseModel):
         use_enum_values = True
 
 
-class ChatOutgoing(BaseModel): ...
+class ChatOutgoing(BaseModel):
+    ...
 
 
-class ChatBase(ChatIncoming, ChatOutgoing): ...
+class ChatBase(ChatIncoming, ChatOutgoing):
+    ...

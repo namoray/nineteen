@@ -1,4 +1,3 @@
-
 from core import bittensor_overrides as bt
 
 
@@ -9,7 +8,6 @@ POST_ENDPOINT = "inpaint"
 
 
 async def inpaint_logic(body: base_models.InpaintIncoming) -> base_models.InpaintOutgoing:
-
     output = base_models.ImageToImageOutgoing(image_b64=None)
 
     image_response_body = await operation_utils.get_image_from_server(body, POST_ENDPOINT, timeout=20)

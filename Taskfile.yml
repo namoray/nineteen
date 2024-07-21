@@ -23,10 +23,10 @@ tasks:
     cmds:
       - docker-compose exec -e ENV=test metagraph_syncer python validator/metagraph_syncer/metagraph_syncer.py once
 
-  signing_service:
+  sign_dendrite_messages:
     cmds:
-      - docker-compose run --rm -e ENV=test signing_service  python validator/signing_service/signing_service.py
-    
+      - docker-compose run --rm -e ENV=test signing_service  python validator/signing_service/dendrite.py
+
   dbmate-up:
     cmds:
       - docker-compose run --rm dbmate up
@@ -34,5 +34,5 @@ tasks:
     cmds:
       - docker-compose run --rm dbmate down
   dbmate-drop:
-    cmds: 
+    cmds:
       - docker-compose run --rm dbmate drop

@@ -13,6 +13,3 @@ class Task(Enum):
     jugger_inpainting = "inpaint"
     avatar = "avatar"
     # clip_image_embeddings = "clip-image-embeddings"
-
-
-

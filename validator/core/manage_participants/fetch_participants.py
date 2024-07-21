@@ -94,9 +94,11 @@ async def _store_all_participants_in_db(
     participants = []
     for task in Task:
         for hotkey, declared_capacity in capacities_for_tasks.get(task, {}).items():
-            capacity_to_score, number_of_requests_to_make, delay_between_requests = (
-                calculate_synthetic_query_parameters(task, declared_capacity)
-            )
+            (
+                capacity_to_score,
+                number_of_requests_to_make,
+                delay_between_requests,
+            ) = calculate_synthetic_query_parameters(task, declared_capacity)
             corrected_capacity = _correct_capacity(task, declared_capacity, validator_stake_proportion)
             participant = Participant(
                 miner_hotkey=hotkey,

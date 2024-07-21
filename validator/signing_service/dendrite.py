@@ -8,23 +8,6 @@ from validator.signing_service import utils, constants as cst
 logger = utils.get_logger(__name__)
 
 
-# Constants here to minimise dependencies
-
-
-
-
-
-def load_keypair_from_file(file_path: str, password=""):
-    try:
-        with open(file_path, "r") as file:
-            keypair_data = json.load(file)
-        keypair = Keypair.create_from_seed(keypair_data["secretSeed"])
-        logger.info(f"Loaded keypair from {file_path}")
-        return keypair
-    except Exception as e:
-        raise ValueError(f"Failed to load keypair: {str(e)}")
-
-
 def sign_message(message: str, keypair: Keypair):
     return f"0x{keypair.sign(message).hex()}"
 
@@ -33,7 +16,9 @@ async def sign_and_push(redis_db: Redis, message: str, job_id: str, keypair: Key
     signed_message = sign_message(message, keypair=keypair)
     logger.debug(f"Signed message: {signed_message}")
     await redis_db.set(
-        utils.construct_signed_message_key(job_id), json.dumps({cst.SIGNED_MESSAGE: signed_message, cst.JOB_ID: job_id}), ex=5
+        utils.construct_signed_message_key(job_id),
+        json.dumps({cst.SIGNED_MESSAGE: signed_message, cst.JOB_ID: job_id}),
+        ex=5,
     )
 
 
@@ -41,7 +26,7 @@ async def poll_redis_for_message_to_sign(redis_db: Redis, keypair: Keypair) -> s
     logger.info("Polling redis for message to sign")
 
     while True:
-        payload_raw = await redis_db.blpop(cst.SIGNING_QUEUE_KEY)
+        payload_raw: tuple[str, bytes] = await redis_db.blpop(cst.SIGNING_QUEUE_KEY)
 
         payload = json.loads(payload_raw[1].decode("utf-8"))
         logger.debug(payload)
@@ -49,18 +34,18 @@ async def poll_redis_for_message_to_sign(redis_db: Redis, keypair: Keypair) -> s
 
 
 async def main() -> None:
-    wallet_name = os.getenv("WALLET_NAME")
-    hotkey_name = os.getenv("HOTKEY_NAME")
-    password = os.getenv("HOTKEY_PASSWORD", "")
+    wallet_name = os.getenv("WALLET_NAME", "default")
+    hotkey_name = os.getenv("HOTKEY_NAME", "default")
 
     redis_db = Redis(host="redis")
 
     await redis_db.rpush(
-        cst.SIGNING_QUEUE_KEY, json.dumps({cst.TYPE: cst.DENDRITE_TYPE, cst.MESSAGE: "Starting signing service", "job_id": 0})
+        cst.SIGNING_QUEUE_KEY,
+        json.dumps({cst.TYPE: cst.DENDRITE_TYPE, cst.MESSAGE: "Starting signing service", "job_id": 0}),
     )
 
     filepath = utils.construct_wallet_path(wallet_name, hotkey_name)
-    keypair = load_keypair_from_file(filepath, password)
+    keypair = utils.load_keypair_from_file(filepath)
     await poll_redis_for_message_to_sign(redis_db, keypair)
 
 

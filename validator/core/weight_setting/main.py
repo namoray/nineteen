@@ -11,6 +11,8 @@ from validator.models import AxonUID
 from validator.weight_setting import calculations
 
 VERSION_KEY = 40_004
+
+
 async def start_weight_setting_process(
     subtensor: bt.subtensor,
     metagraph: bt.metagraph,

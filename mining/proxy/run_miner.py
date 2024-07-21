@@ -7,6 +7,7 @@ from core import utils, Task
 from mining.proxy import core_miner
 from config.miner_config import config
 from mining.proxy import operations
+
 # For determinism
 
 tracemalloc.start()

@@ -20,15 +20,18 @@ operation_name = "Operation"
 class Operation(core_miner.CoreMiner):
     @staticmethod
     @abc.abstractmethod
-    async def forward(synapse: Any) -> Any: ...
+    async def forward(synapse: Any) -> Any:
+        ...
 
     @staticmethod
     @abc.abstractmethod
-    def blacklist(synapse: Any) -> Tuple[bool, str]: ...
+    def blacklist(synapse: Any) -> Tuple[bool, str]:
+        ...
 
     @staticmethod
     @abc.abstractmethod
-    def priority(synapse: Any) -> float: ...
+    def priority(synapse: Any) -> float:
+        ...
 
 
 def enforce_concurrency_limits(func):

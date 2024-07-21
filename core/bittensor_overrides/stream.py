@@ -39,10 +39,12 @@ class StreamingSynapse(bt.Synapse, ABC):
             await self.stream_response(send)
 
     @abstractmethod
-    async def process_streaming_response(self, response: ClientResponse): ...
+    async def process_streaming_response(self, response: ClientResponse):
+        ...
 
     @abstractmethod
-    def extract_response_json(self, response: ClientResponse) -> dict: ...
+    def extract_response_json(self, response: ClientResponse) -> dict:
+        ...
 
     def create_streaming_response(self, token_streamer: Callable[[Send], Awaitable[None]]) -> BTStreamingResponse:
         model_instance = BTStreamingResponseModel(token_streamer=token_streamer)

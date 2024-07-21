@@ -6,4 +6,3 @@ OPERATION_TIMEOUTS = {
     synapses.TextToImage.__class__.__name__: 10,
     synapses.ImageToImage.__class__.__name__: 10,
 }
-

@@ -1,5 +1,3 @@
-
-
 from operation_logic import utils as operation_utils
 from models import base_models
 from core import bittensor_overrides as bt

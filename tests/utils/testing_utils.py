@@ -6,7 +6,6 @@ import random
 from io import BytesIO
 
 
-
 def generate_mask_with_circle(image_b64: str) -> np.ndarray:
     imgdata = base64.b64decode(image_b64)
     image = Image.open(BytesIO(imgdata))
