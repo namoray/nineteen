@@ -1,9 +1,11 @@
+from dataclasses import asdict
 from typing import Any, Dict, List
 from redis.asyncio import Redis
 import json
 from enum import Enum
 import copy
 from core.logging import get_logger
+from validator.utils import redis_dataclasses as rdc, redis_constants as rcst
 
 logger = get_logger(__name__)
 
@@ -116,3 +118,12 @@ async def check_value_is_in_set(redis_db: Redis, name: str, value) -> bool:
 
 async def remove_value_from_set(redis_db: Redis, name: str, value: str) -> None:
     await redis_db.srem(name, value)
+
+
+def construct_signed_message_key(job_id: str) -> str:
+    return f"{rcst.SIGNED_MESSAGES_KEY}:{job_id}"
+
+
+def construct_weights_setting_payload(weights_to_set: rdc.WeightsToSet, job_id: str) -> str:
+    payload = rdc.SigningPayload(message=json.dumps(asdict(weights_to_set)), job_id=job_id, is_b64encoded=False)
+    return json.dumps(asdict(payload))

@@ -1,13 +1,14 @@
 import asyncio
 import json
-from typing import Any
+from typing import Union
 from substrateinterface import Keypair
 from substrateinterface.keypair import KeypairType
 from redis import Redis
-from validator.utils import redis_utils as rutils, redis_constants as rcst
+from validator.utils import redis_constants as rcst, redis_dataclasses as rdc
 import uuid
 from core.logging import get_logger
 
+from scalecodec.base import ScaleBytes
 
 logger = get_logger(__name__)
 
@@ -35,17 +36,30 @@ class RedisGappedKeypair(Keypair):
 
         self.redis_db = redis_db
 
-    def sign(self, data: Any) -> bytes:
-        logger.debug("Signing message with keypair!")
+    def sign(self, data: Union[ScaleBytes, bytes, str]) -> bytes:
+        """
+        For some reason bittensor gobbles up logging, and logging wont work in here :-(
+        """
+
+        if type(data) is ScaleBytes:
+            data = bytes(data.data)
+        elif data[0:2] == "0x":
+            data = bytes.fromhex(data[2:])
+        elif type(data) is str:  # noqa
+            data = data.encode()
+
+        # Use below to debug, since logging is hell
+        # raise ValueError(f"Data: {data} not supported")
 
         job_id = str(uuid.uuid4())
-        payload = {
-            rcst.MESSAGE: data,
-            rcst.JOB_ID: job_id,
-        }
 
-        json_to_add = rutils._remove_enums(payload)
-        json_string = json.dumps(json_to_add)
+        payload = rdc.SigningPayload(
+            message=data,
+            job_id=job_id,
+            is_b64encoded=True,
+        )
+        json_string = json.dumps(payload.to_dict())
+
         self.redis_db.rpush(rcst.SIGNING_WEIGHTS_QUEUE_KEY, json_string)
 
         logger.debug(f"Added payload to signing queue: {payload}. Now waiting for signed payload")
@@ -53,22 +67,24 @@ class RedisGappedKeypair(Keypair):
         job_results_key = _construct_signed_message_key(job_id)
 
         signed_payload_raw = self.redis_db.blpop(job_results_key, timeout=10)
+
         if signed_payload_raw is None:
             raise TimeoutError("Timed out waiting for signed payload")
+        signed_payload = rdc.SignedPayload(**json.loads(signed_payload_raw[1]))
 
-        logger.debug(f"Got signed payload: {signed_payload_raw}")
-
-        signed_payload = json.loads(signed_payload_raw[1].decode("utf-8"))
-        signature = signed_payload[rcst.SIGNATURE]
+        logger.debug(f"Got signed payload: {signed_payload}")
+        signature = signed_payload.signature
         logger.debug(f"Got signature: {signature}")
-        return signature
+
+        # signature is hex encoded, so get back to bytes
+        return bytes.fromhex(signature[2:])
 
 
 async def main():
     redis_db = Redis(host="redis")
     keypair = RedisGappedKeypair(redis_db=redis_db, ss58_address="5Hddm3iBFD2GLT5ik7LZnT3XJUnRnN8PoeCFgGQgawUVKNm8")
 
-    logger.warn("Signing message, please make sure the signing service is already running")
+    logger.warning("Signing message, please make sure the signing service is already running")
     keypair.sign("hello world")
 
 

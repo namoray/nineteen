@@ -8,5 +8,6 @@ WEIGHTS_TYPE = "weights"
 
 MESSAGE = "message"
 JOB_ID = "job_id"
+IS_B64ENCODED = "is_b64encoded"
 
 SIGNATURE = "signature"

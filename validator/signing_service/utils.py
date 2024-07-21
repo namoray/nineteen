@@ -6,7 +6,6 @@ from validator.signing_service import constants as cst
 from substrateinterface import Keypair
 import random
 import time
-from dataclasses import dataclass
 
 ANSI_COLOR_CODES = {
     "$BLUE": "\033[34m",
@@ -144,10 +143,3 @@ def load_keypair_from_file(file_path: str):
         return keypair
     except Exception as e:
         raise ValueError(f"Failed to load keypair: {str(e)}")
-
-@dataclass
-class PublicKeypairInfo:
-    ss58_address: str
-    ss58_format: int
-    crypto_type: str
-    public_key: str

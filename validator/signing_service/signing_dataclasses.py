@@ -11,14 +11,6 @@ class PublicKeypairInfo:
 
 
 @dataclass
-class WeightsToSet:
-    uids: list[int]
-    values: list[float]
-    version_key: int
-    netuid: int = 19
-
-
-@dataclass
 class SigningPayload:
     message: bytes | str
     job_id: str
