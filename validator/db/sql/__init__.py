@@ -4,7 +4,7 @@ from .particpants import (
     fetch_all_participants,
     fetch_participant,
 )
-from .axons import insert_axon_info, migrate_axons_to_axon_history, get_axons, get_axon_stakes
+from .axons import insert_axon_info, migrate_axons_to_axon_history, get_axons, get_axon_stakes, get_axon
 
 
 __all__ = [
@@ -16,4 +16,5 @@ __all__ = [
     "fetch_participant",
     "get_axons",
     "get_axon_stakes",
+    "get_axon",
 ]

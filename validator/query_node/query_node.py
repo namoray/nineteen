@@ -6,6 +6,7 @@ import uuid
 from redis.asyncio import Redis
 from core import Task, bittensor_overrides as bt
 from validator.db.database import PSQLDB
+from validator.db import sql
 from validator.utils import (
     participant_utils as putils,
     synthetic_utils as sutils,
@@ -17,15 +18,20 @@ from core.logging import get_logger
 
 logger = get_logger(__name__)
 
-DEBUG = os.getenv("ENV", "prod") != "prod"
+
 JOB_TIMEOUT = 300
 
 
-# TODO: Better handle storing the status of jobs, as each participant will do *many* jobs. the redis stuff isnt ideal here
-async def process_job(redis_db: Redis, psql_db: PSQLDB, dendrite: bt.dendrite, job_data):
-    # Add separate handling for organics and synthetics
+async def process_job(
+    redis_db: Redis, psql_db: PSQLDB, dendrite: bt.dendrite, job_data: dict, netuid: int, debug: bool = False
+):
     participant_id = job_data["query_payload"]["participant_id"]
     participant = await putils.load_participant(psql_db, participant_id)
+    axon = await sql.get_axon(
+        psql_db,
+        participant.miner_hotkey,
+        netuid,
+    )
 
     await redis_db.hset(f"job:{participant_id}", "state", "processing")
 
@@ -35,7 +41,7 @@ async def process_job(redis_db: Redis, psql_db: PSQLDB, dendrite: bt.dendrite, j
 
         if stream:
             generator = utils.query_miner_stream(
-                participant, synthetic_synapse, participant.task, dendrite, synthetic_query=True, debug=DEBUG
+                axon, synthetic_synapse, participant.task, dendrite, synthetic_query=True, debug=debug
             )
             await qutils.consume_generator(generator)
 
@@ -58,7 +64,9 @@ async def process_job_with_timeout(redis_db: Redis, psql_db: PSQLDB, dendrite: b
         await redis_db.hset(f"job:{participant_id}", "error", f"Job timed out after {JOB_TIMEOUT} seconds")
 
 
-async def worker_loop(redis_db: Redis, psql_db: PSQLDB, dendrite: bt.dendrite, max_concurrent_jobs=100):
+async def worker_loop(
+    redis_db: Redis, psql_db: PSQLDB, dendrite: bt.dendrite, netuid: int, debug: bool, max_concurrent_jobs: int = 5000
+):
     active_tasks: set[asyncio.Task] = set()
     while True:
         try:
@@ -92,11 +100,13 @@ async def heartbeat(redis_db: Redis):
         await asyncio.sleep(5)
 
 
-async def run_worker(redis_db: Redis, psql_db: PSQLDB, dendrite: bt.dendrite, queue_name):
+async def run_worker(
+    redis_db: Redis, psql_db: PSQLDB, dendrite: bt.dendrite, queue_name: str, netuid: int, debug: bool = False
+):
     logger.debug("Starting worker")
     try:
         heartbeat_task = asyncio.create_task(heartbeat(redis_db))
-        worker_task = asyncio.create_task(worker_loop(redis_db, psql_db, dendrite))
+        worker_task = asyncio.create_task(worker_loop(redis_db, psql_db, dendrite, netuid, debug))
         await asyncio.gather(worker_task, heartbeat_task)
     except asyncio.CancelledError:
         logger.info("Worker cancelled")
@@ -116,10 +126,13 @@ async def main():
     await psql_db.connect()
 
     dendrite = bt.dendrite()
-    logger.warning("Starting worker")
+    debug = os.getenv("ENV", "prod") != "prod"
+    netuid = int(os.getenv("NETUID", 19))  # Default to 1 if not set
+
+    logger.warning(f"Starting worker for NETUID: {netuid}")
     queue_name = rcst.SYNTHETIC_DATA_KEY
 
-    await run_worker(redis_db, psql_db, dendrite, queue_name)
+    await run_worker(redis_db, psql_db, dendrite, queue_name, netuid, debug)
 
 
 if __name__ == "__main__":

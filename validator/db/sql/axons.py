@@ -86,7 +86,7 @@ async def migrate_axons_to_axon_history(connection: Connection) -> None:  # noqa
     await connection.execute(f"TRUNCATE TABLE {dcst.AXON_INFO_TABLE}")
 
 
-async def get_axons(psql_db: PSQLDB) -> list[chain_data.AxonInfo]:
+async def get_axons(psql_db: PSQLDB, netuid: int) -> list[chain_data.AxonInfo]:
     query = (
         f"SELECT "
         f"{dcst.HOTKEY}, "
@@ -101,16 +101,18 @@ async def get_axons(psql_db: PSQLDB) -> list[chain_data.AxonInfo]:
         f"{dcst.NETWORK}, "
         f"{dcst.STAKE} "
         f"FROM {dcst.AXON_INFO_TABLE}"
+        f"WHERE {dcst.NETUID} = $1"
     )
 
-    axons = await psql_db.fetchall(query)
+    axons = await psql_db.fetchall(query, netuid)
 
     return [chain_data.AxonInfo(**axon) for axon in axons]
 
 
-async def get_axon_stakes(psql_db: PSQLDB) -> dict[str, float]:
+async def get_axon_stakes(psql_db: PSQLDB, netuid: int) -> dict[str, float]:
     axons = await psql_db.fetchall(
-        f"SELECT {dcst.HOTKEY}, {dcst.STAKE} FROM {dcst.AXON_INFO_TABLE}",
+        f"SELECT {dcst.HOTKEY}, {dcst.STAKE} " f"FROM {dcst.AXON_INFO_TABLE} " f"WHERE {dcst.NETUID} = $1",
+        netuid,
     )
     hotkey_to_stake = {axon[dcst.HOTKEY]: axon[dcst.STAKE] for axon in axons}
 

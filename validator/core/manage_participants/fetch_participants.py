@@ -1,4 +1,5 @@
 import asyncio
+import os
 import threading
 
 from validator.db.database import PSQLDB
@@ -35,10 +36,10 @@ async def _get_validator_stake_proportion(
     return hotkey_to_stake[validator_hotkey] / sum(hotkey_to_stake.values())
 
 
-async def _fetch_available_capacities_for_each_axon(psql_db: PSQLDB, dendrite: bt.dendrite) -> None:
+async def _fetch_available_capacities_for_each_axon(psql_db: PSQLDB, dendrite: bt.dendrite, netuid: int) -> None:
     hotkey_to_query_task = {}
 
-    axons = await sql.get_axons(psql_db)
+    axons = await sql.get_axons(psql_db, netuid=netuid)
 
     for axon in axons:
         task = asyncio.create_task(
@@ -142,21 +143,24 @@ async def get_and_store_participant_info(
     psql_db: PSQLDB,
     dendrite: bt.dendrite,
     validator_hotkey: str,
+    netuid: int,
 ):
-    capacities_for_tasks = await _fetch_available_capacities_for_each_axon(psql_db, dendrite)
+    capacities_for_tasks = await _fetch_available_capacities_for_each_axon(psql_db, dendrite, netuid)
 
     validator_stake_proportion = await _get_validator_stake_proportion(psql_db, validator_hotkey)
 
     await _store_all_participants_in_db(psql_db, capacities_for_tasks, validator_hotkey, validator_stake_proportion)
 
 
-async def main(run_with_dummy: bool = True):
+async def main():
     # Remember to export ENV=test
     psql_db = PSQLDB()
     await psql_db.connect()
     dendrite = bt.dendrite()
 
-    await get_and_store_participant_info(psql_db, dendrite, validator_hotkey="test-vali")
+    netuid = os.getenv("NETUID", 19)
+
+    await get_and_store_participant_info(psql_db, dendrite, validator_hotkey="test-vali", netuid=netuid)
 
 
 if __name__ == "__main__":
