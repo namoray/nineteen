@@ -54,9 +54,11 @@ async def process_job(
         await redis_db.hset(f"job:{participant_id}", "error", str(e))
 
 
-async def process_job_with_timeout(redis_db: Redis, psql_db: PSQLDB, dendrite: bt.dendrite, job_data: dict, netuid: int, debug: bool = False):
+async def process_job_with_timeout(
+    redis_db: Redis, psql_db: PSQLDB, dendrite: bt.dendrite, job_data: dict, netuid: int, debug: bool = False
+):
     try:
-        await asyncio.wait_for(process_job(redis_db, psql_db, dendrite,  job_data, netuid, debug), timeout=JOB_TIMEOUT)
+        await asyncio.wait_for(process_job(redis_db, psql_db, dendrite, job_data, netuid, debug), timeout=JOB_TIMEOUT)
     except asyncio.TimeoutError:
         participant_id = job_data["participant_id"]
         logger.error(f"Job {participant_id} timed out after {JOB_TIMEOUT} seconds")
@@ -126,7 +128,7 @@ async def main():
     await psql_db.connect()
 
     dendrite = bt.dendrite()
-    debug = os.getenv("ENV", "test") != "test"
+    debug = os.getenv("ENV", "test") == "test"
     netuid = int(os.getenv("NETUID", 19))  # Default to 1 if not set
 
     logger.warning(f"Starting worker for NETUID: {netuid}")

@@ -134,7 +134,7 @@ class dendrite:
         url = self._get_endpoint_url(target_axon, request_name)
 
         # Preprocess synapse for making a request
-        synapse = self.preprocess_synapse_for_request(target_axon, synapse, response_timeout)
+        synapse = await self.preprocess_synapse_for_request(target_axon, synapse, response_timeout)
 
         timeout_settings = aiohttp.ClientTimeout(sock_connect=connect_timeout, sock_read=response_timeout)
 
@@ -270,7 +270,7 @@ class dendrite:
         synapse.timeout = response_timeout
 
         # TODO: overwrite
-        return
+        return synapse
 
         # Build the Dendrite headers using the local system's details
         # TODO: review why I need to add my ip here, and TerminalInfo??

@@ -2,6 +2,8 @@ from enum import Enum
 from core import Task
 from models.base_models import CapacityForTask
 from pydantic import BaseModel
+from core import bittensor_overrides as bt
+from models import synapses
 
 
 class TaskType(Enum):
@@ -45,6 +47,7 @@ class FullTaskConfig(BaseModel):
     scoring_config: TaskScoringConfig
     orchestrator_server_config: OrchestratorServerConfig
     synthetic_generation_config: SyntheticGenerationConfig
+    synapse: bt.Synapse
 
 
 TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
@@ -66,6 +69,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         synthetic_generation_config=SyntheticGenerationConfig(
             func="generate_chat_synthetic", kwargs={"model": "mixtral"}
         ),
+        synapse=synapses.Chat,
     ),
     Task.chat_llama_3: FullTaskConfig(
         task=Task.chat_llama_3,
@@ -85,6 +89,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         synthetic_generation_config=SyntheticGenerationConfig(
             func="generate_chat_synthetic", kwargs={"model": "llama_3"}
         ),
+        synapse=synapses.Chat,
     ),
     Task.proteus_text_to_image: FullTaskConfig(
         task=Task.proteus_text_to_image,
@@ -101,6 +106,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
             func="generate_text_to_image_synthetic",
             kwargs={"engine": "proteus"},
         ),
+        synapse=synapses.TextToImage,
     ),
     Task.playground_text_to_image: FullTaskConfig(
         task=Task.playground_text_to_image,
@@ -117,6 +123,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
             func="generate_text_to_image_synthetic",
             kwargs={"engine": "playground"},
         ),
+        synapse=synapses.TextToImage,
     ),
     Task.dreamshaper_text_to_image: FullTaskConfig(
         task=Task.dreamshaper_text_to_image,
@@ -133,6 +140,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
             func="generate_text_to_image_synthetic",
             kwargs={"engine": "dreamshaper"},
         ),
+        synapse=synapses.TextToImage,
     ),
     Task.proteus_image_to_image: FullTaskConfig(
         task=Task.proteus_image_to_image,
@@ -149,6 +157,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
             func="generate_image_to_image_synthetic",
             kwargs={"engine": "proteus"},
         ),
+        synapse=synapses.ImageToImage,
     ),
     Task.playground_image_to_image: FullTaskConfig(
         task=Task.playground_image_to_image,
@@ -165,6 +174,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
             func="generate_image_to_image_synthetic",
             kwargs={"engine": "playground"},
         ),
+        synapse=synapses.ImageToImage,
     ),
     Task.dreamshaper_image_to_image: FullTaskConfig(
         task=Task.dreamshaper_image_to_image,
@@ -181,6 +191,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
             func="generate_image_to_image_synthetic",
             kwargs={"engine": "dreamshaper"},
         ),
+        synapse=synapses.ImageToImage,
     ),
     Task.jugger_inpainting: FullTaskConfig(
         task=Task.jugger_inpainting,
@@ -194,6 +205,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
             checking_function="check_image_result",
         ),
         synthetic_generation_config=SyntheticGenerationConfig(func="generate_inpaint_synthetic", kwargs={}),
+        synapse=synapses.Inpaint,
     ),
     Task.avatar: FullTaskConfig(
         task=Task.avatar,
@@ -207,21 +219,22 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         synthetic_generation_config=SyntheticGenerationConfig(
             func="generate_avatar_synthetic",
             kwargs={},
-            # Task.clip_image_embeddings: FullTaskConfig(
-            #     task=Task.clip_image_embeddings,
-            #     max_capacity=CapacityForTask(capacity=0),  # disabled clip for now
-            #     scoring_config=TaskScoringConfig(
-            #         task=Task.clip_image_embeddings, mean=0.5, variance=2, overhead=1.0, task_type=TaskType.CLIP
-            #     ),
-            #     orchestrator_server_config=OrchestratorServerConfig(
-            #         checking_server_needed=ServerType.IMAGE,
-            #         checking_load_model_config={},
-            #         checking_function="check_clip_result",
-            #     ),
-            #     synthetic_generation_config=SyntheticGenerationConfig(
-            #         func="generate_clip_synthetic", kwargs={}
-            #     ),
-            # ),
         ),
+        synapse=synapses.Avatar,
     ),
+    # Task.clip_image_embeddings: FullTaskConfig(
+    #     task=Task.clip_image_embeddings,
+    #     max_capacity=CapacityForTask(capacity=0),  # disabled clip for now
+    #     scoring_config=TaskScoringConfig(
+    #         task=Task.clip_image_embeddings, mean=0.5, variance=2, overhead=1.0, task_type=TaskType.CLIP
+    #     ),
+    #     orchestrator_server_config=OrchestratorServerConfig(
+    #         checking_server_needed=ServerType.IMAGE,
+    #         checking_load_model_config={},
+    #         checking_function="check_clip_result",
+    #     ),
+    #     synthetic_generation_config=SyntheticGenerationConfig(
+    #         func="generate_clip_synthetic", kwargs={}
+    #     ),
+    # ),
 }

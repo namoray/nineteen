@@ -12,7 +12,7 @@ from validator.utils import (
 from core import dataclasses as dc
 from redis.asyncio import Redis
 
-
+from core import bittensor_overrides as bt
 import base64
 from io import BytesIO
 
@@ -203,3 +203,9 @@ async def fetch_synthetic_data_for_task(redis_db: Redis, task: Task) -> dict[str
         raise ValueError(f"Unknown task type: {task_type}")
 
     return synthetic_data
+
+
+def convert_synthetic_data_to_synapse(synthetic_data: dict[str, Any], task: Task) -> bt.Synapse:
+    # dynamically get synapse from models.synapses using the task
+    synapse = tasks_config.TASK_TO_CONFIG[task].synapse
+    return synapse(**synthetic_data)
