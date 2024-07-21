@@ -156,7 +156,7 @@ services:
     # Below needs to be from config somehow
     environment:
       WALLET_NAME: new_test
-      HOTKEY_NAME: 1
+      HOTKEY_NAME: vali
     networks:
       - redis_network
     entrypoint: ["python", "-u", "/app/validator/signing_service/main.py"]
