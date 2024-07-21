@@ -83,3 +83,15 @@ class PSQLDB:
             except asyncpg.exceptions.PostgresError as e:
                 logger.error(f"PostgreSQL error in truncate_all_tables: {str(e)}")
                 raise
+
+    async def fetchone(self, query: str, *args: Any) -> dict[str, Any] | None:
+        if not self.pool:
+            raise RuntimeError("Database connection not established. Call connect() first.")
+        async with self.pool.acquire() as connection:
+            try:
+                row = await connection.fetchrow(query, *args)
+                return dict(row) if row else None
+            except asyncpg.exceptions.PostgresError as e:
+                logger.error(f"PostgreSQL error in fetchone: {str(e)}")
+                logger.error(f"Query: {query}")
+                raise
