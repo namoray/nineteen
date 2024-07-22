@@ -12,6 +12,7 @@ from validator.core.manage_participants import fetch_participants, scheduling_pa
 from validator.core.store_synthetic_data import generate_synthetic_data
 
 
+# TODO: better co-ordinate these
 async def main() -> None:
     await asyncio.gather(
         calculate_weights.main(),
