@@ -14,7 +14,7 @@ AxonUID = int
 class PeriodScore(BaseModel):
     hotkey: str
     period_score: Optional[float]
-    consumed_volume: float
+    consumed_capacity: float
     created_at: datetime
 
 

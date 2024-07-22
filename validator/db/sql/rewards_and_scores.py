@@ -186,7 +186,19 @@ async def select_recent_reward_data_for_a_task(
 ) -> List[tuple]:
     return await connection.fetch(
         f"""
-        SELECT * FROM {dcst.TABLE_REWARD_DATA}
+        SELECT
+            {dcst.COLUMN_ID},
+            {dcst.COLUMN_TASK},
+            {dcst.COLUMN_AXON_UID},
+            {dcst.COLUMN_QUALITY_SCORE},
+            {dcst.COLUMN_VALIDATOR_HOTKEY},
+            {dcst.COLUMN_MINER_HOTKEY},
+            {dcst.COLUMN_SYNTHETIC_QUERY},
+            {dcst.COLUMN_SPEED_SCORING_FACTOR},
+            {dcst.COLUMN_RESPONSE_TIME},
+            {dcst.COLUMN_VOLUME},
+            {dcst.COLUMN_CREATED_AT}
+        FROM {dcst.TABLE_REWARD_DATA}
         WHERE {dcst.COLUMN_TASK} = $1
         AND {dcst.COLUMN_CREATED_AT} > $2
         AND {dcst.COLUMN_MINER_HOTKEY} = $3
@@ -202,17 +214,17 @@ async def select_recent_reward_data(connection: Connection, date: str, miner_hot
     return await connection.fetch(
         f"""
         SELECT
-            id,
-            task,
-            axon_uid,
-            quality_score,
-            validator_hotkey,
-            miner_hotkey,
-            synthetic_query,
-            speed_scoring_factor,
-            response_time,
-            volume,
-            created_at
+            {dcst.COLUMN_ID},
+            {dcst.COLUMN_TASK},
+            {dcst.COLUMN_AXON_UID},
+            {dcst.COLUMN_QUALITY_SCORE},
+            {dcst.COLUMN_VALIDATOR_HOTKEY},
+            {dcst.COLUMN_MINER_HOTKEY},
+            {dcst.COLUMN_SYNTHETIC_QUERY},
+            {dcst.COLUMN_SPEED_SCORING_FACTOR},
+            {dcst.COLUMN_RESPONSE_TIME},
+            {dcst.COLUMN_VOLUME},
+            {dcst.COLUMN_CREATED_AT}
         FROM {dcst.TABLE_REWARD_DATA}
         WHERE {dcst.COLUMN_CREATED_AT} > $1
         AND {dcst.COLUMN_MINER_HOTKEY} = $2
@@ -222,20 +234,4 @@ async def select_recent_reward_data(connection: Connection, date: str, miner_hot
         date,
         miner_hotkey,
         limit,
-    )
-
-
-async def select_uid_period_scores_for_task(connection: Connection, task: str, miner_hotkey: str) -> List[tuple]:
-    return await connection.fetch(
-        f"""
-        SELECT
-            {dcst.COLUMN_PERIOD_SCORE},
-            {dcst.COLUMN_CONSUMED_VOLUME},
-            {dcst.COLUMN_CREATED_AT}
-        FROM {dcst.TABLE_UID_RECORDS}
-        WHERE {dcst.COLUMN_TASK} = $1
-        AND {dcst.COLUMN_MINER_HOTKEY} = $2
-        """,
-        task,
-        miner_hotkey,
     )

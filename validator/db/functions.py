@@ -125,7 +125,7 @@ async def delete_data_older_than_date(connection: Connection, minutes: int) -> N
 async def fetch_recent_most_rewards_for_uid(
     connection: Connection, task: Task, miner_hotkey: str, quality_tasks_to_fetch: int = 50
 ) -> List[RewardData]:
-    date = datetime.now().timestamp() - timedelta(hours=72).total_seconds()
+    date = datetime.now() - timedelta(hours=72)
     priority_results = await sql.select_recent_reward_data_for_a_task(connection, task.value, date, miner_hotkey)
 
     y = len(priority_results)
@@ -133,7 +133,7 @@ async def fetch_recent_most_rewards_for_uid(
 
     reward_data_list = [
         RewardData(
-            id=row[0],
+            id=str(row[0]),
             task=row[1],
             axon_uid=row[2],
             quality_score=row[3],
@@ -156,15 +156,6 @@ async def fetch_hotkey_scores_for_task(
     task: Task,
     miner_hotkey: str,
 ) -> List[PeriodScore]:
-    rows = await sql.select_uid_period_scores_for_task(connection, task.value, miner_hotkey)
+    period_scores = await sql.fetch_hotkey_scores_for_task(connection, task, miner_hotkey)
 
-    period_scores = [
-        PeriodScore(
-            hotkey=miner_hotkey,
-            period_score=row[0],
-            consumed_volume=row[1],
-            created_at=row[2],
-        )
-        for row in rows
-    ]
     return sorted(period_scores, key=lambda x: x.created_at, reverse=True)

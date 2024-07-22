@@ -26,7 +26,10 @@ tasks:
       - docker-compose exec -e ENV=test  {{.CLI_ARGS}} chain_node python validator/core/get_rewards/main.py
   client_node:
     cmds:
-      - docker-compose run --rm {{.CLI_ARGS}} client_node python validator/client_node/main.py
+      - docker-compose run {{.CLI_ARGS}} --entrypoint client_node python validator/client_node/main.py
+  calculate_weights:
+    cmds:
+      - docker-compose run {{.CLI_ARGS}} --entrypoint python core_validator  validator/core/calculate_weights/main.py
 
   test_sign_message:
     cmds:

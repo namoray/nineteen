@@ -1,28 +1,37 @@
 # Schema for the db
-from typing import Dict, List
 
-from core import Task
-from models import utility_models
-from validator.db.db_management import db_manager
-from validator.models import PeriodScore
-from validator.models import AxonUID
+
+from core import Task, tasks_config as tcfg
+from validator.db import functions as db_functions
+from validator.db.database import PSQLDB
+from validator.models import Participant, PeriodScore
 from validator.models import RewardData
+from core.logging import get_logger
+
+
+logger = get_logger(__name__)
 
 PERIOD_SCORE_TIME_DECAYING_FACTOR = 0.5
 
 
-async def _get_reward_datas(miner_hotkey: str, task: Task) -> List[RewardData]:
-    reward_datas = await db_manager.fetch_recent_most_rewards_for_uid(task, miner_hotkey)
+async def _get_reward_datas(psql_db: PSQLDB, participant: Participant) -> list[RewardData]:
+    async with await psql_db.connection() as connection:
+        reward_datas = await db_functions.fetch_recent_most_rewards_for_uid(
+            connection, participant.task, participant.miner_hotkey
+        )
     return reward_datas
 
 
-async def _get_period_scores(miner_hotkey: str, task: Task) -> List[PeriodScore]:
-    period_scores = await db_manager.fetch_hotkey_scores_for_task(task, miner_hotkey)
+async def _get_period_scores(psql_db: PSQLDB, participant: Participant) -> list[PeriodScore]:
+    async with await psql_db.connection() as connection:
+        period_scores = await db_functions.fetch_hotkey_scores_for_task(
+            connection, participant.task, participant.miner_hotkey
+        )
     return period_scores
 
 
-async def _calculate_combined_quality_score(miner_hotkey: str, task: Task) -> float:
-    reward_datas = await _get_reward_datas(miner_hotkey, task)
+async def _calculate_combined_quality_score(psql_db: PSQLDB, participant: Participant) -> float:
+    reward_datas: list[RewardData] = await _get_reward_datas(psql_db, participant=participant)
     combined_quality_scores = [
         reward_data.quality_score * reward_data.speed_scoring_factor for reward_data in reward_datas
     ]
@@ -31,25 +40,25 @@ async def _calculate_combined_quality_score(miner_hotkey: str, task: Task) -> fl
     return sum(combined_quality_scores) / len(combined_quality_scores)
 
 
-async def _calculate_normalised_period_score(miner_hotkey: str, task: Task) -> float:
-    period_scores = await _get_period_scores(miner_hotkey, task)
+async def _calculate_normalised_period_score(psql_db: PSQLDB, participant: Participant) -> float:
+    period_scores = await _get_period_scores(psql_db, participant)
     all_period_scores = [ps for ps in period_scores if ps.period_score is not None]
     normalised_period_scores = _normalise_period_scores(all_period_scores)
     return normalised_period_scores
 
 
-def _normalise_period_scores(period_scores: List[PeriodScore]) -> float:
+def _normalise_period_scores(period_scores: list[PeriodScore]) -> float:
     if len(period_scores) == 0:
         return 0
 
-    sum_of_volumes = sum(ps.consumed_volume for ps in period_scores)
+    sum_of_volumes = sum(ps.consumed_capacity for ps in period_scores)
     if sum_of_volumes == 0:
         return 0
 
     total_score = 0
     total_weight = 0
     for i, score in enumerate(period_scores):
-        volume_weight = score.consumed_volume / sum_of_volumes
+        volume_weight = score.consumed_capacity / sum_of_volumes
         time_weight = (1 - PERIOD_SCORE_TIME_DECAYING_FACTOR) ** i
         combined_weight = volume_weight * time_weight
         total_score += score.period_score * combined_weight
@@ -68,30 +77,30 @@ def _calculate_hotkey_effective_volume_for_task(
 
 
 async def calculate_scores_for_settings_weights(
-    capacities_for_tasks: Dict[Task, Dict[AxonUID, float]],
-    uid_to_uid_info: Dict[AxonUID, utility_models.HotkeyInfo],
-    task_weights: Dict[Task, float],
-) -> Dict[str, float]:
-    total_hotkey_scores: Dict[str, float] = {}
+    psql_db: PSQLDB,
+    participants: list[Participant],
+) -> dict[str, float]:
+    total_hotkey_scores: dict[str, float] = {}
 
+    logger.debug("Starting calculation of scores for settings weights")
     for task in Task:
-        if task not in task_weights:
-            continue
-        task_weight = task_weights[task]
-        hotkey_to_effective_volumes: Dict[str, float] = {}
-        capacities = capacities_for_tasks[task]
+        task_weight = tcfg.TASK_TO_CONFIG[task].weight
+        logger.debug(f"Processing task: {task}, weight: {task_weight}")
+        hotkey_to_effective_volumes: dict[str, float] = {}
 
-        for uid, volume in capacities.items():
-            miner_hotkey = uid_to_uid_info[uid].hotkey
-            combined_quality_score = await _calculate_combined_quality_score(miner_hotkey, task)
-            normalised_period_score = await _calculate_normalised_period_score(miner_hotkey, task)
+        for participant in [participant for participant in participants if participant.task == task]:
+            miner_hotkey = participant.miner_hotkey
+            combined_quality_score = await _calculate_combined_quality_score(psql_db, participant=participant)
+            normalised_period_score = await _calculate_normalised_period_score(psql_db, participant=participant)
             effective_volume_for_task = _calculate_hotkey_effective_volume_for_task(
-                combined_quality_score, normalised_period_score, volume
+                combined_quality_score, normalised_period_score, participant.capacity
             )
             hotkey_to_effective_volumes[miner_hotkey] = effective_volume_for_task
 
         sum_of_effective_volumes = sum(hotkey_to_effective_volumes.values())
+        logger.debug(f"Sum of effective volumes for task {task}: {sum_of_effective_volumes}")
         if sum_of_effective_volumes == 0:
+            logger.debug(f"No effective volume for task {task}, skipping")
             continue
         normalised_scores_for_task = {
             hotkey: effective_volume / sum_of_effective_volumes
@@ -102,4 +111,7 @@ async def calculate_scores_for_settings_weights(
                 total_hotkey_scores.get(hotkey, 0) + normalised_scores_for_task[hotkey] * task_weight
             )
 
+        logger.debug(f"Completed processing task: {task}")
+
+    logger.debug("Completed calculation of scores for settings weights")
     return total_hotkey_scores

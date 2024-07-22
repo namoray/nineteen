@@ -44,6 +44,7 @@ class FullTaskConfig(BaseModel):
     synapse: str
     volume_to_requests_conversion: float
     is_stream: bool
+    weight: float
 
 
 TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
@@ -89,6 +90,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         synapse="Chat",
         volume_to_requests_conversion=300,
         is_stream=True,
+        weight=0.1,
     ),
     Task.chat_llama_3: FullTaskConfig(
         task=Task.chat_llama_3,
@@ -111,6 +113,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         synapse="Chat",
         volume_to_requests_conversion=300,
         is_stream=True,
+        weight=0.1,
     ),
     # Task.proteus_text_to_image: FullTaskConfig(
     #     task=Task.proteus_text_to_image,

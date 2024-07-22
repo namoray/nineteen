@@ -3,7 +3,9 @@ from .participants import (
     migrate_participants_to_participant_history,
     fetch_all_participants,
     fetch_participant,
-    get_participant_for_task
+    get_participant_for_task,
+    fetch_hotkey_scores_for_task,
+    update_participants_period_scores
 )
 from .axons import (
     insert_axon_info,
@@ -30,7 +32,6 @@ from .rewards_and_scores import (
     select_task_for_deletion,
     select_recent_reward_data_for_a_task,
     select_recent_reward_data,
-    select_uid_period_scores_for_task,
 )
 
 __all__ = [
@@ -40,6 +41,8 @@ __all__ = [
     "fetch_all_participants",
     "fetch_participant",
     "get_participant_for_task",
+    "fetch_hotkey_scores_for_task",
+    "update_participants_period_scores"
 
     # Axons
     "insert_axon_info",
@@ -65,5 +68,5 @@ __all__ = [
     "select_task_for_deletion",
     "select_recent_reward_data_for_a_task",
     "select_recent_reward_data",
-    "select_uid_period_scores_for_task",
+
 ]

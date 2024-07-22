@@ -3,7 +3,7 @@ import os
 
 from validator.db.database import PSQLDB
 from validator.models import Participant
-from validator.utils import query_utils as qutils
+from validator.utils import query_utils as qutils, participant_utils as putils
 from core import tasks_config as tcfg
 from core import constants as ccst
 from collections import defaultdict
@@ -138,7 +138,9 @@ async def store_participants(
     participants: list[Participant],
     validator_hotkey: str,
 ):
+    logger.info("Calculating period scores & refreshing participants")
     async with await psql_db.connection() as connection:
+        await putils.add_period_scores_to_current_participants(connection)
         await sql.migrate_participants_to_participant_history(connection)
         await sql.insert_participants(connection, participants, validator_hotkey)
 

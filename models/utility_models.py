@@ -5,7 +5,6 @@ import numpy as np
 from pydantic import BaseModel
 
 from core import Task
-from validator.models import AxonUID
 
 
 class QueryResult(BaseModel):
@@ -44,13 +43,6 @@ class Message(BaseModel):
         extra = "allow"
 
 
-class HotkeyInfo(BaseModel):
-    class Config:
-        arbitrary_types_allowed = True
-
-    uid: AxonUID
-    hotkey: str
-    axon_ip: str
 
 
 class OperationDistribution(BaseModel):

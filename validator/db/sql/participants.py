@@ -2,7 +2,7 @@ from core import Task
 from core.logging import get_logger
 
 from asyncpg import Connection
-from validator.models import Participant
+from validator.models import Participant, PeriodScore
 from validator.utils import database_constants as dcst
 
 logger = get_logger(__name__)
@@ -136,9 +136,9 @@ async def fetch_participant(connection: Connection, participant_id: str) -> Part
     return Participant(**row)
 
 
-async def fetch_all_participants(connection: Connection) -> list[Participant]:
-    rows = await connection.fetch(
-        f"""
+# TODO: add netuid to participant?!
+async def fetch_all_participants(connection: Connection, netuid: int | None = None) -> list[Participant]:
+    base_query = f"""
         SELECT 
             {dcst.PARTICIPANT_ID}, {dcst.MINER_HOTKEY}, {dcst.TASK}, 
             {dcst.CAPACITY}, {dcst.CAPACITY_TO_SCORE}, {dcst.CONSUMED_CAPACITY}, 
@@ -147,5 +147,37 @@ async def fetch_all_participants(connection: Connection) -> list[Participant]:
             {dcst.RAW_CAPACITY}, {dcst.PERIOD_SCORE}
         FROM {dcst.PARTICIPANTS_TABLE}
         """
-    )
+    if netuid is None:
+        rows = await connection.fetch(base_query)
+    else:
+        rows = await connection.fetch(base_query + f" WHERE {dcst.NETUID} = $1", netuid)
     return [Participant(**row) for row in rows]
+
+
+async def fetch_hotkey_scores_for_task(connection: Connection, task: Task, miner_hotkey: str) -> list[PeriodScore]:
+    rows = await connection.fetch(
+        f"""
+        SELECT
+            {dcst.MINER_HOTKEY} as hotkey,
+            {dcst.PERIOD_SCORE},
+            {dcst.CONSUMED_CAPACITY},
+            {dcst.CREATED_AT}
+        FROM {dcst.PARTICIPANTS_HISTORY_TABLE}
+        WHERE {dcst.TASK} = $1
+        AND {dcst.MINER_HOTKEY} = $2
+        ORDER BY {dcst.CREATED_AT} DESC
+        """,
+        task.value,
+        miner_hotkey,
+    )
+    return [PeriodScore(**row) for row in rows]
+
+async def update_participants_period_scores(connection: Connection, participants: list[Participant]) -> None:
+    await connection.executemany(
+        f"""
+        UPDATE {dcst.PARTICIPANTS_TABLE}
+        SET {dcst.PERIOD_SCORE} = $1
+        WHERE {dcst.PARTICIPANT_ID} = $2
+        """,
+        [(participant.period_score, participant.id) for participant in participants],
+    )
