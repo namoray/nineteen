@@ -3,3 +3,5 @@ fastapi
 httpx
 asyncpg
 redis
+uvicorn
+colorama

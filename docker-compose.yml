@@ -65,7 +65,27 @@ services:
     networks:
     - postgres_network
 
-
+  client_node:
+    build:
+      context: .
+      dockerfile: dockerfiles/client_node.dockerfile
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+      - postgresql
+    volumes:
+      - .:/app
+    networks:
+      - postgres_network
+      - redis_network
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: postgresql
+      POSTGRES_PORT: 5432
+      POSTGRES_NAME: mydb
+    
   query_node:
     build:
       context: .
