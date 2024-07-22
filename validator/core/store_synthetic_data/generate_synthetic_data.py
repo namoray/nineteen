@@ -1,7 +1,8 @@
 import asyncio
 import datetime
+import os
 import threading
-from flask import json
+import json
 import time
 from pydantic import BaseModel
 from core import Task
@@ -31,15 +32,23 @@ async def _store_synthetic_data_in_redis(redis_db: Redis, task: Task, synthetic_
     await pipe.execute()
 
 
-async def update_tasks_synthetic_data(redis_db: Redis, slow_sync: bool = True) -> None:
-    for task in Task:
+async def update_tasks_synthetic_data(redis_db: Redis, slow_sync: bool = True, task: Task | None = None) -> None:
+    if task is not None:
         now = datetime.datetime.now().timestamp()
         synthetic_data_version = await sutils.get_synthetic_data_version(redis_db, task)
         if synthetic_data_version is None or now - synthetic_data_version > scst.SYNTHETIC_DATA_EXPIRATION_TIME:
             new_synthetic_data = await synthetic_generation_funcs.generate_synthetic_data(task)
             await _store_synthetic_data_in_redis(redis_db, task, new_synthetic_data)
-        if slow_sync:
-            await asyncio.sleep(0.1)
+
+    else:
+        for task in Task:
+            now = datetime.datetime.now().timestamp()
+            synthetic_data_version = await sutils.get_synthetic_data_version(redis_db, task)
+            if synthetic_data_version is None or now - synthetic_data_version > scst.SYNTHETIC_DATA_EXPIRATION_TIME:
+                new_synthetic_data = await synthetic_generation_funcs.generate_synthetic_data(task)
+                await _store_synthetic_data_in_redis(redis_db, task, new_synthetic_data)
+            if slow_sync:
+                await asyncio.sleep(0.1)
 
 
 async def _continuously_fetch_synthetic_data_for_tasks(redis_db: Redis) -> None:
@@ -66,9 +75,16 @@ class SyntheticDataManager:
 
 async def main():
     redis_db = Redis(host="redis", db=0)
-    await update_tasks_synthetic_data(redis_db, slow_sync=False)
-    # synthetic_data_manager = SyntheticDataManager(redis_db, start_event_loop=False)
-    # synthetic_data_manager._start_synthetic_event_loop()
+
+    task = os.getenv("TASK", None)
+    if task is not None:
+        task = Task(task)
+        await update_tasks_synthetic_data(redis_db, slow_sync=False, task=task)
+    else:
+        synthetic_data_manager = SyntheticDataManager(redis_db, start_event_loop=False)
+        synthetic_data_manager._start_synthetic_event_loop()
+        while True:
+            await asyncio.sleep(60 * 60)
 
 
 if __name__ == "__main__":

@@ -1,5 +1,6 @@
 from enum import Enum
 from core import Task
+from models import utility_models
 from models.base_models import CapacityForTask
 from pydantic import BaseModel
 
@@ -62,7 +63,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
             checking_function="check_text_result",
         ),
         synthetic_generation_config=SyntheticGenerationConfig(
-            func="generate_chat_synthetic", kwargs={"model": "mixtral"}
+            func="generate_chat_synthetic", kwargs={"model": utility_models.ChatModels.mixtral.value}
         ),
         synapse="Chat",
         volume_to_requests_conversion=300,
@@ -84,7 +85,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
             checking_function="check_text_result",
         ),
         synthetic_generation_config=SyntheticGenerationConfig(
-            func="generate_chat_synthetic", kwargs={"model": "llama_3"}
+            func="generate_chat_synthetic", kwargs={"model": utility_models.ChatModels.llama_3.value}
         ),
         synapse="Chat",
         volume_to_requests_conversion=300,

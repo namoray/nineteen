@@ -28,6 +28,9 @@ async def process_job(
 ):
     participant_id = job_data["query_payload"]["participant_id"]
     participant = await putils.load_participant(psql_db, participant_id)
+    if participant is None:
+        logger.error(f"Participant {participant_id} not found in db... can't process")
+        return
     task = participant.task
     axon = await sql.get_axon(
         psql_db,

@@ -16,7 +16,7 @@ def construct_synthetic_query_message(participant_id: str) -> str:
 
 
 # Consistently about 1ms
-async def load_participant(psql_db: PSQLDB, participant_id: str) -> Participant:
+async def load_participant(psql_db: PSQLDB, participant_id: str) -> Participant | None:
     async with await psql_db.connection() as connection:
         return await sql.fetch_participant(connection, participant_id)
 

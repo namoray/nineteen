@@ -83,7 +83,11 @@ class dendrite:
 
         job_results_key = _construct_signed_message_key(job_id)
 
-        _, payload_raw = await self.redis_db.blpop(job_results_key, 10)
+        resp = await self.redis_db.blpop(job_results_key, 10)
+        if resp is None:
+            raise Exception("Timed out waiting for signed message")
+
+        _, payload_raw = resp
 
         payload = SignedPayload(**json.loads(payload_raw))
 
@@ -176,8 +180,9 @@ class dendrite:
 
         try:
             # Log outgoing request
-            if log_requests_and_responses:
+            if log_requests_and_responses or True:
                 self._log_outgoing_request(synapse)
+
 
             # Make the HTTP POST request
             async with (await self.session).post(
@@ -186,6 +191,7 @@ class dendrite:
                 json=synapse.model_dump(),
                 timeout=timeout_settings,
             ) as response:
+                logger.debug(f"Response code: {response.status}. Response: {response.text}")
                 # Use synapse subclass' process_streaming_response method to yield the response chunks
                 async for chunk in synapse.process_streaming_response(response):
                     yield chunk

@@ -134,6 +134,8 @@ async def query_individual_axon_stream(
     synapse_name = synapse.__class__.__name__
     if synapse_name not in qcst.OPERATION_TIMEOUTS:
         logger.warning(f"Operation {synapse_name} not in operation_to_timeout, this is probably a mistake / bug 🐞")
+
+    timeouts = qcst.OPERATION_TIMEOUTS.get(synapse_name, qcst.Timeouts(connect_timeout=15, response_timeout=15))
     if log_requests_and_responses:
         logger.info(f"Querying axon {axon_uid} for {synapse_name}")
 
@@ -141,8 +143,8 @@ async def query_individual_axon_stream(
     response = await dendrite.forward(
         axons=axon,
         synapse=synapse,
-        connect_timeout=0.3,
-        response_timeout=qcst.OPERATION_TIMEOUTS.get(synapse_name, 5),  # if X seconds without any data, its boinked
+        connect_timeout=timeouts.connect_timeout,
+        response_timeout=timeouts.response_timeout,  # if X seconds without any data, its boinked
         deserialize=deserialize,
         log_requests_and_responses=log_requests_and_responses,
         streaming=True,

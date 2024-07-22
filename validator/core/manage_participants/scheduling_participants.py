@@ -11,7 +11,6 @@ from validator.utils import (
     redis_utils as rutils,
     redis_constants as rcst,
 )
-from core import Task
 from core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -44,13 +43,11 @@ def _get_time_to_execute_query(delay: float) -> float:
     return time_to_execute_query.timestamp()
 
 
-async def schedule_synthetic_queries_for_all_participants(psql_db: PSQLDB, redis_db: Redis, task: Task | None) -> None:
+async def schedule_synthetic_queries_for_all_participants(psql_db: PSQLDB, redis_db: Redis) -> None:
     await rutils.clear_sorted_set(redis_db, rcst.SYNTHETIC_SCHEDULING_QUEUE_KEY)
 
     participants = await putils.load_participants(psql_db)
     for participant in participants:
-        if task is not None and participant.task != task:
-            continue
         await schedule_synthetic_query(redis_db, participant.id, participant.delay_between_synthetic_requests)
 
         # Below for load testing
@@ -113,16 +110,17 @@ async def main():
 
     run_once = os.getenv("RUN_ONCE", "true").lower() == "true"
     test = os.getenv("ENV", "prod").lower() == "test"
-    specific_task = os.getenv("TASK", None)
-    if specific_task is not None:
-        specific_task = Task(specific_task)
     await psql_db.connect()
+    specific_participant = os.getenv("PARTICIPANT_ID", None)
+    if specific_participant is not None:
+        await putils.add_synthetic_query_to_queue(redis_db, specific_participant)
 
-    await schedule_synthetic_queries_for_all_participants(psql_db, redis_db, specific_task)
-    if test:
-        logger.debug("Sleeping for a few secs to let some synthetics build up...")
-        await asyncio.sleep(3)
-    await run_schedule_processor(redis_db, run_once=run_once)
+    else:
+        await schedule_synthetic_queries_for_all_participants(psql_db, redis_db)
+        if test:
+            logger.debug("Sleeping for a few secs to let some synthetics build up...")
+            await asyncio.sleep(3)
+        await run_schedule_processor(redis_db, run_once=run_once)
 
 
 if __name__ == "__main__":

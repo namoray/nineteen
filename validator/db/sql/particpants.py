@@ -97,7 +97,7 @@ async def migrate_participants_to_participant_history(connection: Connection) ->
     await connection.execute(f"TRUNCATE TABLE {dcst.PARTICIPANTS_TABLE}")
 
 
-async def fetch_participant(connection: Connection, participant_id: str) -> Participant:
+async def fetch_participant(connection: Connection, participant_id: str) -> Participant | None:
     row = await connection.fetchrow(
         f"""
         SELECT 

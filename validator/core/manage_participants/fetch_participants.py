@@ -46,7 +46,7 @@ async def _fetch_available_capacities_for_each_axon(psql_db: PSQLDB, dendrite: b
     # Capacity operations is extremely highly dependent
     # On the connect timeout and response timeouts.
     # It definitely should not be...
-    for axon in axons[:10]:
+    for axon in axons[:256]:
         task = asyncio.create_task(
             qutils.query_individual_axon(
                 synapse=synapses.Capacity(capacities=None),
