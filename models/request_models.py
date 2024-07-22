@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, root_validator, validator
+from pydantic import BaseModel, Field, validator
 from typing import Optional, List
 from models import utility_models
 import random
@@ -77,7 +77,7 @@ class TextToImageRequest(BaseModel):
     width: Optional[int] = Field(cst.DEFAULT_WIDTH, description="Width of the generated image", le=1344, ge=512)
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "examples": [
                 {
                     "text_prompts": [{"text": "A dog parachuting over the ocean"}],

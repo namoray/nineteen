@@ -5,3 +5,4 @@ asyncpg
 redis
 uvicorn
 colorama
+aiocache

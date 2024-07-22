@@ -3,6 +3,7 @@ from .participants import (
     migrate_participants_to_participant_history,
     fetch_all_participants,
     fetch_participant,
+    get_participant_for_task
 )
 from .axons import (
     insert_axon_info,
@@ -38,6 +39,8 @@ __all__ = [
     "migrate_participants_to_participant_history",
     "fetch_all_participants",
     "fetch_participant",
+    "get_participant_for_task",
+
     # Axons
     "insert_axon_info",
     "migrate_axons_to_axon_history",

@@ -2,7 +2,11 @@ import base64
 import binascii
 import io
 from typing import AsyncGenerator
-from validator.utils import query_constants as qcst, query_utils as qutils
+from validator.utils import (
+    query_constants as qcst,
+    query_utils as qutils,
+    redis_constants as rcst,
+)
 from core import tasks_config as tcfg
 from models import base_models, synapses
 from core.bittensor_overrides.chain_data import AxonInfo
@@ -13,7 +17,7 @@ import time
 from typing import Tuple
 from core import bittensor_overrides as bt
 from core.logging import get_logger
-
+from redis.asyncio import Redis
 
 logger = get_logger(__name__)
 
@@ -73,9 +77,17 @@ def alter_clip_body(
     return body
 
 
-async def consume_generator(generator: AsyncGenerator) -> None:
-    async for _ in generator:
-        pass
+async def consume_generator(redis_db: Redis, generator: AsyncGenerator, job_id: str, synthetic_query: bool) -> None:
+    if synthetic_query:
+        async for _ in generator:
+            pass
+    else:
+        assert job_id
+        # Change this to a nicer payload
+        async for text in generator:
+            await redis_db.rpush(rcst.QUERY_RESULTS_KEY + ":" + job_id, text)
+
+        # await redis_db.expire(rcst.QUERY_RESULTS_KEY + ":" + job_id, 10)
 
 
 async def query_individual_axon(

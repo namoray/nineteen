@@ -4,7 +4,7 @@ import os
 import traceback
 import uuid
 from redis.asyncio import Redis
-from core import bittensor_overrides as bt
+from core import Task, bittensor_overrides as bt
 from core import tasks_config as tcfg
 from validator.db.database import PSQLDB
 from validator.db import sql
@@ -28,23 +28,32 @@ JOB_TIMEOUT = 300
 async def process_job(
     redis_db: Redis, psql_db: PSQLDB, dendrite: bt.dendrite, job_data: dict, netuid: int, debug: bool = False
 ):
-    participant_id = job_data["query_payload"]["participant_id"]
-    participant = await putils.load_participant(psql_db, participant_id)
+    # TODO: This should be nicer
+    synthetic_query = job_data["query_type"].lower() == "synthetic"
+    if synthetic_query:
+        participant_id = job_data["query_payload"].get("participant_id", None)
+        participant = await putils.load_participant(psql_db, participant_id)
+
+    # TODO: Change this so we have all sorts of retry logic for organics
+    else:
+        task = job_data["query_payload"]["task"]
+        async with await psql_db.connection() as connection:
+            participant = await sql.get_participant_for_task(connection, Task(task))
+
     if participant is None:
-        logger.error(f"Participant {participant_id} not found in db... can't process")
+        logger.error(f"Participant for task {task} not found in db... can't process")
         return
+
     task = participant.task
-    axons = await sql.get_axons(psql_db, netuid=netuid)
-    logger.debug(f"FOudn {len(axons)} axons for netuid {netuid}")
-    for axon in axons:
-        logger.debug(axon.hotkey)
+    participant_id = participant.id
+
     axon = await sql.get_axon(
         psql_db,
         participant.miner_hotkey,
         netuid,
     )
 
-    await redis_db.hset(f"job:{participant_id}", "state", "processing")
+    await redis_db.hset(f"job:{participant.id}", "state", "processing")
 
     try:
         synthetic_synapse = await sutils.fetch_synthetic_data_for_task(redis_db, task=participant.task)
@@ -57,10 +66,12 @@ async def process_job(
                 participant,
                 synthetic_synapse,
                 dendrite,
-                synthetic_query=True,
+                synthetic_query=synthetic_query,
                 debug=debug,
             )
-            await qutils.consume_generator(generator)
+            await qutils.consume_generator(
+                redis_db, generator, job_id=job_data["query_payload"].get("job_id"), synthetic_query=synthetic_query
+            )
 
         await redis_db.hset(f"job:{participant_id}", "state", "completed")
         logger.debug(f"Job {participant_id} completed successfully")

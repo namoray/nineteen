@@ -1,3 +1,4 @@
+from core import Task
 from core.logging import get_logger
 
 from asyncpg import Connection
@@ -95,6 +96,25 @@ async def migrate_participants_to_participant_history(connection: Connection) ->
     )
 
     await connection.execute(f"TRUNCATE TABLE {dcst.PARTICIPANTS_TABLE}")
+
+
+async def get_participant_for_task(connection: Connection, task: Task) -> Participant | None:
+    row = await connection.fetchrow(
+        f"""
+        SELECT 
+            {dcst.PARTICIPANT_ID}, {dcst.MINER_HOTKEY}, {dcst.TASK},
+            {dcst.CAPACITY}, {dcst.CAPACITY_TO_SCORE}, {dcst.CONSUMED_CAPACITY}, 
+            {dcst.DELAY_BETWEEN_SYNTHETIC_REQUESTS}, {dcst.SYNTHETIC_REQUESTS_STILL_TO_MAKE}, 
+            {dcst.TOTAL_REQUESTS_MADE}, {dcst.REQUESTS_429}, {dcst.REQUESTS_500}, 
+            {dcst.RAW_CAPACITY}, {dcst.PERIOD_SCORE}
+        FROM {dcst.PARTICIPANTS_TABLE} 
+        WHERE {dcst.TASK} = $1
+        """,
+        task.value,
+    )
+    if not row:
+        return None
+    return Participant(**row)
 
 
 async def fetch_participant(connection: Connection, participant_id: str) -> Participant | None:
