@@ -118,6 +118,8 @@ async def query_individual_axon(
             streaming=False,
         )
 
+    # logger.debug(response.dendrite.status_message)
+
     return response, time.time() - start_time
 
 

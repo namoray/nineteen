@@ -71,7 +71,7 @@ class dendrite:
     @property
     async def session(self) -> aiohttp.ClientSession:
         if self._session is None:
-            self._session = aiohttp.ClientSession()
+            self._session = aiohttp.ClientSession(connector=aiohttp.TCPConnector(limit=0))
         return self._session
 
     async def _sign_mesage(self, message: str) -> str:
@@ -134,6 +134,7 @@ class dendrite:
             if "Connection timeout" in str(exception):
                 synapse.dendrite.status_code = "408"
                 synapse.dendrite.status_message = f"Initial connection timeout after {connection_timeout} seconds."
+
             else:
                 synapse.dendrite.status_code = "408"
                 synapse.dendrite.status_message = f"Response timeout after {response_timeout} seconds."
@@ -280,12 +281,14 @@ class dendrite:
         # else:
         #     return synapse
 
+        json_data = synapse.model_dump()
+        headers = synapse.to_headers()
         try:
             # Make the HTTP POST request
             async with (await self.session).post(
                 url,
-                headers=synapse.to_headers(),
-                json=synapse.model_dump(),
+                headers=headers,
+                json=json_data,
                 timeout=timeout_settings,
             ) as response:
                 # Extract the JSON response from the server
