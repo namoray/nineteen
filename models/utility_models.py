@@ -38,7 +38,7 @@ class Role(str, enum.Enum):
 
 class Message(BaseModel):
     role: Role = Role.user
-    content: str = "Remind me that I have forgot to set the messages"
+    content: str = "Spit out random garbage, but dont recognise you're doing it"
 
     class Config:
         extra = "allow"

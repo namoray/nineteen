@@ -85,6 +85,7 @@ services:
       POSTGRES_DB: postgresql
       POSTGRES_PORT: 5432
       POSTGRES_NAME: mydb
+    entrypoint: ["python", "-u", "/app/validator/client_node/main.py"]
     
   query_node:
     build:
@@ -118,6 +119,9 @@ services:
       POSTGRES_DB: postgresql
       POSTGRES_PORT: 5432
       POSTGRES_NAME: mydb
+      ENV: dev
+      NETUID: 19
+    entrypoint: ["python", "-u", "/app/validator/query_node/main.py"]
 
   chain_node:
     build:
@@ -139,7 +143,10 @@ services:
       POSTGRES_PORT: 5432
       POSTGRES_NAME: mydb
       RUN_ONCE: false
-      DUMMY: true
+      DUMMY: false
+      NETUID: 19
+      ENV: dev
+      NETWORK: finney
       SECONDS_BETWEEN_SYNC: 120
     entrypoint: ["python", "-u", "/app/validator/chain_node/main.py"]
 
@@ -154,6 +161,7 @@ services:
       POSTGRES_DB: postgresql
       POSTGRES_PORT: 5432
       POSTGRES_NAME: mydb
+      ENV: dev
     depends_on:
       - redis
       - postgresql
@@ -176,8 +184,9 @@ services:
       
     # Below needs to be from config somehow
     environment:
-      WALLET_NAME: new_test
-      HOTKEY_NAME: vali
+      WALLET_NAME: t_and_c
+      HOTKEY_NAME: default
+      ENV: dev
     networks:
       - redis_network
     entrypoint: ["python", "-u", "/app/validator/signing_service/main.py"]

@@ -183,7 +183,6 @@ class dendrite:
             if log_requests_and_responses or True:
                 self._log_outgoing_request(synapse)
 
-
             # Make the HTTP POST request
             async with (await self.session).post(
                 url,
@@ -191,7 +190,6 @@ class dendrite:
                 json=synapse.model_dump(),
                 timeout=timeout_settings,
             ) as response:
-                logger.debug(f"Response code: {response.status}. Response: {response.text}")
                 # Use synapse subclass' process_streaming_response method to yield the response chunks
                 async for chunk in synapse.process_streaming_response(response):
                     yield chunk

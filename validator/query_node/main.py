@@ -33,16 +33,18 @@ async def process_job(
     if synthetic_query:
         participant_id = job_data["query_payload"].get("participant_id", None)
         participant = await putils.load_participant(psql_db, participant_id)
+        if participant is None:
+            logger.error(f"Participant {participant_id} not found in db... can't process")
+            return
 
     # TODO: Change this so we have all sorts of retry logic for organics
     else:
         task = job_data["query_payload"]["task"]
         async with await psql_db.connection() as connection:
             participant = await sql.get_participant_for_task(connection, Task(task))
-
-    if participant is None:
-        logger.error(f"Participant for task {task} not found in db... can't process")
-        return
+        if participant is None:
+            logger.error(f"Participant for task {task} not found in db... can't process")
+            return
 
     task = participant.task
     participant_id = participant.id

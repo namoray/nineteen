@@ -87,7 +87,7 @@ async def consume_generator(redis_db: Redis, generator: AsyncGenerator, job_id: 
         async for text in generator:
             await redis_db.rpush(rcst.QUERY_RESULTS_KEY + ":" + job_id, text)
 
-        # await redis_db.expire(rcst.QUERY_RESULTS_KEY + ":" + job_id, 10)
+        await redis_db.expire(rcst.QUERY_RESULTS_KEY + ":" + job_id, 10)
 
 
 async def query_individual_axon(
@@ -151,7 +151,6 @@ async def query_individual_axon_stream(
     if log_requests_and_responses:
         logger.info(f"Querying axon {axon_uid} for {synapse_name}")
 
-    logger.debug(f"Querying axon {axon} for {synapse_name}")
     response = await dendrite.forward(
         axons=axon,
         synapse=synapse,

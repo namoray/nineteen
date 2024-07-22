@@ -136,7 +136,6 @@ async def query_miner_stream(
         if text_generator is not None:
             first_message = True
             async for text in text_generator:
-                logger.info(f"Text: {text}")
                 if isinstance(text, str):
                     try:
                         loaded_jsons = _load_sse_jsons(text)

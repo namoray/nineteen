@@ -51,7 +51,7 @@ async def make_organic_query(
     organic_message = _construct_organic_message(job_id=job_id, task=task)
     await rutils.add_str_to_redis_list(redis_db, rcst.QUERY_QUEUE_KEY, organic_message)
 
-    # REPLACE BELOW WITH A STREAM, NOT BLOCKING QUEUE READS
+    # REPLACE BELOW WITH A STREAM, NOT NEVER ENDING QUEUE READS
     done = False
     while not done:
         _, result = await redis_db.blpop(rcst.QUERY_RESULTS_KEY + ":" + job_id)
@@ -59,6 +59,7 @@ async def make_organic_query(
         yield result
         if "DONE" in result.decode():
             break
+    
 
 
 @router.post("/chat")

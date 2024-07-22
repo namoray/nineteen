@@ -19,7 +19,7 @@ logger = get_logger(__name__)
 
 
 def _get_percentage_of_tasks_to_score():
-    return 1
+    return 0.1
 
 
 async def _get_validator_stake_proportion(
@@ -54,7 +54,7 @@ async def _fetch_available_capacities_for_each_axon(psql_db: PSQLDB, dendrite: b
                 axon=axon,
                 uid=axon.axon_uid,
                 deserialize=True,
-                log_requests_and_responses=True,
+                log_requests_and_responses=False,
             )
         )
 

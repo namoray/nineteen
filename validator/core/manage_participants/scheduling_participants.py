@@ -38,7 +38,8 @@ def _log_performance_metrics(
 
 def _get_time_to_execute_query(delay: float) -> float:
     now = datetime.now()
-    randomised_delay = delay * (0.90 + 0.10 * random.random())
+    # TODO: REMOVE THE MULTIPLIERS
+    randomised_delay = max(delay, 0.1) * (0.90 + 0.10 * random.random()) * 100
     time_to_execute_query = now + timedelta(seconds=randomised_delay)
     return time_to_execute_query.timestamp()
 
@@ -93,14 +94,15 @@ async def run_schedule_processor(redis_db: Redis, run_once: bool = False) -> Non
             await schedule_synthetic_query(redis_db, **details)
             processed_items += 1
         else:
-            logger.debug(f"No queries ready; Time left to execute next: {time_left_to_execute}")
+            # logger.debug(f"No queries ready; Time left to execute next: {time_left_to_execute}")
             sleep_time: float = min(0.5, time_left_to_execute)
             cumulative_sleep_time += sleep_time
             if run_once:
                 break
             await asyncio.sleep(sleep_time)
 
-        if processed_items % 10 == 0 and processed_items > 0:
+        # TODO: CHANGE TO SOMETHING THAT SCALES ITSELF WHEN TO LOG
+        if processed_items % 1000 == 0 and processed_items > 0:
             _log_performance_metrics(processed_items, start_time, cumulative_late_time, cumulative_sleep_time)
 
 
@@ -108,7 +110,7 @@ async def main():
     redis_db = Redis(host="redis")
     psql_db = PSQLDB()
 
-    run_once = os.getenv("RUN_ONCE", "true").lower() == "true"
+    run_once = os.getenv("RUN_ONCE", "false").lower() == "true"
     test = os.getenv("ENV", "prod").lower() == "test"
     await psql_db.connect()
     specific_participant = os.getenv("PARTICIPANT_ID", None)

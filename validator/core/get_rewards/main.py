@@ -233,7 +233,7 @@ class Scorer:
                 #     keypair=self.keypair,
                 #     data_type_to_post=post_stats.DataTypeToPost.REWARD_DATA,
                 # )
-                logger.info(f"\nPosted reward data for task: {task}, uid: {uid}")
+                logger.info(f"Succesfully scored and stored data for task: {task}")
 
             i += 1
 

@@ -1,4 +1,5 @@
 """TODO: Move this out from the main validator"""
+
 import asyncio
 import json
 from substrateinterface import Keypair
@@ -18,7 +19,7 @@ def sign_message(message: str, keypair: Keypair) -> str:
 async def sign_and_push(redis_db: Redis, message: str, job_id: str, keypair: Keypair):
     signed_message = sign_message(message, keypair=keypair)
     signed_payload = dc.SignedPayload(signature=signed_message, job_id=job_id)
-    logger.debug(f"Signed message: {signed_message}")
+    logger.debug("Signed message!")
     await redis_db.lpush(
         utils.construct_signed_message_key(job_id),
         json.dumps(asdict(signed_payload)),
