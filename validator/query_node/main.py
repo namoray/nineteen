@@ -22,7 +22,8 @@ logger = get_logger(__name__)
 
 JOB_TIMEOUT = 300
 
-
+# TODO: bug where if you have an error in a job, it will be silenty ignored
+# until the second
 async def process_job(
     redis_db: Redis, psql_db: PSQLDB, dendrite: bt.dendrite, job_data: dict, netuid: int, debug: bool = False
 ):
@@ -32,6 +33,10 @@ async def process_job(
         logger.error(f"Participant {participant_id} not found in db... can't process")
         return
     task = participant.task
+    axons = await sql.get_axons(psql_db, netuid=netuid)
+    logger.debug(f"FOudn {len(axons)} axons for netuid {netuid}")
+    for axon in axons:
+        logger.debug(axon.hotkey)
     axon = await sql.get_axon(
         psql_db,
         participant.miner_hotkey,
@@ -46,7 +51,7 @@ async def process_job(
 
         if stream:
             generator = utils.query_miner_stream(
-                axon, synthetic_synapse, participant.task, dendrite, synthetic_query=True, debug=debug
+                axon, participant, synthetic_synapse, participant.task, dendrite, synthetic_query=True, debug=debug
             )
             await qutils.consume_generator(generator)
 
@@ -128,18 +133,23 @@ async def run_worker(
 
 
 async def main():
-    redis_db = Redis(host="redis")
-    psql_db = PSQLDB()
-    await psql_db.connect()
+    try:
+        redis_db = Redis(host="redis")
+        psql_db = PSQLDB()
+        await psql_db.connect()
 
-    dendrite = bt.dendrite(redis_db)
-    debug = os.getenv("ENV", "test") == "test"
-    netuid = int(os.getenv("NETUID", 19))  # Default to 1 if not set
+        dendrite = bt.dendrite(redis_db)
+        debug = os.getenv("ENV", "test") == "test"
+        netuid = int(os.getenv("NETUID", 19))  # Default to 1 if not set
 
-    logger.warning(f"Starting worker for NETUID: {netuid}")
-    queue_name = rcst.SYNTHETIC_DATA_KEY
+        logger.warning(f"Starting worker for NETUID: {netuid}")
+        queue_name = rcst.SYNTHETIC_DATA_KEY
 
-    await run_worker(redis_db, psql_db, dendrite, queue_name, netuid, debug)
+        await run_worker(redis_db, psql_db, dendrite, queue_name, netuid, debug)
+    finally:
+        await dendrite.aclose_session()
+        await psql_db.close()
+        await redis_db.aclose()
 
 
 if __name__ == "__main__":

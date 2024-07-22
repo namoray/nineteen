@@ -10,7 +10,7 @@ from validator.models import Participant, AxonUID
 from core import bittensor_overrides as bt
 from collections import OrderedDict
 import json
-from validator.utils import query_utils as qutils
+from validator.utils import query_utils as qutils, work_and_speed_functions
 from core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -103,13 +103,14 @@ async def _get_debug_text_generator():
 
 async def query_miner_stream(
     axon: AxonInfo,
+    participant: Participant,
     synapse: bt.Synapse,
-    task: Task,
     dendrite: bt.dendrite,
     synthetic_query: bool,
     debug: bool = False,
 ) -> AsyncIterator[str]:
     axon_uid = axon.axon_uid
+    task = participant.task
 
     logger.debug(
         f"Querying axon {axon_uid} for a stream, and task: {task}. Debug: {bool(debug)}. Synthetic: {synthetic_query}."
@@ -177,17 +178,30 @@ async def query_miner_stream(
                 error_message=error_message,
             )
 
-        # create_scoring_adjustment_task(query_result, synapse, participant, synthetic_query)
+        await adjust_participant_from_result(query_result, synapse, participant, synthetic_query)
 
 
-# def create_scoring_adjustment_task(
-#     query_result: utility_models.QueryResult, synapse: bt.Synapse, participant: Participant, synthetic_query: bool
-# ):
-#     asyncio.create_task(
-#         scoring_utils.adjust_participant_from_result(
-#             query_result, synapse, participant, synthetic_query=synthetic_query
-#         )
-#     )
+async def adjust_participant_from_result(
+    query_result: utility_models.QueryResult, synapse: bt.Synapse, participant: Participant, synthetic_query: bool
+):
+    participant.total_requests_made += 1
+
+    if synthetic_query:
+        participant.synthetic_requests_still_to_make -= 1
+
+    if query_result.status_code == 200 and query_result.success:
+        work = work_and_speed_functions.calculate_work(query_result.task, query_result, synapse=synapse.model_dump())
+        participant.consumed_capacity += work
+
+        db_manager.potentially_store_result_in_sql_lite_db(
+            query_result, query_result.task, synapse, synthetic_query=synthetic_query
+        )
+
+    elif query_result.status_code == 429:
+        participant.requests_429 += 1
+    else:
+        participant.requests_500 += 1
+    return query_result
 
 
 async def query_miner_no_stream(

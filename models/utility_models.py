@@ -25,6 +25,7 @@ class ChatModels(str, enum.Enum):
 
     mixtral = "mixtral-8x7b"
     llama_3 = "llama-3"
+    big_old_code_model = "big-old-code-model"
 
 
 class Role(str, enum.Enum):
