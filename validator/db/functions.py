@@ -7,8 +7,7 @@ from typing import List, Dict, Any, Optional, Union
 
 from core import Task
 
-import bittensor as bt
-
+from core import bittensor_overrides as bt
 from validator.db.database import PSQLDB
 from models import utility_models
 from validator.db import sql
@@ -30,8 +29,8 @@ async def insert_task_results(
         await connection.execute(sql.delete_oldest_rows_from_tasks(connection, limit=10))
 
     data_to_store = {
-        "result": result.model_dump(),
-        "synapse": json.dumps(synapse.model_dump()),
+        "result": result.model_dump(mode="json"),
+        "synapse": json.dumps(synapse.model_dump(mode="json")),
         "synthetic_query": synthetic_query,
     }
     hotkey = result.miner_hotkey
@@ -49,19 +48,19 @@ async def potentially_store_result_in_sql_lite_db(
     target_percentage = 0.1  # self.task_weights[task]
 
     target_number_of_tasks_to_store = int(MAX_TASKS_IN_DB_STORE * target_percentage)
-    async with psql_db.connection() as connection:
-        number_of_these_tasks_already_stored = await sql.select_count_rows_of_task_stored_for_scoring(connection, task)
+    async with await psql_db.connection() as connection:
+        number_of_these_tasks_already_stored = await sql.select_count_rows_of_task_stored_for_scoring(connection, task.value)
         if number_of_these_tasks_already_stored <= target_number_of_tasks_to_store:
-            await insert_task_results(task.value, result, synapse, synthetic_query)
+            await insert_task_results(connection, task.value, result, synapse, synthetic_query)
         else:
             actual_percentage = number_of_these_tasks_already_stored / MAX_TASKS_IN_DB_STORE
             probability_to_score_again = (target_percentage / actual_percentage - target_percentage) ** 4
             if random.random() < probability_to_score_again:
-                await insert_task_results(task.value, result, synapse, synthetic_query)
+                await insert_task_results(connection, task.value, result, synapse, synthetic_query)
 
 
 async def select_and_delete_task_result(psql_db: PSQLDB, task: Task) -> Optional[Union[List[Dict[str, Any]], str]]:
-    async with psql_db.connection() as connection:
+    async with await psql_db.connection() as connection:
         row = await sql.select_task_for_deletion(connection, task.value)
 
         checking_data, miner_hotkey = row

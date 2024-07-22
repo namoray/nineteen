@@ -22,6 +22,7 @@ logger = get_logger(__name__)
 
 JOB_TIMEOUT = 300
 
+
 # TODO: bug where if you have an error in a job, it will be silenty ignored
 # until the second
 async def process_job(
@@ -51,7 +52,13 @@ async def process_job(
 
         if stream:
             generator = utils.query_miner_stream(
-                axon, participant, synthetic_synapse, participant.task, dendrite, synthetic_query=True, debug=debug
+                psql_db,
+                axon,
+                participant,
+                synthetic_synapse,
+                dendrite,
+                synthetic_query=True,
+                debug=debug,
             )
             await qutils.consume_generator(generator)
 

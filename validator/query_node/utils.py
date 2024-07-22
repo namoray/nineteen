@@ -6,12 +6,14 @@ from pydantic import BaseModel, ValidationError
 from core import Task
 from core.bittensor_overrides.chain_data import AxonInfo
 from models import base_models, utility_models
+from validator.db.database import PSQLDB
 from validator.models import Participant, AxonUID
 from core import bittensor_overrides as bt
 from collections import OrderedDict
 import json
 from validator.utils import query_utils as qutils, work_and_speed_functions
 from core.logging import get_logger
+from validator.db import functions as db_functions
 
 logger = get_logger(__name__)
 
@@ -102,6 +104,7 @@ async def _get_debug_text_generator():
 
 
 async def query_miner_stream(
+    psql_db: PSQLDB,
     axon: AxonInfo,
     participant: Participant,
     synapse: bt.Synapse,
@@ -126,11 +129,6 @@ async def query_miner_stream(
             synapse=synapse, dendrite=dendrite, axon=axon, axon_uid=axon_uid, log_requests_and_responses=False
         )
 
-        logger.debug(f"Text generator: {text_generator}")
-        async for text in text_generator:
-            logger.info(f"Text: {text}")
-        logger.info("emptied text!")
-
         time1 = time.time()
         text_jsons = []
         status_code = 200
@@ -138,6 +136,7 @@ async def query_miner_stream(
         if text_generator is not None:
             first_message = True
             async for text in text_generator:
+                logger.info(f"Text: {text}")
                 if isinstance(text, str):
                     try:
                         loaded_jsons = _load_sse_jsons(text)
@@ -178,11 +177,15 @@ async def query_miner_stream(
                 error_message=error_message,
             )
 
-        await adjust_participant_from_result(query_result, synapse, participant, synthetic_query)
+        await adjust_participant_from_result(psql_db, query_result, synapse, participant, synthetic_query)
 
 
 async def adjust_participant_from_result(
-    query_result: utility_models.QueryResult, synapse: bt.Synapse, participant: Participant, synthetic_query: bool
+    psql_db: PSQLDB,
+    query_result: utility_models.QueryResult,
+    synapse: bt.Synapse,
+    participant: Participant,
+    synthetic_query: bool,
 ):
     participant.total_requests_made += 1
 
@@ -193,9 +196,10 @@ async def adjust_participant_from_result(
         work = work_and_speed_functions.calculate_work(query_result.task, query_result, synapse=synapse.model_dump())
         participant.consumed_capacity += work
 
-        db_manager.potentially_store_result_in_sql_lite_db(
-            query_result, query_result.task, synapse, synthetic_query=synthetic_query
+        await db_functions.potentially_store_result_in_sql_lite_db(
+            psql_db, query_result, query_result.task, synapse, synthetic_query=synthetic_query
         )
+        logger.debug(f"Adjusted participant: {participant.id} for task: {query_result.task}")
 
     elif query_result.status_code == 429:
         participant.requests_429 += 1

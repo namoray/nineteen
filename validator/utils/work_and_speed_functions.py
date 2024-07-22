@@ -7,7 +7,7 @@ from typing import Dict, Any, List, Union
 from core import Task
 from core import tasks_config as tcfg
 from models import base_models, utility_models
-import bittensor as bt
+from core import bittensor_overrides as bt
 
 MAX_SPEED_BONUS = 1.4  # Adjust this value as needed
 BELOW_MEAN_EXPONENT = 0.5
