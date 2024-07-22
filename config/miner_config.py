@@ -1,9 +1,10 @@
 from dotenv import load_dotenv
 from models import config_models
 import os
-from core import bittensor_overrides as bt
 import argparse
+from core.logging import get_logger
 
+logger = get_logger(__name__)
 
 def _get_env_file_from_cli_config() -> str:
     parser = argparse.ArgumentParser()
@@ -19,7 +20,7 @@ def _get_env_file_from_cli_config() -> str:
 
 env_file = _get_env_file_from_cli_config()
 if not os.path.exists(env_file):
-    bt.logging.error(f"Could not find env file: {env_file}")
+    logger.error(f"Could not find env file: {env_file}")
 load_dotenv(env_file, verbose=True)
 
 

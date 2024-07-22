@@ -66,7 +66,7 @@ async def select_and_delete_task_result(psql_db: PSQLDB, task: Task) -> Optional
         checking_data, miner_hotkey = row
         checking_data_loaded = json.loads(checking_data)
 
-        await sql.delete_specific_task(connection, task.value, checking_data)
+        # await sql.delete_specific_task(connection, task.value, checking_data)
 
     return checking_data_loaded, miner_hotkey
 

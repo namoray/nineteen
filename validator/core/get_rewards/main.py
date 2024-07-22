@@ -7,26 +7,29 @@ import asyncio
 import random
 from typing import Any, Dict
 
-import bittensor as bt
+from core.logging import get_logger
 from core import Task
+from redis.asyncio import Redis
 
 import httpx
-from config.validator_config import config as validator_config
 from validator.db.database import PSQLDB
 from validator.models import RewardData
-from validator.utils import work_and_speed_functions
+from validator.utils import work_and_speed_functions, generic_utils as gutils
 import json
 from validator.db import functions as db_functions, sql
 import os
 import binascii
 
+logger = get_logger(__name__)
 # TODO: move these
 MAX_RESULTS_TO_SCORE_FOR_TASK = 100
-MINIMUM_TASKS_TO_START_SCORING = 100
-MINIMUM_TASKS_TO_START_SCORING_TESTNET = 10
+MINIMUM_TASKS_TO_START_SCORING = 1
+MINIMUM_TASKS_TO_START_SCORING_TESTNET = 1
 
 MIN_SECONDS_BETWEEN_SYNTHETICALLY_SCORING = 5
 TESTNET = "testnet"
+
+EXTERNAL_SERVER_URL = "http://38.128.232.218:6920/"
 
 
 def _generate_uid() -> str:
@@ -50,7 +53,7 @@ class Sleeper:
         elif self.consecutive_errors >= 4:
             sleep_time = 60 * 5
 
-        bt.logging.error(f"Sleeping for {sleep_time} seconds after a http error with the orchestrator server")
+        logger.error(f"Sleeping for {sleep_time} seconds after a http error with the orchestrator server")
         return sleep_time
 
     async def sleep(self) -> None:
@@ -70,18 +73,17 @@ class Scorer:
         self.psql_db = psql_db
         self.sleeper = Sleeper()
 
-    def start_scoring_results_if_not_already(self):
-        if not self.am_scoring_results:
-            asyncio.create_task(self._score_results())
-
-        self.am_scoring_results = True
-
-    async def _score_results(self):
+    async def score_results(self):
         min_tasks_to_start_scoring = (
             MINIMUM_TASKS_TO_START_SCORING if self.testnet else MINIMUM_TASKS_TO_START_SCORING_TESTNET
         )
+        logger.debug(f"Here! with {min_tasks_to_start_scoring}")
         while True:
-            tasks_and_number_of_results = await db_functions.get_tasks_and_number_of_results()
+            async with await self.psql_db.connection() as connection:
+                tasks_and_number_of_results = await sql.select_tasks_and_number_of_results(connection)
+                logger.debug(
+                    f"Tasks and number of results: {tasks_and_number_of_results}",
+                )
             total_tasks_stored = sum(tasks_and_number_of_results.values())
 
             if total_tasks_stored < min_tasks_to_start_scoring:
@@ -98,11 +100,11 @@ class Scorer:
 
     async def _check_scores_for_task(self, task: Task) -> None:
         i = 0
-        bt.logging.info(f"Checking some results for task {task}")
+        logger.info(f"Checking some results for task {task}")
         while i < MAX_RESULTS_TO_SCORE_FOR_TASK:
             data_and_hotkey = await db_functions.select_and_delete_task_result(self.psql_db, task)
             if data_and_hotkey is None:
-                bt.logging.warning(f"No data left to score for task {task}; iteration {i}")
+                logger.warning(f"No data left to score for task {task}; iteration {i}")
                 return
             checking_data, miner_hotkey = data_and_hotkey
             results, synthetic_query, synapse_dict_str = (
@@ -110,7 +112,7 @@ class Scorer:
                 checking_data["synthetic_query"],
                 checking_data["synapse"],
             )
-            results_json: Dict[str, Any] = json.loads(results)
+            results_json: Dict[str, Any] = results
 
             synapse = json.loads(synapse_dict_str)
 
@@ -124,9 +126,10 @@ class Scorer:
                 try:
                     j = 0
                     while True:
-                        bt.logging.info("Sending result to be scored...")
+                        logger.info("Sending result to be scored...")
+                        # TODO: REPLACE
                         response = await client.post(
-                            validator_config.external_server_url + "check-result",
+                            EXTERNAL_SERVER_URL + "check-result",
                             json=data,
                         )
                         response.raise_for_status()
@@ -134,14 +137,14 @@ class Scorer:
                         task_id = response.json().get("task_id")
                         if task_id is None:
                             if response_json.get("status") == "Busy":
-                                bt.logging.warning(
+                                logger.warning(
                                     f"Attempt: {j}; There's already a task being checked, will sleep and try again..."
                                     f"\nresponse: {response.json()}"
                                 )
                                 await asyncio.sleep(20)
                                 j += 1
                             else:
-                                bt.logging.error(
+                                logger.error(
                                     "Checking server seems broke, please check!" f"response: {response.json()}"
                                 )
                                 await self.sleeper.sleep()
@@ -153,35 +156,36 @@ class Scorer:
                     # Ping the check-task endpoint until the task is complete
                     while True:
                         await asyncio.sleep(3)
-                        task_response = await client.get(f"{validator_config.external_server_url}check-task/{task_id}")
+                        task_response = await client.get(f"{EXTERNAL_SERVER_URL}check-task/{task_id}")
                         task_response.raise_for_status()
                         task_response_json = task_response.json()
 
                         if task_response_json.get("status") != "Processing":
                             task_status = task_response_json.get("status")
                             if task_status == "Failed":
-                                bt.logging.error(
+                                logger.error(
                                     f"Task {task_id} failed: {task_response_json.get('error')}"
                                     f"\nTraceback: {task_response_json.get('traceback')}"
                                 )
                                 await self.sleeper.sleep()
                             break
                 except httpx.HTTPStatusError as stat_err:
-                    bt.logging.error(f"When scoring, HTTP status error occurred: {stat_err}")
+                    logger.error(f"When scoring, HTTP status error occurred: {stat_err}")
                     await self.sleeper.sleep()
                     continue
 
                 except (httpx.RemoteProtocolError, httpx.ReadError, httpx.ReadTimeout) as read_err:
-                    bt.logging.error(f"When scoring, Read timeout occurred: {read_err}")
+                    logger.error(f"When scoring, Read timeout occurred: {read_err}")
                     await self.sleeper.sleep()
                     continue
 
                 except httpx.HTTPError as http_err:
-                    bt.logging.error(f"When scoring, HTTP error occurred: {http_err}")
-                    if response.status_code == 502:
-                        bt.logging.error("Is your orchestrator server running?")
-                    else:
-                        bt.logging.error(f"Status code: {response.status_code}")
+                    logger.error(f"When scoring, HTTP error occurred: {http_err}")
+                    if isinstance(http_err, httpx.HTTPStatusError):
+                        if http_err.response.status_code == 502:
+                            logger.error("Is your orchestrator server running?")
+                        else:
+                            logger.error(f"Status code: {http_err.response.status_code}")
                     await self.sleeper.sleep()
                     continue
 
@@ -190,10 +194,10 @@ class Scorer:
                 task_result = task_response_json.get("result", {})
                 axon_scores = task_result.get("axon_scores", {})
                 if axon_scores is None:
-                    bt.logging.error(f"AXon scores is none; found in the response josn: {task_response_json}")
+                    logger.error(f"AXon scores is none; found in the response josn: {task_response_json}")
                     continue
             except (json.JSONDecodeError, KeyError) as parse_err:
-                bt.logging.error(f"Error occurred when parsing the response: {parse_err}")
+                logger.error(f"Error occurred when parsing the response: {parse_err}")
                 continue
 
             volume = work_and_speed_functions.calculate_work(task=task, result=results_json, synapse=synapse)
@@ -229,6 +233,23 @@ class Scorer:
                 #     keypair=self.keypair,
                 #     data_type_to_post=post_stats.DataTypeToPost.REWARD_DATA,
                 # )
-                bt.logging.info(f"\nPosted reward data for task: {task}, uid: {uid}")
+                logger.info(f"\nPosted reward data for task: {task}, uid: {uid}")
 
             i += 1
+
+
+async def main():
+    psql_db = PSQLDB()
+    await psql_db.connect()
+
+    redis_db = Redis(host="redis")
+
+    public_key_info = await gutils.get_public_keypair_info(redis_db)
+
+    scorer = Scorer(validator_hotkey=public_key_info.ss58_address, testnet=TESTNET, psql_db=psql_db)
+
+    await scorer.score_results()
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

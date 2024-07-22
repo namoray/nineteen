@@ -1,0 +1,5 @@
+# TODO: PIN
+fastapi
+httpx
+asyncpg
+redis

@@ -1,11 +1,12 @@
+from validator.models import RewardData
 from validator.utils import database_constants as dcst
 from typing import List
 from asyncpg import Connection
 ##### Insert
 
 
-async def insert_reward_data(connection: Connection, data: List[tuple]) -> None:
-    await connection.executemany(
+async def insert_reward_data(connection: Connection, data: RewardData) -> str:
+    return await connection.fetchval(
         f"""
         INSERT INTO {dcst.TABLE_REWARD_DATA} (
             {dcst.COLUMN_ID}, {dcst.COLUMN_TASK}, {dcst.COLUMN_AXON_UID}, 
@@ -13,8 +14,18 @@ async def insert_reward_data(connection: Connection, data: List[tuple]) -> None:
             {dcst.COLUMN_MINER_HOTKEY}, {dcst.COLUMN_SYNTHETIC_QUERY}, 
             {dcst.COLUMN_SPEED_SCORING_FACTOR}, {dcst.COLUMN_RESPONSE_TIME}, {dcst.COLUMN_VOLUME}
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        RETURNING {dcst.COLUMN_ID}
         """,
-        data,
+        data.id,
+        data.task,
+        data.axon_uid,
+        data.quality_score,
+        data.validator_hotkey,
+        data.miner_hotkey,
+        data.synthetic_query,
+        data.speed_scoring_factor,
+        data.response_time,
+        data.volume,
     )
 
 
@@ -123,12 +134,13 @@ async def delete_specific_task(connection: Connection, task_name: str, checking_
 #### Select
 
 
-async def select_tasks_and_number_of_results(connection: Connection) -> List[tuple]:
-    return await connection.fetch(
+async def select_tasks_and_number_of_results(connection: Connection) -> dict:
+    rows = await connection.fetch(
         f"""
-        SELECT {dcst.COLUMN_TASK_NAME}, COUNT(*) FROM {dcst.TABLE_TASKS} GROUP BY {dcst.COLUMN_TASK_NAME}
+        SELECT {dcst.COLUMN_TASK_NAME}, COUNT(*) as count FROM {dcst.TABLE_TASKS} GROUP BY {dcst.COLUMN_TASK_NAME}
         """
     )
+    return {row[dcst.COLUMN_TASK_NAME]: row["count"] for row in rows}
 
 
 async def select_count_of_rows_in_tasks(connection: Connection) -> int:
