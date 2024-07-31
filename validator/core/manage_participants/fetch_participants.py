@@ -7,7 +7,7 @@ from validator.utils import query_utils as qutils, participant_utils as putils
 from core import tasks_config as tcfg
 from core import constants as ccst
 from collections import defaultdict
-from core import Task
+from core.tasks import Task
 from redis.asyncio import Redis
 from core import bittensor_overrides as bt
 from models import base_models, synapses

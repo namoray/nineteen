@@ -7,7 +7,8 @@ from core import bittensor_overrides as bt
 
 # import base miner class which takes care of most of the boilerplate
 from config import configuration
-from core import Task, constants as ccst, utils
+from core.tasks import Task
+from core import constants as ccst, utils
 from config.miner_config import config as config
 
 T = TypeVar("T", bound=bt.Synapse)

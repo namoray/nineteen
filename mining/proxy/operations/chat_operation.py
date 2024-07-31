@@ -2,10 +2,10 @@ from typing import Tuple, TypeVar, AsyncIterator
 
 from core import bittensor_overrides as bt
 
-from core import tasks
 from mining.proxy import core_miner
 from mining.proxy.operations import abstract_operation
 from models import base_models, synapses
+from mining.proxy import utils
 from operation_logic import chat_logic
 from starlette.types import Send
 from functools import partial
@@ -49,7 +49,7 @@ class ChatOperation(abstract_operation.Operation):
             url = config.llama_3_text_worker_url
         else:
             raise NotImplementedError(f"Model {synapse.model} not implemented for chat operation")
-        task = tasks.get_task_from_synapse(synapse)
+        task = utils.get_task_from_synapse(synapse)
         text_generator = await chat_logic.chat_logic(base_models.ChatIncoming(**synapse.dict()), url, task)
 
         text_streamer = partial(_send_text, text_generator)

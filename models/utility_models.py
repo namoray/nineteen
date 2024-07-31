@@ -4,7 +4,7 @@ from typing import Dict, List, Optional, Any
 import numpy as np
 from pydantic import BaseModel
 
-from core import Task
+from core.tasks import Task
 
 
 class QueryResult(BaseModel):

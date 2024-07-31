@@ -8,7 +8,8 @@ from validator.utils import (
     synthetic_constants as scst,
     generic_utils as gutils,
 )
-from core import Task, dataclasses as dc, tasks_config
+from core.tasks import Task
+from core import dataclasses as dc, tasks_config
 
 import markovify
 import datasets

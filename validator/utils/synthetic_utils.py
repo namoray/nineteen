@@ -1,7 +1,8 @@
 import random
 from typing import Any
 
-from core import Task, tasks_config
+from core.tasks import Task
+from core import tasks_config
 from models import base_models
 from validator.utils import (
     redis_utils as rutils,

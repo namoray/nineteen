@@ -5,7 +5,7 @@ import threading
 import json
 import time
 from pydantic import BaseModel
-from core import Task
+from core.tasks import Task
 from core import utils as cutils
 from redis.asyncio import Redis
 from validator.utils import (

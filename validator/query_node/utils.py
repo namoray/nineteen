@@ -3,7 +3,7 @@ import random
 import time
 from typing import Any, AsyncIterator, Dict, List, Optional, Union
 from pydantic import BaseModel, ValidationError
-from core import Task
+from core.tasks import Task
 from core.bittensor_overrides.chain_data import AxonInfo
 from models import base_models, utility_models
 from validator.db.database import PSQLDB

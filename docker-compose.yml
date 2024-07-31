@@ -31,18 +31,18 @@ services:
     depends_on:
       - redis
   
-  portainer:
-    image: portainer/portainer-ce:latest
-    container_name: portainer
-    restart: unless-stopped
-    security_opt:
-      - no-new-privileges:true
+  dozzle:
+    image: amir20/dozzle:latest
+    container_name: dozzle
     volumes:
-      - /etc/localtime:/etc/localtime:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - portainer_data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
     ports:
-      - "9000:9000"
+      - 9000:8080
+    environment:
+      - DOZZLE_LEVEL=info
+      - DOZZLE_TAILSIZE=300
+      - DOZZLE_FILTER=
+    restart: unless-stopped
 
   postgresql:
     image: postgres:latest
@@ -211,7 +211,7 @@ services:
       
     # Below needs to be from config somehow
     environment:
-      WALLET_NAME: narigamatest
+      WALLET_NAME: t_and_c
       HOTKEY_NAME: default
       ENV: dev
     networks:

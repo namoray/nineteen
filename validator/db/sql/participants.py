@@ -1,4 +1,4 @@
-from core import Task
+from core.tasks import Task
 from core.logging import get_logger
 
 from asyncpg import Connection

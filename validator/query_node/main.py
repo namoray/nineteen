@@ -4,8 +4,8 @@ import os
 import traceback
 import uuid
 from redis.asyncio import Redis
-from core import Task, bittensor_overrides as bt
-from core import tasks_config as tcfg
+from core.tasks import Task
+from core import tasks_config as tcfg, bittensor_overrides as bt
 from validator.db.database import PSQLDB
 from validator.db import sql
 from validator.utils import (

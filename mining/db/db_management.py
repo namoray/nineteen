@@ -1,6 +1,7 @@
 import sqlite3
 from typing import Dict
-from core import Task, constants as core_cst, tasks_config as tcfg
+from core.tasks import Task
+from core import constants as core_cst, tasks_config as tcfg
 
 
 from mining.db import sql

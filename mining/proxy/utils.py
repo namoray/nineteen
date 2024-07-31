@@ -1,5 +1,5 @@
 from typing import Dict, Optional
-from core import Task
+from core.tasks import Task
 from mining.db.db_management import miner_db_manager
 import bittensor as bt
 

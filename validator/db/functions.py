@@ -5,7 +5,7 @@ import json
 from typing import List, Dict, Any, Optional, Union
 
 
-from core import Task
+from core.tasks import Task
 
 from core import bittensor_overrides as bt
 from validator.db.database import PSQLDB

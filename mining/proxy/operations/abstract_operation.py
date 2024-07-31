@@ -9,7 +9,7 @@ from mining.proxy import core_miner
 from mining.proxy.core_miner import miner_requests_stats
 from config.miner_config import config as config
 from functools import wraps
-from core.tasks import tasks_config
+from core import tasks_config
 
 T = TypeVar("T", bound=bt.Synapse)
 

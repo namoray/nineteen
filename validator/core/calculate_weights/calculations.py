@@ -1,7 +1,8 @@
 # Schema for the db
 
 
-from core import Task, tasks_config as tcfg
+from core.tasks import Task
+from core import tasks_config as tcfg
 from validator.db import functions as db_functions
 from validator.db.database import PSQLDB
 from validator.models import Participant, PeriodScore

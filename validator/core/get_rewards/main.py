@@ -8,7 +8,7 @@ import random
 from typing import Any, Dict
 
 from core.logging import get_logger
-from core import Task
+from core.tasks import Task
 from redis.asyncio import Redis
 
 import httpx

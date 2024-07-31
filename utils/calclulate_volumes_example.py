@@ -4,7 +4,7 @@ If you prefer, you can remove the 'mean' estimation and instead insert your own 
 So you can more accurately calculate your own volume
 """
 
-from core import Task, tasks
+from core.tasks import Task
 from core import constants as ccst
 from core.tasks_config import TaskType
 from core import tasks_config

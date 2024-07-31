@@ -1,5 +1,5 @@
 from typing import Any, Dict
-from core import Task
+from core.tasks import Task
 from . import capacity_operation  # noqa
 from . import chat_operation  # noqa
 from . import text_to_image_operation  # noqa

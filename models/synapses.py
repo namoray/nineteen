@@ -1,5 +1,6 @@
 from typing import Dict, List, Optional
-from core import Task, bittensor_overrides as bt
+from core.tasks import Task
+from core import bittensor_overrides as bt
 
 from models import base_models
 

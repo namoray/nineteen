@@ -7,7 +7,8 @@ Keep it as SynapseNameBase / SynapseNameIncoming / SynapseNameOutgoing
 from typing import List, Optional
 from pydantic import BaseModel, Field
 
-from core import Task, constants as cst
+from core.tasks import Task
+from core import constants as cst
 from core import dataclasses as dc
 from models import utility_models
 from core import bittensor_overrides as bt

@@ -1,4 +1,4 @@
-from core import Task
+from core.tasks import Task
 from models import base_models
 from core import bittensor_overrides as bt
 import httpx
