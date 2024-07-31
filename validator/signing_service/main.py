@@ -37,7 +37,7 @@ async def poll_redis_for_message_to_sign(redis_db: Redis, keypair: Keypair, run_
         if run_once:
             break
 
-
+# Dont bother, just cahnge this to respond to a request for public info in the same way
 async def post_and_refresh_public_key_info(redis_db: Redis, keypair: Keypair, run_once: bool = False):
     ss58_address = keypair.ss58_address
     public_key_format = keypair.ss58_format

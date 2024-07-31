@@ -48,27 +48,27 @@ class FullTaskConfig(BaseModel):
 
 
 TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
-    # Task.big_old_code_model: FullTaskConfig(
-    #     task=Task.big_old_code_model,
-    #     max_capacity=CapacityForTask(volume=576_000),
-    #     scoring_config=TaskScoringConfig(
-    #         task=Task.big_old_code_model, mean=1 / 80, variance=100, overhead=1.0, task_type=TaskType.TEXT
-    #     ),
-    #     orchestrator_server_config=OrchestratorServerConfig(
-    #         checking_server_needed=ServerType.LLM,
-    #         checking_load_model_config={
-    #             "model": "some-big-code-model",
-    #             "half_precision": False,  # will no longer be relevant
-    #         },
-    #         checking_function="check_text_result",
-    #     ),
-    #     synthetic_generation_config=SyntheticGenerationConfig(
-    #         func="generate_chat_synthetic", kwargs={"model": utility_models.ChatModels.big_old_code_model.value}
-    #     ),
-    #     synapse="Chat",
-    #     volume_to_requests_conversion=69420,
-    #     is_stream=True,
-    # ),
+    Task.big_old_code_model: FullTaskConfig(
+        task=Task.big_old_code_model,
+        max_capacity=CapacityForTask(volume=576_000),
+        scoring_config=TaskScoringConfig(
+            task=Task.big_old_code_model, mean=1 / 80, variance=100, overhead=1.0, task_type=TaskType.TEXT
+        ),
+        orchestrator_server_config=OrchestratorServerConfig(
+            checking_server_needed=ServerType.LLM,
+            checking_load_model_config={
+                "model": "some-big-code-model",
+                "half_precision": False,  # will no longer be relevant
+            },
+            checking_function="check_text_result",
+        ),
+        synthetic_generation_config=SyntheticGenerationConfig(
+            func="generate_chat_synthetic", kwargs={"model": utility_models.ChatModels.big_old_code_model.value}
+        ),
+        synapse="Chat",
+        volume_to_requests_conversion=69420,
+        is_stream=True,
+    ),
     Task.chat_mixtral: FullTaskConfig(
         task=Task.chat_mixtral,
         max_capacity=CapacityForTask(volume=576_000),

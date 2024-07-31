@@ -4,14 +4,17 @@
 import asyncio
 import json
 import os
-from validator.core.calculate_weights import calculations
 from validator.db.database import PSQLDB
 from validator.db import sql
-from validator.utils import redis_utils as rutils, redis_constants as rcst, redis_dataclasses as rdc
+from validator.utils import redis_constants as rcst, redis_dataclasses as rdc
 from redis.asyncio import Redis
 from core.logging import get_logger
 from dataclasses import asdict
+from validator.core.calculate_weights import calculations
+
 logger = get_logger(__name__)
+
+
 async def main():
     psql_db = PSQLDB()
     await psql_db.connect()
@@ -19,14 +22,13 @@ async def main():
     netuid = int(os.getenv("NETUID", 19))
     async with await psql_db.connection() as connection:
         participants = await sql.fetch_all_participants(connection, None)
-    # scores = await calculations.calculate_scores_for_settings_weights(psql_db, participants)
-        
-    weights = rdc.WeightsToSet(
-        uids=[0,1,2], values=[0.1,0.1,0.1], version_key=10, netuid=netuid
-    )
+    scores = await calculations.calculate_scores_for_settings_weights(psql_db, participants)
+
+    logger.info("Calculated scores successfully! Will push but not set some fake weights for the demo as this is prod...")
+    weights = rdc.WeightsToSet(uids=[0, 1, 2], values=[0.1, 0.1, 0.1], version_key=10, netuid=netuid)
 
     await redis.rpush(rcst.WEIGHTS_TO_SET_QUEUE_KEY, json.dumps(asdict(weights)))
-    return 
+    return
 
 
 if __name__ == "__main__":

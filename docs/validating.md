@@ -8,7 +8,7 @@ Welcome to S19 Validating 🔥
 - [Orchestrator setup](#orchestrator-setup)
 - [Proxy server setup](#proxy-server-setup)
 - [Managing organic access](#managing-organic-access)
-- [Recommended compute](../recommended-compute)
+- [Recommended compute](./recommended-compute)
 
 
 # Overview

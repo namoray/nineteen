@@ -82,7 +82,6 @@ async def calculate_scores_for_settings_weights(
 ) -> dict[str, float]:
     total_hotkey_scores: dict[str, float] = {}
 
-    logger.debug("Starting calculation of scores for settings weights")
     for task in Task:
         task_weight = tcfg.TASK_TO_CONFIG[task].weight
         logger.debug(f"Processing task: {task}, weight: {task_weight}")
@@ -98,9 +97,7 @@ async def calculate_scores_for_settings_weights(
             hotkey_to_effective_volumes[miner_hotkey] = effective_volume_for_task
 
         sum_of_effective_volumes = sum(hotkey_to_effective_volumes.values())
-        logger.debug(f"Sum of effective volumes for task {task}: {sum_of_effective_volumes}")
         if sum_of_effective_volumes == 0:
-            logger.debug(f"No effective volume for task {task}, skipping")
             continue
         normalised_scores_for_task = {
             hotkey: effective_volume / sum_of_effective_volumes

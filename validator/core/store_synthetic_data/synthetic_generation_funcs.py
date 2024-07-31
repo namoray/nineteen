@@ -35,7 +35,7 @@ async def markov_model_factory():
 
 @lru_cache(maxsize=1)
 def image_cache_factory() -> diskcache.Cache:
-    cache = diskcache.Cache("./image_cache")
+    cache = diskcache.Cache("./cache/image_cache")
     return cache
 
 
