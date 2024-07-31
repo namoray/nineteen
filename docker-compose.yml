@@ -30,6 +30,19 @@ services:
       - redis_network
     depends_on:
       - redis
+  
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - portainer_data:/data
+    ports:
+      - "9000:9000"
 
   postgresql:
     image: postgres:latest
@@ -214,5 +227,6 @@ networks:
 
 volumes:
   postgres_data:
+  portainer_data:
   pgadmin-data:
 
