@@ -49,6 +49,7 @@ async def insert_axon_info(connection: Connection, axon_infos: list[chain_data.A
 
 # TODO: Technically the primary key should be hotkey + netuid. Will need to change the below to work with that
 async def migrate_axons_to_axon_history(connection: Connection) -> None:  # noqa: F821
+    logger.debug("Migrating axons to axon history")
     await connection.execute(
         f"""
         INSERT INTO {dcst.AXON_INFO_HISTORY_TABLE} (
@@ -82,6 +83,7 @@ async def migrate_axons_to_axon_history(connection: Connection) -> None:  # noqa
     """
     )
 
+    logger.debug("Truncating axon info table")
     # Now delete the old table info
     await connection.execute(f"TRUNCATE TABLE {dcst.AXON_INFO_TABLE}")
 

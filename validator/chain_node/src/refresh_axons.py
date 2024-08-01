@@ -7,6 +7,7 @@ import asyncio
 import os
 from dataclasses import asdict, dataclass
 
+from asyncpg import Connection
 import bittensor as bt
 from dotenv import load_dotenv
 
@@ -57,14 +58,10 @@ def load_config() -> Config:
 
 
 async def fetch_axon_infos_from_metagraph(config: Config) -> None:
+    logger.info("Fetching axon infos from the metagraph. First, syncing...")
+    await asyncio.to_thread(config.metagraph.sync, subtensor=config.subtensor, lite=True)
+    logger.info("Metagraph synced, now extracting axon infos")
 
-    if config.sync:
-        logger.info("Fetching axon infos from the metagraph. First, syncing...")
-        await asyncio.to_thread(config.metagraph.sync, subtensor=config.subtensor, lite=True)
-        logger.info("Metagraph synced, now extracting axon infos")
-    else:
-        logger.info("Not syncing, only extracting axon infos form metagraph object!")
-        
     new_axons = [
         AxonInfo(
             **asdict(axon),
@@ -86,18 +83,21 @@ async def fetch_axon_infos_from_metagraph(config: Config) -> None:
     config.metagraph.axons = new_axons
 
 
-async def store_and_migrate_old_axons(config: Config) -> None:
-    async with await config.psql_db.connection() as connection:
-        await sql.migrate_axons_to_axon_history(connection)
-        await sql.insert_axon_info(connection, config.metagraph.axons)
+async def store_and_migrate_old_axons(config: Config, connection: Connection) -> None:
+    logger.debug("Storing and migrating old axons...")
+
+    await sql.migrate_axons_to_axon_history(connection)
+    await sql.insert_axon_info(connection, config.metagraph.axons)
     logger.info(f"Stored {len(config.metagraph.axons)} axons from the metagraph")
 
 
 async def get_and_store_axons(config: Config) -> None:
+
     if config.sync:
         await fetch_axon_infos_from_metagraph(config)
 
-    await store_and_migrate_old_axons(config)
+    async with await config.psql_db.connection() as connection:
+        await store_and_migrate_old_axons(config, connection)
 
     logger.info(f"Stored {len(config.metagraph.axons)} axons. Sleeping for {config.seconds_between_syncs} seconds.")
 

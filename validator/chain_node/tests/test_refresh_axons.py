@@ -1,51 +1,15 @@
 import asyncio
-import logging
-from unittest.mock import MagicMock
-from core.bittensor_overrides.chain_data import AxonInfo
-from src.refresh_axons import Config, get_and_store_axons
-from validator.db.src.database import PSQLDB
 import unittest
 
+from asyncpg import Connection
+from validator.db.src.database import PSQLDB
+from src.refresh_axons import Config, get_and_store_axons
+import bittensor as bt
+from core.bittensor_overrides.chain_data import AxonInfo
 
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
 
-
-class TestRefreshAxons(unittest.TestCase):
-    def setUp(self):
-        self.loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(self.loop)
-
-    def tearDown(self):
-        self.loop.close()
-
-    def test_get_and_store_axons(self):
-        async def run_test():
-            config = self.create_test_config()
-            await config.psql_db.connect()
-
-            # Run once
-            await get_and_store_axons(config)
-            result = await self.get_axon_info(config)
-            self.assertEqual(len(result), 3)
-
-            # Run twice
-            await get_and_store_axons(config)
-            history = await self.get_axon_history(config)
-            self.assertEqual(len(history), 3)
-
-        self.loop.run_until_complete(run_test())
-
-    def test_get_and_store_axons_db_error(self):
-        async def run_test():
-            config = self.create_test_config()
-            config.psql_db.connect = MagicMock(side_effect=Exception("DB Connection Error"))
-            with self.assertRaises(Exception):
-                await get_and_store_axons(config)
-
-        self.loop.run_until_complete(run_test())
-
-    def create_test_config(self):
+class TestRefreshAxons(unittest.IsolatedAsyncioTestCase):
+    def create_test_config(self) -> Config:
         config = Config(
             psql_db=PSQLDB(),
             run_once=True,
@@ -53,7 +17,7 @@ class TestRefreshAxons(unittest.TestCase):
             network="test",
             netuid=1,
             seconds_between_syncs=60,
-            metagraph=MagicMock(),
+            metagraph=bt.metagraph,
             sync=False,
             subtensor=None,
         )
@@ -61,8 +25,7 @@ class TestRefreshAxons(unittest.TestCase):
         return config
 
     def set_axons_for_testing(self, config: Config) -> None:
-        config.metagraph = MagicMock()
-        config.metagraph.network = "test_network"  # Use a string instead of MagicMock
+        config.metagraph.network = "test_network"
         config.metagraph.netuid = 1
         config.metagraph.axons = [
             AxonInfo(
@@ -108,13 +71,38 @@ class TestRefreshAxons(unittest.TestCase):
         config.metagraph.total_stake = [50, 30, 20]
         config.sync = False
 
-    async def get_axon_info(self, config):
-        async with await config.psql_db.connection() as conn:
-            return await conn.fetch("SELECT * FROM axon_info")
+    async def asyncSetUp(self):
+        self.config = self.create_test_config()
+        await self.config.psql_db.connect()
 
-    async def get_axon_history(self, config):
-        async with await config.psql_db.connection() as conn:
-            return await conn.fetch("SELECT * FROM axon_info_history")
+    async def asyncTearDown(self):
+        await self.config.psql_db.close()
+
+    async def test_get_and_store_axons(self):
+        async with await self.config.psql_db.connection() as conn:
+            conn: Connection
+            async with conn.transaction():
+                # Clear existing data
+                await conn.execute("TRUNCATE TABLE axon_info, axon_info_history RESTART IDENTITY;")
+
+                # Run get_and_store_axons
+                await get_and_store_axons(self.config)
+
+                # Verify the results
+                axon_info = await conn.fetch("SELECT * FROM axon_info ORDER BY hotkey")
+                self.assertEqual(len(axon_info), 3, "Expected 3 axons in axon_info table")
+
+                # Check specific values
+                self.assertEqual(axon_info[0]["hotkey"], "test-hotkey1")
+                self.assertEqual(axon_info[1]["hotkey"], "test-hotkey2")
+                self.assertEqual(axon_info[2]["hotkey"], "test-vali")
+
+                # Run get_and_store_axons again to test history
+                await get_and_store_axons(self.config)
+
+                # Verify history
+                axon_history = await conn.fetch("SELECT * FROM axon_info_history ORDER BY hotkey")
+                self.assertEqual(len(axon_history), 3, "Expected 3 entries in axon_info_history table")
 
 
 if __name__ == "__main__":

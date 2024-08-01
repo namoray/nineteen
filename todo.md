@@ -19,3 +19,53 @@ What to change when making a new inference subnet?
 - weight setting calculations
 
 Thats it?
+
+
+
+def set_axons_for_testing(config: Config) -> None:
+    config.metagraph = MagicMock()
+    config.metagraph.network = "test_network"
+    config.metagraph.netuid = 1
+    config.metagraph.axons = [
+        AxonInfo(
+            version=1,
+            ip="127.0.0.1",
+            port=1,
+            ip_type=4,
+            hotkey="test-vali",
+            coldkey="test-vali-ck",
+            axon_uid=0,
+            incentive=0,
+            netuid=config.metagraph.netuid,
+            network=config.metagraph.network,
+            stake=50.0,
+        ),
+        AxonInfo(
+            version=1,
+            ip="127.0.0.1",
+            port=1,
+            ip_type=4,
+            hotkey="test-hotkey1",
+            coldkey="test-coldkey1",
+            axon_uid=1,
+            incentive=0.004,
+            netuid=config.metagraph.netuid,
+            network=config.metagraph.network,
+            stake=30.0,
+        ),
+        AxonInfo(
+            version=2,
+            ip="127.0.0.1",
+            port=2,
+            ip_type=4,
+            hotkey="test-hotkey2",
+            coldkey="test-coldkey2",
+            axon_uid=2,
+            incentive=0.005,
+            netuid=config.metagraph.netuid,
+            network=config.metagraph.network,
+            stake=20.0,
+        ),
+    ]
+    config.metagraph.total_stake = [50, 30, 20]
+    config.sync = False
