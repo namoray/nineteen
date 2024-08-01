@@ -103,7 +103,7 @@ async def periodically_get_and_store_metagraph_info(config: Config) -> None:
         await asyncio.sleep(config.seconds_between_syncs)
 
 
-async def run():
+async def main():
     config = load_config()
 
     try:
@@ -122,4 +122,4 @@ async def run():
 
 
 if __name__ == "__main__":
-    asyncio.run(run())
+    asyncio.run(main())

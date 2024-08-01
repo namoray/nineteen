@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import contextlib
 import logging
@@ -32,9 +33,15 @@ def log_time(description: str, logger: logging.Logger):
         logger.debug(f"{description} took {elapsed_time:.4f} seconds")
 
 
+# TODO: change this to instead push and pull a message, rather than just checking
 async def get_public_keypair_info(redis_db: Redis) -> rdc.PublicKeypairInfo:
     logger.info("Getting public key config from Redis...")
-    info = await redis_db.get(rcst.PUBLIC_KEYPAIR_INFO_KEY)
+    i = 0
+    while i < 10:
+        info = await redis_db.get(rcst.PUBLIC_KEYPAIR_INFO_KEY)
+        if info is None:
+            i += 1
+            await asyncio.sleep(11)
     if info is None:
         raise RuntimeError("Could not get public key config from Redis")
     logger.info("Got public key config from Redis!")

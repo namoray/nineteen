@@ -1,14 +1,19 @@
 FROM python:3.11-slim
 
 WORKDIR /app/validator/signing_service
-COPY validator/signing_service/pyproject.toml validator/signing_service/requirements.txt ./
-RUN pip install --no-cache-dir -e .
+COPY validator/signing_service/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY validator/signing_service/src ./src
+COPY validator/signing_service/pyproject.toml .
 
 
-COPY validator/signing_service /app/validator/signing_service
 WORKDIR /app
 
-# Set PYTHONPATH to include /app
-ENV PYTHONPATH=/app:$PYTHONPATH
+ENV PYTHONPATH="${PYTHONPATH}:/app/validator/signing_service/src"
 
-CMD ["python", "-u", "/app/validator/signing_service/main.py"]
+CMD ["python", "-u", "/app/validator/signing_service/src/main.py"]
+
+
+
+

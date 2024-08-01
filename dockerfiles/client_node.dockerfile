@@ -1,13 +1,14 @@
 FROM core
 
-WORKDIR /app
-COPY validator /app/validator
 WORKDIR /app/validator/client_node
-RUN pip install --no-cache-dir -e .
+
+COPY validator/client_node/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY validator/client_node/src ./src
+COPY validator/client_node/pyproject.toml .
 
 
-WORKDIR /app
-
-ENV PYTHONPATH=/app:$PYTHONPATH
+ENV PYTHONPATH="${PYTHONPATH}:/app/validator/client_node/src"
 
 CMD ["tail", "-f", "/dev/null"]
