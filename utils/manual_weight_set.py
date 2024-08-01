@@ -11,28 +11,28 @@ Usage:
 python manually_set_weights.py --env_file {youvr_vali_hotkey_env_file_here}
 """
 
-from validator.core_validator import core_validator
+from validator.control_center import control_center
 from validator.weight_setting import calculations
 import asyncio
 from validator.db.db_management import db_manager
 
 
 async def main():
-    await core_validator.resync_metagraph()
+    await control_center.resync_metagraph()
     await db_manager.initialize()
     total_scores = await calculations.calculate_scores_for_settings_weights(
-        capacities_for_tasks=core_validator.capacities_for_tasks,
-        uid_to_uid_info=core_validator.uid_to_uid_info,
-        task_weights=core_validator.task_weights,
+        capacities_for_tasks=control_center.capacities_for_tasks,
+        uid_to_uid_info=control_center.uid_to_uid_info,
+        task_weights=control_center.task_weights,
     )
-    weights, uids = core_validator.weight_setter._get_processed_weights_and_uids(
-        uid_to_uid_info=core_validator.uid_to_uid_info,
-        metagraph=core_validator.metagraph,
+    weights, uids = control_center.weight_setter._get_processed_weights_and_uids(
+        uid_to_uid_info=control_center.uid_to_uid_info,
+        metagraph=control_center.metagraph,
         total_hotkey_scores=total_scores,
         netuid=19,
     )
-    core_validator.weight_setter._set_weights(
-        wallet=core_validator.wallet,
+    control_center.weight_setter._set_weights(
+        wallet=control_center.wallet,
         netuid=19,
         processed_weight_uids=uids,
         processed_weights=weights,

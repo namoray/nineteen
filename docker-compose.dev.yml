@@ -1,0 +1,127 @@
+services:
+  client_node:
+    ports:
+      - "8000:8000"
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: postgresql
+      POSTGRES_PORT: 5432
+      POSTGRES_NAME: mydb
+      ENV: dev
+
+  query_node:
+    deploy:
+      replicas: 1
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: postgresql
+      POSTGRES_PORT: 5432
+      POSTGRES_NAME: mydb
+      ENV: dev
+      NETUID: 19
+
+  chain_node:
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: postgresql
+      POSTGRES_PORT: 5432
+      POSTGRES_NAME: mydb
+      RUN_ONCE: "false"
+      DUMMY: "false"
+      NETUID: 19
+      ENV: dev
+      NETWORK: finney
+      SECONDS_BETWEEN_SYNC: 120
+
+  control_center:
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: postgresql
+      POSTGRES_PORT: 5432
+      POSTGRES_NAME: mydb
+      ENV: dev
+
+  signing_service:
+    environment:
+      WALLET_NAME: t_and_c
+      HOTKEY_NAME: default
+      ENV: dev
+
+  redis:
+    ports:
+      - "6379:6379"
+
+  postgresql:
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: mydb
+      POSTGRES_PORT: 5432
+      POSTGRES_NAME: mydb
+    volumes:
+      - ./postgres_data:/host_postgres_data
+
+  prometheus:
+    ports:
+      - "9090:9090"
+
+  grafana:
+    ports:
+      - "3000:3000"
+
+  # Development-specific services
+  redis-commander:
+    image: ghcr.io/joeferner/redis-commander:latest
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    ports:
+      - '8081:8081'
+    networks:
+      - redis_network
+    depends_on:
+      - redis
+
+  dozzle:
+    image: amir20/dozzle:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - 9000:8080
+    environment:
+      - DOZZLE_LEVEL=info
+      - DOZZLE_TAILSIZE=300
+      - DOZZLE_FILTER=
+    restart: unless-stopped
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 5051:8080
+    environment:
+      ADMINER_DEFAULT_SERVER: postgresql
+      ADMINER_DESIGN: nette
+      ADMINER_PLUGINS: tables-filter tinymce
+    networks:
+      - postgres_network
+    depends_on:
+      - postgresql
+
+  dbmate:
+    image: amacneil/dbmate
+    environment:
+      DATABASE_URL: postgres://user:password@postgresql:5432/mydb?sslmode=disable
+    volumes:
+      - ./validator/db:/db
+    command: up
+    depends_on:
+      postgresql:
+        condition: service_healthy
+    networks:
+      - postgres_network

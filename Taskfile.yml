@@ -3,16 +3,16 @@ version: "3"
 tasks:
   refresh_participants:
     cmds:
-      - docker-compose run -e ENV=test -e NETUID=19 {{.CLI_ARGS}} core_validator python validator/core/manage_participants/refresh_participants.py
+      - docker-compose run -e ENV=test -e NETUID=19 {{.CLI_ARGS}} control_center python validator/core/manage_participants/refresh_participants.py
   schedule_participants:
     cmds:
-      - docker-compose run -e ENV=test -e NETUID=19  {{.CLI_ARGS}} --entrypoint python core_validator validator/core/manage_participants/scheduling_participants.py
+      - docker-compose run -e ENV=test -e NETUID=19  {{.CLI_ARGS}} --entrypoint python control_center validator/core/manage_participants/scheduling_participants.py
   generate_synthetic_data:
     cmds:
-      - docker-compose exec -e ENV=test {{.CLI_ARGS}} core_validator python validator/core/store_synthetic_data/generate_synthetic_data.py
+      - docker-compose exec -e ENV=test {{.CLI_ARGS}} control_center python validator/core/store_synthetic_data/generate_synthetic_data.py
   run_query_node:
     cmds:
-      - docker-compose exec -e ENV=test -e NETUID=176  {{.CLI_ARGS}} core_validator python validator/query_node/main.py
+      - docker-compose exec -e ENV=test -e NETUID=176  {{.CLI_ARGS}} control_center python validator/query_node/main.py
   metagraph_sync:
     cmds:
       - >
@@ -29,8 +29,12 @@ tasks:
       - docker-compose run {{.CLI_ARGS}} --entrypoint client_node python validator/client_node/main.py
   calculate_weights:
     cmds:
-      - docker-compose run {{.CLI_ARGS}} --entrypoint python core_validator  validator/core/calculate_weights/main.py
+      - docker-compose run {{.CLI_ARGS}} --entrypoint python control_center  validator/core/calculate_weights/main.py
 
+
+  test_chain_node_refresh_axons:
+    cmds:
+      - docker-compose run --rm -e NEST_ASYNCIO=0 --entrypoint python chain_node /app/validator/chain_node/tests/test_refresh_axons.py
   test_sign_message:
     cmds:
       - docker-compose run --rm -e ENV=test -e RUN_ONCE=true signing_service  python validator/signing_service/main.py

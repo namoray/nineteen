@@ -57,9 +57,14 @@ def load_config() -> Config:
 
 
 async def fetch_axon_infos_from_metagraph(config: Config) -> None:
-    logger.info("Resyncing the metagraph!")
-    await asyncio.to_thread(config.metagraph.sync, subtensor=config.subtensor, lite=True)
 
+    if config.sync:
+        logger.info("Fetching axon infos from the metagraph. First, syncing...")
+        await asyncio.to_thread(config.metagraph.sync, subtensor=config.subtensor, lite=True)
+        logger.info("Metagraph synced, now extracting axon infos")
+    else:
+        logger.info("Not syncing, only extracting axon infos form metagraph object!")
+        
     new_axons = [
         AxonInfo(
             **asdict(axon),
@@ -88,7 +93,7 @@ async def store_and_migrate_old_axons(config: Config) -> None:
     logger.info(f"Stored {len(config.metagraph.axons)} axons from the metagraph")
 
 
-async def get_and_store_metagraph_info(config: Config) -> None:
+async def get_and_store_axons(config: Config) -> None:
     if config.sync:
         await fetch_axon_infos_from_metagraph(config)
 
@@ -97,9 +102,9 @@ async def get_and_store_metagraph_info(config: Config) -> None:
     logger.info(f"Stored {len(config.metagraph.axons)} axons. Sleeping for {config.seconds_between_syncs} seconds.")
 
 
-async def periodically_get_and_store_metagraph_info(config: Config) -> None:
+async def periodically_get_and_store_axons(config: Config) -> None:
     while True:
-        await get_and_store_metagraph_info(config)
+        await get_and_store_axons(config)
         await asyncio.sleep(config.seconds_between_syncs)
 
 
@@ -111,9 +116,9 @@ async def main():
 
         if config.run_once:
             logger.warning("Running once only!")
-            await get_and_store_metagraph_info(config)
+            await get_and_store_axons(config)
         else:
-            await periodically_get_and_store_metagraph_info(config)
+            await periodically_get_and_store_axons(config)
     except Exception as e:
         logger.error(f"Unexpected error: {str(e)}")
         raise

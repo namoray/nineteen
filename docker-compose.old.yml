@@ -1,0 +1,268 @@
+services:
+
+  core:
+    build:
+      context: .
+      dockerfile: dockerfiles/core.dockerfile
+    image: core
+    
+  client_node:
+    container_name: client_node
+    build:
+      context: .
+      dockerfile: dockerfiles/client_node.dockerfile
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+      - postgresql
+      - core
+    volumes:
+      - .:/app
+    networks:
+      - postgres_network
+      - redis_network
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: postgresql
+      POSTGRES_PORT: 5432
+      POSTGRES_NAME: mydb
+    entrypoint: ["python", "-u", "/app/validator/client_node/src/main.py"]
+  
+  query_node:
+    container_name: query_node
+    build:
+      context: .
+      dockerfile: dockerfiles/query_node.dockerfile
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+      restart_policy:
+        condition: on-failure
+      update_config:
+        parallelism: 1
+        delay: 10s
+      rollback_config:
+        parallelism: 1
+        delay: 10s
+    depends_on:
+      - redis
+      - postgresql
+      - core
+    volumes:
+      - .:/app
+    networks:
+      - postgres_network
+      - redis_network
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: postgresql
+      POSTGRES_PORT: 5432
+      POSTGRES_NAME: mydb
+      ENV: dev
+      NETUID: 19
+    entrypoint: ["python", "-u", "/app/validator/query_node/src/main.py"]
+
+  chain_node:
+    container_name: chain_node
+    build:
+      context: .
+      dockerfile: dockerfiles/chain_node.dockerfile
+    depends_on:
+      - core
+      - postgresql
+      - redis
+      - signing_service
+    volumes:
+      - .:/app
+    networks:
+      - postgres_network
+      - redis_network
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: postgresql
+      POSTGRES_PORT: 5432
+      POSTGRES_NAME: mydb
+      RUN_ONCE: false
+      DUMMY: false
+      NETUID: 19
+      ENV: dev
+      NETWORK: finney
+      SECONDS_BETWEEN_SYNC: 120
+      TEST_DATABASE_URL: postgresql://test_user:test_password@test_db:5432/test_db
+    entrypoint: ["python", "-u", "/app/validator/chain_node/src/main.py"]
+
+
+  control_center:
+    container_name: control_center
+    build:
+      context: .
+      dockerfile: dockerfiles/core.dockerfile
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: postgresql
+      POSTGRES_PORT: 5432
+      POSTGRES_NAME: mydb
+      ENV: dev
+    depends_on:
+      - redis
+      - postgresql
+      - core
+    volumes:
+      - .:/app
+    networks:
+      - postgres_network
+      - redis_network
+    entrypoint: ["python", "-u", "/app/validator/core/src/main.py"]
+
+  signing_service:
+    container_name: signing_service
+    build:
+      context: .
+      dockerfile: dockerfiles/signing_service.dockerfile
+    depends_on:
+      - redis
+    volumes:
+      - ./validator/signing_service:/app/validator/signing_service
+      - ~/.bittensor:/root/.bittensor
+      
+    # Below needs to be from config somehow
+    environment:
+      WALLET_NAME: t_and_c
+      HOTKEY_NAME: default
+      ENV: dev
+    networks:
+      - redis_network
+    entrypoint: ["python", "-u", "/app/validator/signing_service/src/main.py"]
+
+
+  redis:
+    container_name: 0_redis
+    image: redis/redis-stack:latest
+    ports:
+      - "6379:6379"
+    networks:
+      - redis_network
+
+  prometheus:
+    container_name: 0_prometheus
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+
+  grafana:
+    container_name: 0_grafana
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+
+  redis-commander:
+    container_name: 0_redis-commander
+    image: ghcr.io/joeferner/redis-commander:latest
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    ports:
+      - '8081:8081'
+    networks:
+      - redis_network
+    depends_on:
+      - redis
+  
+  dozzle:
+    image: amir20/dozzle:latest
+    container_name: 0_dozzle
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - 9000:8080
+    environment:
+      - DOZZLE_LEVEL=info
+      - DOZZLE_TAILSIZE=300
+      - DOZZLE_FILTER=
+    restart: unless-stopped
+
+  postgresql:
+    container_name: 0_postgres
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: mydb
+      POSTGRES_PORT: 5432
+      POSTGRES_NAME: mydb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres_data:/host_postgres_data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d mydb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - postgres_network
+  
+  adminer:
+    container_name: 0_postgres_adminer
+    image: adminer
+    restart: always
+    ports:
+      - 5051:8080
+    environment:
+      ADMINER_DEFAULT_SERVER: postgresql
+      ADMINER_DESIGN: nette
+      ADMINER_PLUGINS: tables-filter tinymce
+    networks:
+      - postgres_network
+    depends_on:
+      - postgresql
+    
+  test_db:
+    image: postgres:13
+    environment:
+      POSTGRES_DB: test_db
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_password
+    ports:
+      - "5433:5432"
+    
+  dbmate:
+    container_name: 0_postgres_dbmate
+    image: amacneil/dbmate
+    environment:
+      DATABASE_URL: postgres://user:password@postgresql:5432/mydb?sslmode=disable
+    volumes:
+      - ./validator/db:/db
+    command: up
+    depends_on:
+      postgresql:
+        condition: service_healthy
+    networks:
+    - postgres_network
+
+  
+
+
+networks:
+  postgres_network:
+    driver: bridge
+  redis_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  portainer_data:
+  pgadmin-data:
+

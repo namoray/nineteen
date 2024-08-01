@@ -1,0 +1,89 @@
+services:
+  client_node:
+    environment:
+      POSTGRES_USER: ${PROD_DB_USER}
+      POSTGRES_PASSWORD: ${PROD_DB_PASSWORD}
+      POSTGRES_DB: ${PROD_DB_NAME}
+      POSTGRES_PORT: ${PROD_DB_PORT}
+      POSTGRES_NAME: ${PROD_DB_NAME}
+      ENV: prod
+    deploy:
+      restart_policy:
+        condition: on-failure
+
+  query_node:
+    environment:
+      POSTGRES_USER: ${PROD_DB_USER}
+      POSTGRES_PASSWORD: ${PROD_DB_PASSWORD}
+      POSTGRES_DB: ${PROD_DB_NAME}
+      POSTGRES_PORT: ${PROD_DB_PORT}
+      POSTGRES_NAME: ${PROD_DB_NAME}
+      ENV: prod
+      NETUID: ${PROD_NETUID}
+    deploy:
+      replicas: 3
+      restart_policy:
+        condition: on-failure
+
+  chain_node:
+    environment:
+      POSTGRES_USER: ${PROD_DB_USER}
+      POSTGRES_PASSWORD: ${PROD_DB_PASSWORD}
+      POSTGRES_DB: ${PROD_DB_NAME}
+      POSTGRES_PORT: ${PROD_DB_PORT}
+      POSTGRES_NAME: ${PROD_DB_NAME}
+      RUN_ONCE: "false"
+      DUMMY: "false"
+      NETUID: ${PROD_NETUID}
+      ENV: prod
+      NETWORK: ${PROD_NETWORK}
+      SECONDS_BETWEEN_SYNC: ${PROD_SYNC_INTERVAL}
+    deploy:
+      restart_policy:
+        condition: on-failure
+
+  control_center:
+    environment:
+      POSTGRES_USER: ${PROD_DB_USER}
+      POSTGRES_PASSWORD: ${PROD_DB_PASSWORD}
+      POSTGRES_DB: ${PROD_DB_NAME}
+      POSTGRES_PORT: ${PROD_DB_PORT}
+      POSTGRES_NAME: ${PROD_DB_NAME}
+      ENV: prod
+    deploy:
+      restart_policy:
+        condition: on-failure
+
+  signing_service:
+    environment:
+      WALLET_NAME: ${PROD_WALLET_NAME}
+      HOTKEY_NAME: ${PROD_HOTKEY_NAME}
+      ENV: prod
+    deploy:
+      restart_policy:
+        condition: on-failure
+
+  postgresql:
+    environment:
+      POSTGRES_USER: ${PROD_DB_USER}
+      POSTGRES_PASSWORD: ${PROD_DB_PASSWORD}
+      POSTGRES_DB: ${PROD_DB_NAME}
+      POSTGRES_PORT: ${PROD_DB_PORT}
+      POSTGRES_NAME: ${PROD_DB_NAME}
+    volumes:
+      - /path/to/production/postgres/data:/var/lib/postgresql/data
+
+  dbmate:
+    environment:
+      POSTGRES_USER: ${PROD_DB_USER}
+      POSTGRES_PASSWORD: ${PROD_DB_PASSWORD}
+      POSTGRES_DB: ${PROD_DB_NAME}
+      POSTGRES_PORT: ${PROD_DB_PORT}
+      POSTGRES_NAME: ${PROD_DB_NAME}
+      ENV: prod
+    
+
+  redis:
+    deploy:
+      restart_policy:
+        condition: on
