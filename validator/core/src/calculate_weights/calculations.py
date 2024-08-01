@@ -4,7 +4,7 @@
 from core.tasks import Task
 from core import tasks_config as tcfg
 from validator.db import functions as db_functions
-from validator.db.database import PSQLDB
+from validator.db.src.database import PSQLDB
 from validator.models import Participant, PeriodScore
 from validator.models import RewardData
 from core.logging import get_logger
@@ -112,4 +112,8 @@ async def calculate_scores_for_settings_weights(
         logger.debug(f"Completed processing task: {task}")
 
     logger.debug("Completed calculation of scores for settings weights")
+
+    # Finish this because its not finished at the moment
+    hotkey_to_uid = {participant.miner_hotkey: participant.uid for participant in participants}
+    total_uid_scores = {}
     return total_hotkey_scores

@@ -1,3 +1,5 @@
+"""TODO: move away from this models file being in the validator bit"""
+
 from collections import defaultdict
 
 
@@ -7,8 +9,6 @@ from typing import Optional
 from datetime import datetime
 
 task_data = defaultdict(lambda: defaultdict(list))
-
-AxonUID = int
 
 
 class PeriodScore(BaseModel):
@@ -25,6 +25,7 @@ class Participant(BaseModel):
         # allow_mutation = True
 
     miner_hotkey: str
+    miner_uid: int
     task: Task
     synthetic_requests_still_to_make: int = Field(..., description="Synthetic requests still to make")
     delay_between_synthetic_requests: float = Field(..., description="Delay between synthetic requests")

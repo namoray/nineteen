@@ -4,7 +4,7 @@ import os
 import random
 import time
 
-from validator.db.database import PSQLDB
+from validator.db.src.database import PSQLDB
 from redis.asyncio import Redis
 from validator.utils import (
     participant_utils as putils,

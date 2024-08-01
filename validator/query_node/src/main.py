@@ -6,7 +6,7 @@ import uuid
 from redis.asyncio import Redis
 from core.tasks import Task
 from core import tasks_config as tcfg, bittensor_overrides as bt
-from validator.db.database import PSQLDB
+from validator.db.src.database import PSQLDB
 from validator.db import sql
 from validator.utils import (
     participant_utils as putils,

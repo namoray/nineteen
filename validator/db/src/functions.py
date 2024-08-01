@@ -8,7 +8,7 @@ from typing import List, Dict, Any, Optional, Union
 from core.tasks import Task
 
 from core import bittensor_overrides as bt
-from validator.db.database import PSQLDB
+from validator.db.src.database import PSQLDB
 from models import utility_models
 from validator.db import sql
 from asyncpg import Connection

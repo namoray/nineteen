@@ -1,5 +1,4 @@
 import asyncio
-from dataclasses import asdict
 import json
 import os
 import time
@@ -7,7 +6,7 @@ from redis.asyncio import Redis
 from redis import Redis as SyncRedis
 import numpy as np
 from validator.utils import redis_constants as rcst, generic_utils as gutils
-from validator.chain_node.keypair import RedisGappedKeypair
+from validator.chain_node.src.keypair import RedisGappedKeypair
 from core.logging import get_logger
 import bittensor as bt
 from validator.utils import redis_dataclasses as rdc
@@ -99,16 +98,16 @@ async def main():
     # TODO: Change back to 19
     netuid = os.getenv("NETUID", 176)
 
-    test_env = os.getenv("ENV", "prod").lower() == "test"
+    # test_env = os.getenv("ENV", "prod").lower() == "test"
 
-    if test_env:
-        payload = json.dumps(
-            asdict(rdc.WeightsToSet(uids=[0, 1, 2], values=[0.3, 0.01, 0.5], version_key=10000000000, netuid=netuid))
-        )
-        await redis_db.rpush(
-            rcst.WEIGHTS_TO_SET_QUEUE_KEY,
-            payload,
-        )
+    # if test_env:
+    #     payload = json.dumps(
+    #         asdict(rdc.WeightsToSet(uids=[0, 1, 2], values=[0.3, 0.01, 0.5], version_key=10000000000, netuid=netuid))
+    #     )
+    #     await redis_db.rpush(
+    #         rcst.WEIGHTS_TO_SET_QUEUE_KEY,
+    #         payload,
+    #     )
 
     await poll_for_weights_then_set(redis_db, wallet, metagraph, subtensor)
 

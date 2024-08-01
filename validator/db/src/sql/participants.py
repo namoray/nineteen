@@ -16,6 +16,7 @@ async def insert_participants(connection: Connection, participants: list[Partici
         INSERT INTO {dcst.PARTICIPANTS_TABLE} (
             {dcst.PARTICIPANT_ID},
             {dcst.MINER_HOTKEY},
+            {dcst.MINER_UID},
             {dcst.TASK},
             {dcst.VALIDATOR_HOTKEY},
             {dcst.CAPACITY},
@@ -30,12 +31,13 @@ async def insert_participants(connection: Connection, participants: list[Partici
             {dcst.CREATED_AT},
             {dcst.UPDATED_AT}
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,  NOW(), NOW())
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW(), NOW())
         """,
         [
             (
                 participant.id,
                 participant.miner_hotkey,
+                participant.miner_uid,
                 participant.task.value,
                 validator_hotkey,
                 participant.capacity,
@@ -59,6 +61,7 @@ async def migrate_participants_to_participant_history(connection: Connection) ->
         INSERT INTO {dcst.PARTICIPANTS_HISTORY_TABLE} (
             {dcst.PARTICIPANT_ID},
             {dcst.MINER_HOTKEY},
+            {dcst.MINER_UID},
             {dcst.TASK},
             {dcst.VALIDATOR_HOTKEY},
             {dcst.CAPACITY},
@@ -77,6 +80,7 @@ async def migrate_participants_to_participant_history(connection: Connection) ->
         SELECT
             {dcst.PARTICIPANT_ID},
             {dcst.MINER_HOTKEY},
+            {dcst.MINER_UID},
             {dcst.TASK},
             {dcst.VALIDATOR_HOTKEY},
             {dcst.CAPACITY},
@@ -102,7 +106,7 @@ async def get_participant_for_task(connection: Connection, task: Task) -> Partic
     row = await connection.fetchrow(
         f"""
         SELECT 
-            {dcst.PARTICIPANT_ID}, {dcst.MINER_HOTKEY}, {dcst.TASK},
+            {dcst.PARTICIPANT_ID}, {dcst.MINER_HOTKEY}, {dcst.MINER_UID},{dcst.TASK},
             {dcst.CAPACITY}, {dcst.CAPACITY_TO_SCORE}, {dcst.CONSUMED_CAPACITY}, 
             {dcst.DELAY_BETWEEN_SYNTHETIC_REQUESTS}, {dcst.SYNTHETIC_REQUESTS_STILL_TO_MAKE}, 
             {dcst.TOTAL_REQUESTS_MADE}, {dcst.REQUESTS_429}, {dcst.REQUESTS_500}, 
@@ -121,7 +125,7 @@ async def fetch_participant(connection: Connection, participant_id: str) -> Part
     row = await connection.fetchrow(
         f"""
         SELECT 
-            {dcst.PARTICIPANT_ID}, {dcst.MINER_HOTKEY}, {dcst.TASK},
+            {dcst.PARTICIPANT_ID}, {dcst.MINER_HOTKEY}, {dcst.MINER_UID},{dcst.TASK},
             {dcst.CAPACITY}, {dcst.CAPACITY_TO_SCORE}, {dcst.CONSUMED_CAPACITY}, 
             {dcst.DELAY_BETWEEN_SYNTHETIC_REQUESTS}, {dcst.SYNTHETIC_REQUESTS_STILL_TO_MAKE}, 
             {dcst.TOTAL_REQUESTS_MADE}, {dcst.REQUESTS_429}, {dcst.REQUESTS_500}, 
@@ -140,7 +144,7 @@ async def fetch_participant(connection: Connection, participant_id: str) -> Part
 async def fetch_all_participants(connection: Connection, netuid: int | None = None) -> list[Participant]:
     base_query = f"""
         SELECT 
-            {dcst.PARTICIPANT_ID}, {dcst.MINER_HOTKEY}, {dcst.TASK}, 
+            {dcst.PARTICIPANT_ID}, {dcst.MINER_HOTKEY}, {dcst.MINER_UID}, {dcst.TASK}, 
             {dcst.CAPACITY}, {dcst.CAPACITY_TO_SCORE}, {dcst.CONSUMED_CAPACITY}, 
             {dcst.DELAY_BETWEEN_SYNTHETIC_REQUESTS}, {dcst.SYNTHETIC_REQUESTS_STILL_TO_MAKE}, 
             {dcst.TOTAL_REQUESTS_MADE}, {dcst.REQUESTS_429}, {dcst.REQUESTS_500}, 
@@ -171,6 +175,7 @@ async def fetch_hotkey_scores_for_task(connection: Connection, task: Task, miner
         miner_hotkey,
     )
     return [PeriodScore(**row) for row in rows]
+
 
 async def update_participants_period_scores(connection: Connection, participants: list[Participant]) -> None:
     await connection.executemany(

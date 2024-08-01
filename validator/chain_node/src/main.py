@@ -2,7 +2,7 @@ import asyncio
 from core.logging import get_logger
 
 from set_weights import main as set_weights_main
-from sync_metagraph import main as sync_metagraph_main
+from validator.chain_node.src.refresh_axons import main as sync_metagraph_main
 
 logger = get_logger(__name__)
 

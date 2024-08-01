@@ -1,5 +1,6 @@
 services:
   redis:
+    container_name: 0_redis
     image: redis/redis-stack:latest
     ports:
       - "6379:6379"
@@ -7,6 +8,7 @@ services:
       - redis_network
 
   prometheus:
+    container_name: 0_prometheus
     image: prom/prometheus:latest
     ports:
       - "9090:9090"
@@ -14,6 +16,7 @@ services:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
 
   grafana:
+    container_name: 0_grafana
     image: grafana/grafana:latest
     ports:
       - "3000:3000"
@@ -21,6 +24,7 @@ services:
       - prometheus
 
   redis-commander:
+    container_name: 0_redis-commander
     image: ghcr.io/joeferner/redis-commander:latest
     environment:
       - REDIS_HOSTS=local:redis:6379
@@ -33,7 +37,7 @@ services:
   
   dozzle:
     image: amir20/dozzle:latest
-    container_name: dozzle
+    container_name: 0_dozzle
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
@@ -45,6 +49,7 @@ services:
     restart: unless-stopped
 
   postgresql:
+    container_name: 0_postgres
     image: postgres:latest
     environment:
       POSTGRES_USER: user
@@ -66,6 +71,7 @@ services:
       - postgres_network
   
   adminer:
+    container_name: 0_postgres_adminer
     image: adminer
     restart: always
     ports:
@@ -80,6 +86,7 @@ services:
       - postgresql
     
   dbmate:
+    container_name: 0_postgres_dbmate
     image: amacneil/dbmate
     environment:
       DATABASE_URL: postgres://user:password@postgresql:5432/mydb?sslmode=disable
@@ -93,6 +100,7 @@ services:
     - postgres_network
 
   client_node:
+    container_name: client_node
     build:
       context: .
       dockerfile: dockerfiles/client_node.dockerfile
@@ -115,6 +123,7 @@ services:
     entrypoint: ["python", "-u", "/app/validator/client_node/main.py"]
     
   query_node:
+    container_name: query_node
     build:
       context: .
       dockerfile: dockerfiles/query_node.dockerfile
@@ -151,6 +160,7 @@ services:
     entrypoint: ["python", "-u", "/app/validator/query_node/main.py"]
 
   chain_node:
+    container_name: chain_node
     build:
       context: .
       dockerfile: dockerfiles/chain_node.dockerfile
@@ -179,6 +189,7 @@ services:
 
 
   core_validator:
+    container_name: core_validator
     build:
       context: .
       dockerfile: dockerfiles/core.dockerfile
@@ -200,6 +211,7 @@ services:
     entrypoint: ["python", "-u", "/app/validator/core/main.py"]
 
   signing_service:
+    container_name: signing_service
     build:
       context: .
       dockerfile: dockerfiles/signing_service.dockerfile

@@ -50,6 +50,7 @@ EXPIRED_AT = "expired_at"
 # Participants table
 PARTICIPANT_ID = "participant_id"
 MINER_HOTKEY = "miner_hotkey"
+MINER_UID = "miner_uid"
 TASK = "task"
 VALIDATOR_HOTKEY = "validator_hotkey"
 CAPACITY = "capacity"

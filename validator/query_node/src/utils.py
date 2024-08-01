@@ -6,14 +6,14 @@ from pydantic import BaseModel, ValidationError
 from core.tasks import Task
 from core.bittensor_overrides.chain_data import AxonInfo
 from models import base_models, utility_models
-from validator.db.database import PSQLDB
-from validator.models import Participant, AxonUID
+from validator.db.src.database import PSQLDB
+from validator.models import Participant
 from core import bittensor_overrides as bt
 from collections import OrderedDict
 import json
 from validator.utils import query_utils as qutils, work_and_speed_functions
 from core.logging import get_logger
-from validator.db import functions as db_functions
+from validator.db.src import functions as db_functions
 
 logger = get_logger(__name__)
 
@@ -22,23 +22,23 @@ class UIDQueue:
     def __init__(self):
         self.uid_map: OrderedDict[str, None] = OrderedDict()
 
-    def add_uid(self, uid: AxonUID) -> None:
+    def add_uid(self, uid: int) -> None:
         if uid not in self.uid_map:
             self.uid_map[uid] = None
 
-    def get_uid_and_move_to_back(self) -> Optional[AxonUID]:
+    def get_uid_and_move_to_back(self) -> Optional[int]:
         if self.uid_map:
             uid, _ = self.uid_map.popitem(last=False)
             self.uid_map[uid] = None
             return uid
         return None
 
-    def move_to_end(self, uid: AxonUID) -> None:
+    def move_to_end(self, uid: int) -> None:
         if uid in self.uid_map:
             self.uid_map.pop(uid)
             self.uid_map[uid] = None
 
-    def remove_uid(self, uid: AxonUID) -> None:
+    def remove_uid(self, uid: int) -> None:
         if uid in self.uid_map:
             self.uid_map.pop(uid)
 

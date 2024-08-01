@@ -6,7 +6,6 @@ from models import base_models, utility_models
 from validator.utils import (
     synthetic_utils as sutils,
     synthetic_constants as scst,
-    generic_utils as gutils,
 )
 from core.tasks import Task
 from core import dataclasses as dc, tasks_config
@@ -210,11 +209,14 @@ async def generate_synthetic_data(task: Task) -> None:
             f"Function {generative_function_name} not found in generate_synthetic_data, some config is wrong"
         )
 
-    with gutils.log_time(f"Generating synthetic data for {task}", logger):
-        func = getattr(sys.modules[__name__], generative_function_name)
-        kwargs = task_config.synthetic_generation_config.kwargs
+    # with gutils.log_time(f"Generating synthetic data for {task}", logger):
+    #     func = getattr(sys.modules[__name__], generative_function_name)
+    #     kwargs = task_config.synthetic_generation_config.kwargs
 
-        return await func(**kwargs)
+    func = getattr(sys.modules[__name__], generative_function_name)
+    kwargs = task_config.synthetic_generation_config.kwargs
+
+    return await func(**kwargs)
 
 
 # async def generate_clip_synthetic() -> base_models.ClipEmbeddingsIncoming:

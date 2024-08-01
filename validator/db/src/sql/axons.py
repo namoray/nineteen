@@ -1,4 +1,4 @@
-from validator.db.database import PSQLDB
+from validator.db.src.database import PSQLDB
 from core.bittensor_overrides import chain_data
 from core.logging import get_logger
 

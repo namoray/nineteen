@@ -12,7 +12,7 @@ from core.tasks import Task
 from redis.asyncio import Redis
 
 import httpx
-from validator.db.database import PSQLDB
+from validator.db.src.database import PSQLDB
 from validator.models import RewardData
 from validator.utils import work_and_speed_functions, generic_utils as gutils
 import json
