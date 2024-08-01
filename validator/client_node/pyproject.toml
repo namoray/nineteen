@@ -9,8 +9,8 @@ description = "Interacts with the chain - without holding any private key inform
 dynamic = ["dependencies"]
 
 [tool.setuptools.packages.find]
-where = ["."]
-include = ["chain_node*"]
+where = ["src"]
+include = ["client_node*"]
 
 [tool.setuptools.dynamic]
 dependencies = { file = ["requirements.txt"] }

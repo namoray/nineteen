@@ -1,25 +1,27 @@
 FROM python:3.11-slim
 
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=off \
+    PIP_DISABLE_PIP_VERSION_CHECK=on \
+    PIP_DEFAULT_TIMEOUT=100
+
 WORKDIR /app
 
-# Install core package
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY core/requirements.txt /app/core/requirements.txt
+
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir -r /app/core/requirements.txt
+
+
 COPY core /app/core
-WORKDIR /app/core
-RUN pip install --no-cache-dir -e .
-
-# Install query_node service
-COPY validator /app/validator
-WORKDIR /app/validator/core
-RUN pip install --no-cache-dir -e .
-
-# Copy models and config
 COPY models /app/models
 COPY config /app/config
 
-# Set the working directory back to /app
-WORKDIR /app
 
-# Set PYTHONPATH to include /app
 ENV PYTHONPATH=/app:$PYTHONPATH
-
-CMD ["tail", "-f", "/dev/null"]

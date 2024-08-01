@@ -9,7 +9,7 @@ description = "Handles the private keys for signing anything needed, and only th
 dynamic = ["dependencies"]
 
 [tool.setuptools.packages.find]
-where = ["."]
+where = ["src"]
 include = ["signing_service*"]
 
 [tool.setuptools.dynamic]

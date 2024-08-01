@@ -1,4 +1,147 @@
 services:
+
+  core:
+    build:
+      context: .
+      dockerfile: dockerfiles/core.dockerfile
+    image: core
+    
+  client_node:
+    container_name: client_node
+    build:
+      context: .
+      dockerfile: dockerfiles/client_node.dockerfile
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+      - postgresql
+      - core
+    volumes:
+      - .:/app
+    networks:
+      - postgres_network
+      - redis_network
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: postgresql
+      POSTGRES_PORT: 5432
+      POSTGRES_NAME: mydb
+    entrypoint: ["python", "-u", "/app/validator/client_node/src/main.py"]
+  
+  query_node:
+    container_name: query_node
+    build:
+      context: .
+      dockerfile: dockerfiles/query_node.dockerfile
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+      restart_policy:
+        condition: on-failure
+      update_config:
+        parallelism: 1
+        delay: 10s
+      rollback_config:
+        parallelism: 1
+        delay: 10s
+    depends_on:
+      - redis
+      - postgresql
+      - core
+    volumes:
+      - .:/app
+    networks:
+      - postgres_network
+      - redis_network
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: postgresql
+      POSTGRES_PORT: 5432
+      POSTGRES_NAME: mydb
+      ENV: dev
+      NETUID: 19
+    entrypoint: ["python", "-u", "/app/validator/query_node/src/main.py"]
+
+  chain_node:
+    container_name: chain_node
+    build:
+      context: .
+      dockerfile: dockerfiles/chain_node.dockerfile
+    depends_on:
+      - core
+      - postgresql
+      - redis
+      - signing_service
+    volumes:
+      - .:/app
+    networks:
+      - postgres_network
+      - redis_network
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: postgresql
+      POSTGRES_PORT: 5432
+      POSTGRES_NAME: mydb
+      RUN_ONCE: false
+      DUMMY: false
+      NETUID: 19
+      ENV: dev
+      NETWORK: finney
+      SECONDS_BETWEEN_SYNC: 120
+    entrypoint: ["python", "-u", "/app/validator/chain_node/src/main.py"]
+
+
+  core_validator:
+    container_name: core_validator
+    build:
+      context: .
+      dockerfile: dockerfiles/core.dockerfile
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: postgresql
+      POSTGRES_PORT: 5432
+      POSTGRES_NAME: mydb
+      ENV: dev
+    depends_on:
+      - redis
+      - postgresql
+      - core
+    volumes:
+      - .:/app
+    networks:
+      - postgres_network
+      - redis_network
+    entrypoint: ["python", "-u", "/app/validator/core/src/main.py"]
+
+  signing_service:
+    container_name: signing_service
+    build:
+      context: .
+      dockerfile: dockerfiles/signing_service.dockerfile
+    depends_on:
+      - redis
+    volumes:
+      - ./validator/signing_service:/app/validator/signing_service
+      - ~/.bittensor:/root/.bittensor
+      
+    # Below needs to be from config somehow
+    environment:
+      WALLET_NAME: t_and_c
+      HOTKEY_NAME: default
+      ENV: dev
+    networks:
+      - redis_network
+    entrypoint: ["python", "-u", "/app/validator/signing_service/src/main.py"]
+
+
   redis:
     container_name: 0_redis
     image: redis/redis-stack:latest
@@ -99,136 +242,7 @@ services:
     networks:
     - postgres_network
 
-  client_node:
-    container_name: client_node
-    build:
-      context: .
-      dockerfile: dockerfiles/client_node.dockerfile
-    ports:
-      - "8000:8000"
-    depends_on:
-      - redis
-      - postgresql
-    volumes:
-      - .:/app
-    networks:
-      - postgres_network
-      - redis_network
-    environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: postgresql
-      POSTGRES_PORT: 5432
-      POSTGRES_NAME: mydb
-    entrypoint: ["python", "-u", "/app/validator/client_node/main.py"]
-    
-  query_node:
-    container_name: query_node
-    build:
-      context: .
-      dockerfile: dockerfiles/query_node.dockerfile
-    deploy:
-      replicas: 1
-      resources:
-        limits:
-          cpus: '0.50'
-          memory: 512M
-      restart_policy:
-        condition: on-failure
-      update_config:
-        parallelism: 1
-        delay: 10s
-      rollback_config:
-        parallelism: 1
-        delay: 10s
-    depends_on:
-      - redis
-      - postgresql
-    volumes:
-      - .:/app
-    networks:
-      - postgres_network
-      - redis_network
-    environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: postgresql
-      POSTGRES_PORT: 5432
-      POSTGRES_NAME: mydb
-      ENV: dev
-      NETUID: 19
-    entrypoint: ["python", "-u", "/app/validator/query_node/main.py"]
-
-  chain_node:
-    container_name: chain_node
-    build:
-      context: .
-      dockerfile: dockerfiles/chain_node.dockerfile
-    depends_on:
-      - postgresql
-      - redis
-      - signing_service
-    volumes:
-      - .:/app
-    networks:
-      - postgres_network
-      - redis_network
-    environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: postgresql
-      POSTGRES_PORT: 5432
-      POSTGRES_NAME: mydb
-      RUN_ONCE: false
-      DUMMY: false
-      NETUID: 19
-      ENV: dev
-      NETWORK: finney
-      SECONDS_BETWEEN_SYNC: 120
-    entrypoint: ["python", "-u", "/app/validator/chain_node/main.py"]
-
-
-  core_validator:
-    container_name: core_validator
-    build:
-      context: .
-      dockerfile: dockerfiles/core.dockerfile
-    environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: postgresql
-      POSTGRES_PORT: 5432
-      POSTGRES_NAME: mydb
-      ENV: dev
-    depends_on:
-      - redis
-      - postgresql
-    volumes:
-      - .:/app
-    networks:
-      - postgres_network
-      - redis_network
-    entrypoint: ["python", "-u", "/app/validator/core/main.py"]
-
-  signing_service:
-    container_name: signing_service
-    build:
-      context: .
-      dockerfile: dockerfiles/signing_service.dockerfile
-    depends_on:
-      - redis
-    volumes:
-      - ./validator/signing_service:/app/validator/signing_service
-      - ~/.bittensor:/root/.bittensor
-      
-    # Below needs to be from config somehow
-    environment:
-      WALLET_NAME: t_and_c
-      HOTKEY_NAME: default
-      ENV: dev
-    networks:
-      - redis_network
-    entrypoint: ["python", "-u", "/app/validator/signing_service/main.py"]
+  
 
 
 networks:

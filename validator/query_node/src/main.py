@@ -14,7 +14,7 @@ from validator.utils import (
     query_utils as qutils,
 )
 from validator.utils import redis_constants as rcst
-from validator.query_node import utils
+from validator.query_node.src import utils
 from core.logging import get_logger
 
 logger = get_logger(__name__)

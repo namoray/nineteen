@@ -9,7 +9,7 @@ description = "Query node service for the validator"
 dynamic = ["dependencies"]
 
 [tool.setuptools.packages.find]
-where = ["."]
+where = ["src"]
 include = ["query_node*"]
 
 [tool.setuptools.dynamic]

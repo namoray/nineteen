@@ -3,7 +3,6 @@ Test utilities for metagraph synchronization.
 """
 
 import pytest
-import asyncio
 import numpy as np
 from unittest.mock import AsyncMock, MagicMock, patch
 from core.bittensor_overrides.chain_data import AxonInfo

@@ -3,14 +3,14 @@ requires = ["setuptools>=45", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "validator_core"
+name = "control_center"
 version = "1.0.0"
 description = "Core stuff for the validator; does not need horizontal scaling"
 dynamic = ["dependencies"]
 
 [tool.setuptools.packages.find]
-where = ["."]
-include = ["core*"]
+where = ["src"]
+include = ["control_center*"]
 
 [tool.setuptools.dynamic]
 dependencies = { file = ["requirements.txt"] }
