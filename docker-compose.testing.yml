@@ -71,3 +71,4 @@ services:
       POSTGRES_PORT: 5432
       POSTGRES_HOST: test_db
       POSTGRES_NAME: test_db
+      DATABASE_URL: "postgres://test_user:test_password@test_db:5432/test_db?sslmode=disable"
