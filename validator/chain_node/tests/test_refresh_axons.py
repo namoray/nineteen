@@ -1,4 +1,3 @@
-import asyncio
 import unittest
 
 from asyncpg import Connection
@@ -81,28 +80,23 @@ class TestRefreshAxons(unittest.IsolatedAsyncioTestCase):
     async def test_get_and_store_axons(self):
         async with await self.config.psql_db.connection() as conn:
             conn: Connection
-            async with conn.transaction():
-                # Clear existing data
-                await conn.execute("TRUNCATE TABLE axon_info, axon_info_history RESTART IDENTITY;")
 
-                # Run get_and_store_axons
-                await get_and_store_axons(self.config)
 
-                # Verify the results
-                axon_info = await conn.fetch("SELECT * FROM axon_info ORDER BY hotkey")
-                self.assertEqual(len(axon_info), 3, "Expected 3 axons in axon_info table")
+            await conn.execute("DELETE FROM axon_info; DELETE FROM axon_info_history;")
 
-                # Check specific values
-                self.assertEqual(axon_info[0]["hotkey"], "test-hotkey1")
-                self.assertEqual(axon_info[1]["hotkey"], "test-hotkey2")
-                self.assertEqual(axon_info[2]["hotkey"], "test-vali")
+            await get_and_store_axons(self.config)
 
-                # Run get_and_store_axons again to test history
-                await get_and_store_axons(self.config)
+            axon_info = await conn.fetch("SELECT * FROM axon_info ORDER BY hotkey")
+            self.assertEqual(len(axon_info), 3, "Expected 3 axons in axon_info table")
 
-                # Verify history
-                axon_history = await conn.fetch("SELECT * FROM axon_info_history ORDER BY hotkey")
-                self.assertEqual(len(axon_history), 3, "Expected 3 entries in axon_info_history table")
+            self.assertEqual(axon_info[0]["hotkey"], "test-hotkey1")
+            self.assertEqual(axon_info[1]["hotkey"], "test-hotkey2")
+            self.assertEqual(axon_info[2]["hotkey"], "test-vali")
+
+            await get_and_store_axons(self.config)
+
+            axon_history = await conn.fetch("SELECT * FROM axon_info_history ORDER BY hotkey")
+            self.assertEqual(len(axon_history), 3, "Expected 3 entries in axon_info_history table")
 
 
 if __name__ == "__main__":

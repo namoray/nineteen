@@ -12,6 +12,7 @@ sam_vit_l_0b3195.pth
 .bittensor
 *.safetensors
 *.bin
+docker-compose.combined.yml
 
 .DS_Store
 embeddings_for_testing.txt

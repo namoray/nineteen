@@ -1,4 +1,5 @@
 make all docker files share the core package so i dont need to rebuild this 8 times
+- much better ways to handle the docker composes. Its getting messy to dev
 tests
 •⁠  ⁠high level in core validator which organises the stuff; axons added recently? if so then particiapnts added recently; Any synthetic queries left? All this stuff should give a lot of good insight
 •⁠  ⁠⁠Plan today is turn off synthetics on mogs vali, and turn mine one for a bit

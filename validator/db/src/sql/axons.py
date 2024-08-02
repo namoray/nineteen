@@ -84,8 +84,7 @@ async def migrate_axons_to_axon_history(connection: Connection) -> None:  # noqa
     )
 
     logger.debug("Truncating axon info table")
-    # Now delete the old table info
-    await connection.execute(f"TRUNCATE TABLE {dcst.AXON_INFO_TABLE}")
+    await connection.execute(f"DELETE FROM {dcst.AXON_INFO_TABLE}")
 
 
 async def get_axons(psql_db: PSQLDB, netuid: int) -> list[chain_data.AxonInfo]:

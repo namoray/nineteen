@@ -99,7 +99,7 @@ async def migrate_participants_to_participant_history(connection: Connection) ->
         """
     )
 
-    await connection.execute(f"TRUNCATE TABLE {dcst.PARTICIPANTS_TABLE}")
+    await connection.execute(f"DELETE FROM {dcst.PARTICIPANTS_TABLE}")
 
 
 async def get_participant_for_task(connection: Connection, task: Task) -> Participant | None:
