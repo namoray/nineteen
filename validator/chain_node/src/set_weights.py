@@ -1,3 +1,6 @@
+"""
+Get's weights to set from redis, asks signing service to sign, and then sets on chain
+"""
 import asyncio
 import json
 import os
@@ -33,6 +36,21 @@ class Config:
     wallet: bt.wallet
 
 
+async def _setup_wallet(redis_db: Redis, synchronous_redis: SyncRedis) -> bt.wallet:
+    public_keypair_info = await gutils.get_public_keypair_info(redis_db)
+    keypair = RedisGappedKeypair(
+        redis_db=synchronous_redis,
+        ss58_address=public_keypair_info.ss58_address,
+        ss58_format=public_keypair_info.ss58_format,
+        crypto_type=public_keypair_info.crypto_type,
+        public_key=public_keypair_info.public_key,
+    )
+    # Doesn't matter what wallet we use here, keypair has the relevant info above
+    wallet = bt.wallet()
+    wallet._hotkey = keypair
+    return wallet
+
+
 async def load_config() -> Config:
     redis_host = os.getenv("REDIS_HOST", "redis")
     subtensor_network = os.getenv("SUBTENSOR_NETWORK", "finney")
@@ -42,7 +60,7 @@ async def load_config() -> Config:
     redis_db = Redis(host=redis_host)
     synchronous_redis = SyncRedis(host=redis_host)
 
-    wallet = await setup_wallet(redis_db, synchronous_redis)
+    wallet = await _setup_wallet(redis_db, synchronous_redis)
     subtensor = bt.subtensor(network=subtensor_network)
     metagraph = subtensor.metagraph(netuid=netuid)
 
@@ -106,21 +124,7 @@ async def poll_for_weights_then_set(config: Config) -> None:
 
         await set_weights(weights_to_set, config)
 
-
-async def setup_wallet(redis_db: Redis, synchronous_redis: SyncRedis) -> bt.wallet:
-    public_keypair_info = await gutils.get_public_keypair_info(redis_db)
-    keypair = RedisGappedKeypair(
-        redis_db=synchronous_redis,
-        ss58_address=public_keypair_info.ss58_address,
-        ss58_format=public_keypair_info.ss58_format,
-        crypto_type=public_keypair_info.crypto_type,
-        public_key=public_keypair_info.public_key,
-    )
-    wallet = bt.wallet()
-    wallet._hotkey = keypair
-    return wallet
-
-
+# TODO: Move this out to testing file
 async def main():
     config = await load_config()
 

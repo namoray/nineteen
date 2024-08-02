@@ -2,7 +2,7 @@ import json
 import logging
 import os
 import sys
-from validator.signing_service import constants as cst
+from validator.signing_service.src import constants as cst
 from substrateinterface import Keypair
 
 ANSI_COLOR_CODES = {

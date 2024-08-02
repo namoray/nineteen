@@ -7,7 +7,6 @@ from redis import Redis
 from validator.utils import redis_constants as rcst, redis_dataclasses as rdc
 import uuid
 from core.logging import get_logger
-
 from scalecodec.base import ScaleBytes
 
 logger = get_logger(__name__)
@@ -48,7 +47,7 @@ class RedisGappedKeypair(Keypair):
         elif type(data) is str:  # noqa
             data = data.encode()
 
-        # Use below to debug, since logging is hell
+        # Use below to debug, since logging is hell when bittensor is involved :)
         # raise ValueError(f"Data: {data} not supported")
 
         job_id = str(uuid.uuid4())

@@ -10,7 +10,7 @@ Probably refactor signing service slightly, probably refactor the core module to
 refactor everything
 easy validator setup and running
 
-
+rethink singing service - at the minute it will sign *anything*. It should only sign dendrite requests and weight setting requests - it can't sign an arbitrary message
 
 
 What to change when making a new inference subnet?

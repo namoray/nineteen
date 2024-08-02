@@ -1,13 +1,15 @@
-"""TODO: Move this out from the main validator"""
+"""
+TODO: Make this more secure so it will only sign certain things
+"""
 
 import asyncio
 import json
 from substrateinterface import Keypair
 from redis.asyncio import Redis
 import os
-from validator.signing_service import utils, constants as cst
+from validator.signing_service.src import utils, constants as cst
 from dataclasses import asdict
-from validator.signing_service import signing_dataclasses as dc
+from validator.signing_service.src import signing_dataclasses as dc
 
 logger = utils.get_logger(__name__)
 
