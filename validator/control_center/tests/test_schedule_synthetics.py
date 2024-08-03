@@ -5,7 +5,7 @@ import time
 from redis.asyncio import Redis
 from validator.db.src.database import PSQLDB
 from validator.utils import redis_constants as rcst
-from validator.control_center.src.schedule_synthetics import ( 
+from validator.control_center.src.schedule_synthetics import (
     Config,
     schedule_synthetic_query,
     schedule_synthetics_until_done,
@@ -32,21 +32,19 @@ class TestSyntheticSchedulerFunctional(unittest.IsolatedAsyncioTestCase):
 
     @patch("validator.utils.participant_utils.add_synthetic_query_to_queue")
     async def test_schedule_and_process_synthetics(self, mock_add_to_queue):
+        # Make a fake participant add, it , wait a 5 secs, check there is only one in the queue?
         participant_id = "test_participant"
         num_synthetics = 10
         delay = 1.0
 
-        # Schedule 10 synthetic queries
         for _ in range(num_synthetics):
             await schedule_synthetic_query(self.redis_db, participant_id, delay)
 
-        # Verify that 10 items are in the queue
         queue_size = await self.redis_db.zcard(rcst.SYNTHETIC_SCHEDULING_QUEUE_KEY)
         self.assertEqual(
             queue_size, num_synthetics, f"Expected {num_synthetics} items in queue, but found {queue_size}"
         )
 
-        # Run the scheduler
         start_time = time.time()
 
         async def stop_after_timeout():

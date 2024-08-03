@@ -15,6 +15,7 @@ from typing import Optional
 from dotenv import load_dotenv
 from validator.db.src.database import PSQLDB
 from redis.asyncio import Redis
+from validator.models import Participant
 from validator.utils import participant_utils as putils
 from validator.utils import redis_utils as rutils
 from validator.utils import redis_constants as rcst
@@ -91,9 +92,8 @@ async def schedule_synthetic_query(redis_db: Redis, participant_id: str, delay: 
     )
 
 
-async def schedule_initial_synthetics(config: Config) -> None:
+async def schedule_initial_synthetics(config: Config, participants: list[Participant]) -> None:
     await rutils.clear_sorted_set(config.redis_db, rcst.SYNTHETIC_SCHEDULING_QUEUE_KEY)
-    participants = await putils.load_participants(config.psql_db)
 
     for participant in participants:
         await schedule_synthetic_query(config.redis_db, participant.id, participant.delay_between_synthetic_requests)
@@ -104,7 +104,8 @@ async def schedule_initial_synthetics(config: Config) -> None:
 async def schedule_synthetics_until_done(config: Config) -> None:
     logger.debug(f"Scheduling any synthetic queries which are ready. Scheduling just once: {config.run_once}")
 
-    schedule_initial_synthetics(config)
+    pariticipants = await putils.load_participants(config.psql_db)
+    schedule_initial_synthetics(config, pariticipants)
     if config.run_once:
         return
     metrics = PerformanceMetrics()
