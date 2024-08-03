@@ -16,7 +16,7 @@ from validator.db.src.database import PSQLDB
 from validator.models import RewardData
 from validator.utils import work_and_speed_functions, generic_utils as gutils
 import json
-from validator.db import functions as db_functions, sql
+from validator.db.src import functions as db_functions, sql
 import os
 import binascii
 

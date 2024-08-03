@@ -9,7 +9,7 @@ from dataclasses import dataclass
 import os
 from typing import List
 
-from validator.db import sql
+from validator.db.src import sql
 from validator.models import Participant
 
 from dotenv import load_dotenv

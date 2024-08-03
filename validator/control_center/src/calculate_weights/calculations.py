@@ -113,7 +113,7 @@ async def calculate_scores_for_settings_weights(
 
     logger.debug("Completed calculation of scores for settings weights")
 
-    # Finish this because its not finished at the moment
+    # TODO: Finish this because its not finished at the moment
     hotkey_to_uid = {participant.miner_hotkey: participant.uid for participant in participants}
     total_uid_scores = {}
     return total_hotkey_scores

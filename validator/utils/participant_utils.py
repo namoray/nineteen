@@ -1,5 +1,5 @@
 import json
-from validator.db import sql
+from validator.db.src import sql
 from validator.db.src.database import PSQLDB
 from validator.models import Participant
 from validator.utils import redis_constants as rcst
