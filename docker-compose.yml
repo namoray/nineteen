@@ -102,6 +102,7 @@ services:
     networks:
       - redis_network
     entrypoint: ["python", "-u", "/app/validator/signing_service/src/main.py"]
+    container_name: signing_service
      
 
 

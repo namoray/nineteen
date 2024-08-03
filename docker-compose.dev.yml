@@ -86,6 +86,7 @@ services:
       - redis_network
     depends_on:
       - redis
+    container_name: 0_redis-commander
 
   dozzle:
     image: amir20/dozzle:latest
@@ -98,6 +99,7 @@ services:
       - DOZZLE_TAILSIZE=300
       - DOZZLE_FILTER=
     restart: unless-stopped
+    container_name: 0_dozzle
 
   adminer:
     image: adminer
@@ -112,6 +114,7 @@ services:
       - postgres_network
     depends_on:
       - postgresql
+    container_name: 0_adminer
 
   dbmate:
     image: amacneil/dbmate
@@ -125,3 +128,4 @@ services:
         condition: service_healthy
     networks:
       - postgres_network
+    container_name: 0_dbmate

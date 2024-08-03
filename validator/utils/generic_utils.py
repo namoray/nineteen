@@ -40,8 +40,11 @@ async def get_public_keypair_info(redis_db: Redis) -> rdc.PublicKeypairInfo:
     while i < 10:
         info = await redis_db.get(rcst.PUBLIC_KEYPAIR_INFO_KEY)
         if info is None:
+            logger.info("No public key config found in Redis, waiting for 10 secs before trying again...")
             i += 1
-            await asyncio.sleep(11)
+            await asyncio.sleep(10)
+        else:
+            break
     if info is None:
         raise RuntimeError("Could not get public key config from Redis")
     logger.info("Got public key config from Redis!")
