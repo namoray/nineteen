@@ -54,59 +54,8 @@ class TestSyntheticSchedulerFunctional(unittest.IsolatedAsyncioTestCase):
             await sql.insert_participants(connection, [participant], "test_vali")
 
         await schedule_synthetics_until_done(self.config)
-        return
-        self.assertEqual(
-            mock_add_to_queue.call_count,
-            num_synthetics,
-            f"Expected {num_synthetics} calls to add_synthetic_query_to_queue, but got {mock_add_to_queue.call_count}",
-        )
 
-        queue_size = await self.redis_db.zcard(rcst.SYNTHETIC_SCHEDULING_QUEUE_KEY)
-        self.assertEqual(
-            queue_size,
-            num_synthetics,
-            f"Expected {num_synthetics} items in queue after processing, but found {queue_size}",
-        )
-
-        end_time = datetime.now()
-        queue_items = await self.redis_db.zrange(rcst.SYNTHETIC_SCHEDULING_QUEUE_KEY, 0, -1, withscores=True)
-        for item, score in queue_items:
-            self.assertGreater(score, end_time.timestamp(), "Expected updated timestamp to be in the future")
-
-        # self.assertLess(
-        #     end_time - start_time,
-        #     timedelta(seconds=num_synthetics * delay + 1),
-        #     "Function took longer than expected to complete",
-        # )
-
-        async def stop_after_timeout():
-            await asyncio.sleep(15)
-            self.config.run_once = True
-
-        await asyncio.gather(schedule_synthetics_until_done(self.config), stop_after_timeout())
-
-        end_time = time.time()
-
-        queue_size_after = await self.redis_db.zcard(rcst.SYNTHETIC_SCHEDULING_QUEUE_KEY)
-        self.assertEqual(
-            queue_size_after, 0, f"Expected 0 items in queue after processing, but found {queue_size_after}"
-        )
-
-        self.assertEqual(
-            mock_add_to_queue.call_count,
-            num_synthetics,
-            f"Expected add_synthetic_query_to_queue to be called {num_synthetics} times, but was called {mock_add_to_queue.call_count} times",
-        )
-
-        expected_min_duration = num_synthetics * delay
-        actual_duration = end_time - start_time
-        self.assertGreaterEqual(
-            actual_duration,
-            expected_min_duration,
-            f"Processing took {actual_duration:.2f}s, expected at least {expected_min_duration:.2f}s",
-        )
-
-        print(f"Processed {num_synthetics} synthetic queries in {actual_duration:.2f} seconds")
+        self.assertEqual(await self.redis_db.get(rcst.SYNTHETIC_SCHEDULING_QUEUE_KEY), None)
 
 
 if __name__ == "__main__":

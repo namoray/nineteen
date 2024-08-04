@@ -180,8 +180,6 @@ async def schedule_synthetics_until_done(config: Config) -> None:
             await reschedule_participant(config, SyntheticQueueItem(**raw_details), metrics, overspilled_time)
 
         else:
-            if config.run_once:
-                break
             await _sleep_until_next_query(overspilled_time, metrics)
 
         if current_time - last_log_time >= log_interval:
