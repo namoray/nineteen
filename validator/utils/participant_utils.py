@@ -40,6 +40,12 @@ async def add_synthetic_query_to_queue(redis_db: Redis, participant_id: str) -> 
     await rutils.add_str_to_redis_list(redis_db, rcst.QUERY_QUEUE_KEY, message)
 
 
+async def get_requests_remaining_and_decrement(psql_db: PSQLDB, participant_id: str) -> int | None:
+    async with await psql_db.connection() as connection:
+        count = await sql.get_and_decrement_synthetic_request_count(connection, participant_id)
+        return count
+
+
 async def load_query_queue(redis_db: Redis) -> list[str]:
     return await rutils.get_redis_list(redis_db, rcst.QUERY_QUEUE_KEY)
 

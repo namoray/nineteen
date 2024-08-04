@@ -5,7 +5,8 @@ from .participants import (
     fetch_participant,
     get_participant_for_task,
     fetch_hotkey_scores_for_task,
-    update_participants_period_scores
+    update_participants_period_scores,
+    get_and_decrement_synthetic_request_count
 )
 from .axons import (
     insert_axon_info,
@@ -43,6 +44,7 @@ __all__ = [
     "get_participant_for_task",
     "fetch_hotkey_scores_for_task",
     "update_participants_period_scores"
+    "get_and_decrement_synthetic_request_count",
 
     # Axons
     "insert_axon_info",

@@ -68,6 +68,13 @@ async def add_to_sorted_set(redis_db: Redis, name: str, data: str | dict[Any, An
     await redis_db.zadd(name, {data: score})
 
 
+async def removed_from_sorted_set(redis_db: Redis, name: str, data: str | dict[Any, Any]) -> None:
+    if isinstance(data, dict):
+        json_to_add = _remove_enums(data)
+        data = json.dumps(json_to_add)
+    await redis_db.zrem(name, data)
+
+
 async def add_str_to_redis_list(redis_db: Redis, queue: str, value_to_add: str) -> None:
     await redis_db.rpush(queue, value_to_add)
 

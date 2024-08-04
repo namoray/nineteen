@@ -186,3 +186,29 @@ async def update_participants_period_scores(connection: Connection, participants
         """,
         [(participant.period_score, participant.id) for participant in participants],
     )
+
+
+async def get_and_decrement_synthetic_request_count(connection: Connection, participant_id: str) -> int | None:
+    """
+    Asynchronously retrieves and decrements the synthetic request count for a given participant, setting it to 0 if
+    it the consumed capacity is greater than the announced capacity.
+    """
+
+    result = await connection.fetchrow(
+        f"""
+        UPDATE {dcst.PARTICIPANTS_TABLE}
+        SET {dcst.SYNTHETIC_REQUESTS_STILL_TO_MAKE} = 
+            CASE 
+                WHEN {dcst.CONSUMED_CAPACITY} > {dcst.CAPACITY} THEN 0
+                ELSE GREATEST({dcst.SYNTHETIC_REQUESTS_STILL_TO_MAKE} - 1, 0)
+            END
+        WHERE {dcst.PARTICIPANT_ID} = $1
+        RETURNING {dcst.SYNTHETIC_REQUESTS_STILL_TO_MAKE}
+        """,
+        participant_id,
+    )
+
+    if result:
+        return result[dcst.SYNTHETIC_REQUESTS_STILL_TO_MAKE]
+    else:
+        return None

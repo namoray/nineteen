@@ -2,6 +2,7 @@
 CREATE TABLE IF NOT EXISTS participants (
     participant_id TEXT PRIMARY KEY,
     miner_hotkey TEXT NOT NULL,
+    miner_uid INTEGER NOT NULL,
     task TEXT NOT NULL,
     validator_hotkey TEXT NOT NULL,
     capacity FLOAT NOT NULL,

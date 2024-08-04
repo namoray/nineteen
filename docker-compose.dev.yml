@@ -9,6 +9,7 @@ services:
       POSTGRES_PORT: 5432
       POSTGRES_NAME: mydb
       ENV: dev
+    container_name: dev_client_node
 
   query_node:
     deploy:
@@ -21,6 +22,7 @@ services:
       POSTGRES_NAME: mydb
       ENV: dev
       NETUID: 19
+      container_name: dev_query_node
 
   chain_node:
     environment:
@@ -35,6 +37,7 @@ services:
       ENV: dev
       NETWORK: finney
       SECONDS_BETWEEN_SYNC: 120
+    container_name: dev_chain_node
 
   control_center:
     environment:
@@ -44,16 +47,14 @@ services:
       POSTGRES_PORT: 5432
       POSTGRES_NAME: mydb
       ENV: dev
+    container_name: dev_control_center
 
   signing_service:
     environment:
       WALLET_NAME: t_and_c
       HOTKEY_NAME: default
       ENV: dev
-
-  redis:
-    ports:
-      - "6379:6379"
+    container_name: dev_signing_service
 
   postgresql:
     ports:
@@ -66,55 +67,7 @@ services:
       POSTGRES_NAME: mydb
     volumes:
       - ./postgres_data:/host_postgres_data
-
-  prometheus:
-    ports:
-      - "9090:9090"
-
-  grafana:
-    ports:
-      - "3000:3000"
-
-  # Development-specific services
-  redis-commander:
-    image: ghcr.io/joeferner/redis-commander:latest
-    environment:
-      - REDIS_HOSTS=local:redis:6379
-    ports:
-      - '8081:8081'
-    networks:
-      - redis_network
-    depends_on:
-      - redis
-    container_name: 0_redis-commander
-
-  dozzle:
-    image: amir20/dozzle:latest
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    ports:
-      - 9000:8080
-    environment:
-      - DOZZLE_LEVEL=info
-      - DOZZLE_TAILSIZE=300
-      - DOZZLE_FILTER=
-    restart: unless-stopped
-    container_name: 0_dozzle
-
-  adminer:
-    image: adminer
-    restart: always
-    ports:
-      - 5051:8080
-    environment:
-      ADMINER_DEFAULT_SERVER: postgresql
-      ADMINER_DESIGN: nette
-      ADMINER_PLUGINS: tables-filter tinymce
-    networks:
-      - postgres_network
-    depends_on:
-      - postgresql
-    container_name: 0_adminer
+    container_name: 0_dev_postgresql
 
   dbmate:
     image: amacneil/dbmate
