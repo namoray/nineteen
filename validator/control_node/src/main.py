@@ -1,8 +1,7 @@
-
 # TODO: rename core_node (they shoud all be nodes)
 
 import asyncio
-from validator.control_node.src.calculate_weights import main as calculate_weights
+from validator.control_node.src.weights import calculate_and_schedule_weights as calculate_weights
 
 # do the rest
 from validator.control_node.src.score_results import score_results
