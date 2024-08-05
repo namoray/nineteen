@@ -10,7 +10,7 @@ from core.tasks import Task
 from core import bittensor_overrides as bt
 from validator.db.src.database import PSQLDB
 from models import utility_models
-from validator.db import sql
+from validator.db.src import sql
 from asyncpg import Connection
 
 from validator.models import PeriodScore, RewardData

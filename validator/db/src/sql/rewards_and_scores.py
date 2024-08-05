@@ -210,7 +210,7 @@ async def select_recent_reward_data_for_a_task(
     )
 
 
-async def select_recent_reward_data(connection: Connection, date: str, miner_hotkey: str, limit: int) -> List[tuple]:
+async def select_recent_reward_data(connection: Connection, date: str, miner_hotkey: str, limit: int) -> list[tuple]:
     return await connection.fetch(
         f"""
         SELECT

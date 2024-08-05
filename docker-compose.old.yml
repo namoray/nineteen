@@ -99,8 +99,8 @@ services:
     entrypoint: ["python", "-u", "/app/validator/chain_node/src/main.py"]
 
 
-  control_center:
-    container_name: control_center
+  control_node:
+    container_name: control_node
     build:
       context: .
       dockerfile: dockerfiles/core.dockerfile

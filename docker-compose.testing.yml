@@ -35,7 +35,7 @@ services:
       NETWORK: test
       SECONDS_BETWEEN_SYNC: 60
 
-  control_center:
+  control_node:
     environment:
       POSTGRES_USER: test_user
       POSTGRES_PASSWORD: test_password

@@ -73,10 +73,10 @@ services:
     entrypoint: ["python", "-u", "/app/validator/chain_node/src/main.py"]
     container_name: chain_node
 
-  control_center:
+  control_node:
     build:
       context: .
-      dockerfile: dockerfiles/control_center.dockerfile
+      dockerfile: dockerfiles/control_node.dockerfile
     depends_on:
       - redis
       - postgresql
@@ -86,8 +86,8 @@ services:
     networks:
       - postgres_network
       - redis_network
-    entrypoint: ["python", "-u", "/app/validator/control_center/src/main.py"]
-    container_name: control_center
+    entrypoint: ["python", "-u", "/app/validator/control_node/src/main.py"]
+    container_name: control_node
 
 
   signing_service:

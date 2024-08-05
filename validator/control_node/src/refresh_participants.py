@@ -9,6 +9,7 @@ from dataclasses import dataclass
 import os
 from typing import List
 
+from core.bittensor_overrides.chain_data import AxonInfo
 from validator.db.src import sql
 from validator.models import Participant
 
@@ -112,7 +113,7 @@ async def get_validator_stake_proportion(psql_db: PSQLDB, validator_hotkey: str,
     return hotkey_to_stake[validator_hotkey] / sum(hotkey_to_stake.values())
 
 
-async def query_axon(dendrite: bt.dendrite, axon: bt.axon) -> AxonCapacity:
+async def query_axon(dendrite: bt.dendrite, axon: AxonInfo) -> AxonCapacity:
     response = await qutils.query_individual_axon(
         synapse=synapses.Capacity(capacities=None),
         dendrite=dendrite,

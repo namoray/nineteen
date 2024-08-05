@@ -5,7 +5,7 @@ from core.tasks import Task
 from validator.db.src.database import PSQLDB
 from validator.utils import redis_constants as rcst
 from validator.utils import synthetic_utils as sutils
-from validator.control_center.src.synthetic_data.refresh_synthetic_data import update_tasks_synthetic_data
+from validator.control_node.src.synthetic_data.refresh_synthetic_data import update_tasks_synthetic_data
 
 
 class TestSyntheticDataStorageFunctional(unittest.IsolatedAsyncioTestCase):

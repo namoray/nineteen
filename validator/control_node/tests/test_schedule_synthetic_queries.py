@@ -5,7 +5,7 @@ from validator.db.src.database import PSQLDB
 from validator.db.src import sql
 from validator.models import Participant
 from validator.utils import redis_constants as rcst
-from validator.control_center.src.schedule_synthetic_queries import (
+from validator.control_node.src.schedule_synthetic_queries import (
     Config,
     schedule_synthetics_until_done,
 )

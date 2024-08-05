@@ -42,7 +42,7 @@ services:
       restart_policy:
         condition: on-failure
 
-  control_center:
+  control_node:
     environment:
       POSTGRES_USER: ${PROD_DB_USER}
       POSTGRES_PASSWORD: ${PROD_DB_PASSWORD}

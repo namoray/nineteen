@@ -39,7 +39,7 @@ services:
       SECONDS_BETWEEN_SYNC: 120
     container_name: dev_chain_node
 
-  control_center:
+  control_node:
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
@@ -47,7 +47,7 @@ services:
       POSTGRES_PORT: 5432
       POSTGRES_NAME: mydb
       ENV: dev
-    container_name: dev_control_center
+    container_name: dev_control_node
 
   signing_service:
     environment:
