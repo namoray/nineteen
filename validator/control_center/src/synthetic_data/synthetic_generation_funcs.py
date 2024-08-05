@@ -23,7 +23,7 @@ logger = get_logger(__name__)
 @lru_cache(maxsize=1)
 def get_cached_markov_model():
     logger.info("Loading markov model from caption_data...")
-    dataset = datasets.load_dataset("caption_data/data")
+    dataset = datasets.load_dataset("assets/caption_data/data")
     text = [i["query"] for i in dataset["train"]]
     return markovify.Text(" ".join(text))
 

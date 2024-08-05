@@ -1,18 +1,14 @@
-import asyncio
 import unittest
-from unittest.mock import patch
-import time
 from redis.asyncio import Redis
 from core.tasks import Task
 from validator.db.src.database import PSQLDB
 from validator.db.src import sql
 from validator.models import Participant
 from validator.utils import redis_constants as rcst
-from validator.control_center.src.schedule_synthetics import (
+from validator.control_center.src.schedule_synthetic_queries import (
     Config,
     schedule_synthetics_until_done,
 )
-from datetime import datetime, timedelta
 
 
 class TestSyntheticSchedulerFunctional(unittest.IsolatedAsyncioTestCase):

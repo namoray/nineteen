@@ -39,10 +39,14 @@ tasks:
     cmds:
       - docker-compose -f docker-compose.yml -f docker-compose.testing.yml run --rm dbmate up
       - docker-compose -f docker-compose.yml -f docker-compose.testing.yml run --rm -e NEST_ASYNCIO=0 --entrypoint python chain_node /app/validator/chain_node/tests/test_set_weights.py
-  test_control_center_schedule_synthetics:
+  test_control_center_schedule_synthetic_queries:
     cmds:
       - docker-compose -f docker-compose.yml -f docker-compose.testing.yml run --rm dbmate up
-      - docker-compose -f docker-compose.yml -f docker-compose.testing.yml run --rm  --entrypoint python control_center /app/validator/control_center/tests/test_schedule_synthetics.py
+      - docker-compose -f docker-compose.yml -f docker-compose.testing.yml run --rm  --entrypoint python control_center /app/validator/control_center/tests/test_schedule_synthetic_queries.py
+  test_control_center_refresh_synthetic_data:
+    cmds:
+      - docker-compose -f docker-compose.yml -f docker-compose.testing.yml run --rm dbmate up
+      - docker-compose -f docker-compose.yml -f docker-compose.testing.yml run --rm  --entrypoint python control_center /app/validator/control_center/tests/synthetic_data/test_refresh_synthetic_data.py
   test_sign_message:
     cmds:
       - docker-compose run --rm -e ENV=test -e RUN_ONCE=true signing_service  python validator/signing_service/main.py

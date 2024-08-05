@@ -1,19 +1,16 @@
 import asyncio
 import datetime
-import os
-import threading
 import json
 import time
 from pydantic import BaseModel
 from core.tasks import Task
-from core import utils as cutils
 from redis.asyncio import Redis
 from validator.utils import (
     synthetic_utils as sutils,
     redis_constants as rcst,
     synthetic_constants as scst,
 )
-from validator.core.store_synthetic_data import synthetic_generation_funcs
+from validator.control_center.src.synthetic_data import synthetic_generation_funcs
 from core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -51,40 +48,16 @@ async def update_tasks_synthetic_data(redis_db: Redis, slow_sync: bool = True, t
                 await asyncio.sleep(0.1)
 
 
-async def _continuously_fetch_synthetic_data_for_tasks(redis_db: Redis) -> None:
+async def continuously_fetch_synthetic_data_for_tasks(redis_db: Redis) -> None:
     await update_tasks_synthetic_data(redis_db, slow_sync=False)
 
     while True:
         await update_tasks_synthetic_data(redis_db, slow_sync=True)
 
 
-class SyntheticDataManager:
-    def __init__(self, redis_db: Redis, start_event_loop: bool = True) -> None:
-        self.redis_db = redis_db
-        if start_event_loop:
-            self._start_synthetic_event_loop()
-
-    def _start_synthetic_event_loop(self):
-        self.thread = threading.Thread(
-            target=cutils.start_async_loop,
-            args=(_continuously_fetch_synthetic_data_for_tasks, self.redis_db),
-            daemon=True,
-        )
-        self.thread.start()
-
-
 async def main():
     redis_db = Redis(host="redis", db=0)
-
-    task = os.getenv("TASK", None)
-    if task is not None:
-        task = Task(task)
-        await update_tasks_synthetic_data(redis_db, slow_sync=False, task=task)
-    else:
-        synthetic_data_manager = SyntheticDataManager(redis_db, start_event_loop=False)
-        synthetic_data_manager._start_synthetic_event_loop()
-        while True:
-            await asyncio.sleep(60 * 60)
+    await continuously_fetch_synthetic_data_for_tasks(redis_db)
 
 
 if __name__ == "__main__":
