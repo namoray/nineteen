@@ -163,6 +163,7 @@ async def fetch_hotkey_scores_for_task(connection: Connection, task: Task, miner
         f"""
         SELECT
             {dcst.MINER_HOTKEY} as hotkey,
+            {dcst.TASK},
             {dcst.PERIOD_SCORE},
             {dcst.CONSUMED_CAPACITY},
             {dcst.CREATED_AT}

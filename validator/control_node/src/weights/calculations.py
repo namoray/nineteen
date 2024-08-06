@@ -3,7 +3,7 @@
 
 from core.tasks import Task
 from core import tasks_config as tcfg
-from validator.db import functions as db_functions
+from validator.db.src import functions as db_functions
 from validator.db.src.database import PSQLDB
 from validator.models import Participant, PeriodScore
 from validator.models import RewardData
@@ -115,5 +115,7 @@ async def calculate_scores_for_settings_weights(
 
     # TODO: Finish this because its not finished at the moment
     hotkey_to_uid = {participant.miner_hotkey: participant.miner_uid for participant in participants}
-    total_uid_scores = {hotkey_to_uid[hotkey]: score for hotkey, score in total_hotkey_scores.items()}
+
+    total_score = sum(total_hotkey_scores.values())
+    total_uid_scores = {hotkey_to_uid[hotkey]: score / total_score for hotkey, score in total_hotkey_scores.items()}
     return total_uid_scores

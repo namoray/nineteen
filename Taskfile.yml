@@ -51,6 +51,10 @@ tasks:
     cmds:
       - docker-compose -f docker-compose.yml -f docker-compose.testing.yml run --rm dbmate up
       - docker-compose -f docker-compose.yml -f docker-compose.testing.yml run --rm  --entrypoint python control_node /app/validator/control_node/tests/score_results/test_score_results.py
+  test_control_node_calculate_weights:
+    cmds:
+      - docker-compose -f docker-compose.yml -f docker-compose.testing.yml run --rm dbmate up
+      - docker-compose -f docker-compose.yml -f docker-compose.testing.yml run --rm  --entrypoint python control_node /app/validator/control_node/tests/weights/test_calculate_weights.py
   test_sign_message:
     cmds:
       - docker-compose run --rm -e ENV=test -e RUN_ONCE=true signing_service  python validator/signing_service/main.py

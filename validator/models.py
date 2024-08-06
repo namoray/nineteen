@@ -13,6 +13,7 @@ task_data = defaultdict(lambda: defaultdict(list))
 
 class PeriodScore(BaseModel):
     hotkey: str
+    task: Task
     period_score: Optional[float]
     consumed_capacity: float
     created_at: datetime
