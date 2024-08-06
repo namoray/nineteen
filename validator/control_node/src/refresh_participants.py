@@ -106,13 +106,6 @@ async def add_period_scores_to_current_participants(psql_db: PSQLDB) -> None:
         await sql.update_participants_period_scores(connection, participants)
 
 
-async def get_validator_stake_proportion(psql_db: PSQLDB, validator_hotkey: str, netuid: int) -> float:
-    hotkey_to_stake = await sql.get_axon_stakes(psql_db, netuid)
-    if validator_hotkey not in hotkey_to_stake:
-        raise Exception(f"Hotkey {validator_hotkey} not found in stake info in the db.")
-    return hotkey_to_stake[validator_hotkey] / sum(hotkey_to_stake.values())
-
-
 async def query_axon(dendrite: bt.dendrite, axon: AxonInfo) -> AxonCapacity:
     response = await qutils.query_individual_axon(
         synapse=synapses.Capacity(capacities=None),
@@ -173,7 +166,7 @@ async def store_and_migrate_old_participants(config: Config, participants: List[
         await sql.insert_participants(connection, participants, config.validator_hotkey)
 
 
-async def get_participants_from_axons(config: Config) -> List[Participant]:
+async def get_participants_from_axons(config: Config, validator_stake_proportion: float) -> List[Participant]:
     validator_stake_proportion = await get_validator_stake_proportion(
         config.psql_db, config.validator_hotkey, config.netuid
     )
@@ -195,15 +188,41 @@ async def get_participants_from_axons(config: Config) -> List[Participant]:
     return participants
 
 
+async def get_validator_stake_proportion(psql_db: PSQLDB, validator_hotkey: str, netuid: int) -> float:
+    max_retries = 12
+    retry_delay = 5
+    for attempt in range(max_retries):
+        hotkey_to_stake = await sql.get_axon_stakes(psql_db, netuid)
+        if validator_hotkey in hotkey_to_stake:
+            return hotkey_to_stake[validator_hotkey] / sum(hotkey_to_stake.values())
+
+        logger.warning(
+            f"Attempt {attempt + 1}/{max_retries}: Hotkey {validator_hotkey} not found in the DB?!. Retrying in {retry_delay} seconds. Make sure the axons are being refreshed"
+        )
+        await asyncio.sleep(retry_delay)
+        retry_delay = min(retry_delay * 2, 30)
+
+    logger.error(f"Failed to find hotkey {validator_hotkey} in stake info after {max_retries} attempts.")
+    raise Exception(f"Failed to find hotkey {validator_hotkey} in stake info after {max_retries} attempts.")
+
+
 async def main():
     config = await load_config()
     try:
         await add_period_scores_to_current_participants(config.psql_db)
-        participants = await get_participants_from_axons(config)
-        await store_and_migrate_old_participants(config, participants)
+
+        validator_stake_proportion = await get_validator_stake_proportion(
+            config.psql_db, config.validator_hotkey, config.netuid
+        )
+
+        if validator_stake_proportion > 0:
+            participants = await get_participants_from_axons(config, validator_stake_proportion)
+            await store_and_migrate_old_participants(config, participants)
+        else:
+            logger.error("Unable to proceed without valid stake proportion.")
+
     except Exception as e:
         logger.error(f"Unexpected error in fetching participants: {str(e)}")
-        raise
     finally:
         await config.psql_db.close()
         await config.redis_db.aclose()

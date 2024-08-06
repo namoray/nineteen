@@ -30,7 +30,6 @@ class Config:
     redis_db: Redis
     run_once: bool
     test_env: bool
-    specific_participant: Optional[str]
 
 
 @dataclass

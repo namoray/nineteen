@@ -56,7 +56,7 @@ async def load_config() -> Config:
 async def test_external_server_connection(config: Config) -> bool:
     async with httpx.AsyncClient(timeout=10) as client:
         try:
-            response = await client.get(config.external_server_url + "health")
+            response = await client.get(config.external_server_url)
             response.raise_for_status()
             logger.info("Successfully connected to the external scoring server.")
             return True
