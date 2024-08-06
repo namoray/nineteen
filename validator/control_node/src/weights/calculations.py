@@ -113,7 +113,8 @@ async def calculate_scores_for_settings_weights(
         logger.debug(f"Processing task: {task}, weight: {task_weight}")
 
         effective_volumes = await calculate_effective_volumes_for_task(psql_db, participants, task)
-        effective_volumes_after_non_linear_transformation = apply_non_linear_transformation(effective_volumes)
+        normalised_scores_before_non_linear = normalize_scores_for_task(effective_volumes)
+        effective_volumes_after_non_linear_transformation = apply_non_linear_transformation(normalised_scores_before_non_linear)
         normalised_scores_for_task = normalize_scores_for_task(effective_volumes_after_non_linear_transformation)
 
         for hotkey, score in normalised_scores_for_task.items():
