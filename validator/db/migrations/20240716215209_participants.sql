@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS participants_history (
     id SERIAL PRIMARY KEY,
     participant_id TEXT NOT NULL,
     miner_hotkey TEXT NOT NULL,
+    miner_uid INTEGER NOT NULL,
     task TEXT NOT NULL,
     validator_hotkey TEXT NOT NULL,
     capacity FLOAT NOT NULL,

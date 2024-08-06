@@ -189,18 +189,17 @@ async def get_participants_from_axons(config: Config, validator_stake_proportion
 
 
 async def get_validator_stake_proportion(psql_db: PSQLDB, validator_hotkey: str, netuid: int) -> float:
-    max_retries = 12
-    retry_delay = 5
-    for attempt in range(max_retries):
+    max_retries = 20
+    retry_delay = 30
+    for _ in range(max_retries):
         hotkey_to_stake = await sql.get_axon_stakes(psql_db, netuid)
         if validator_hotkey in hotkey_to_stake:
             return hotkey_to_stake[validator_hotkey] / sum(hotkey_to_stake.values())
 
         logger.warning(
-            f"Attempt {attempt + 1}/{max_retries}: Hotkey {validator_hotkey} not found in the DB?!. Retrying in {retry_delay} seconds. Make sure the axons are being refreshed"
+            f"Hotkey {validator_hotkey} not found in the DB. THIS IS NORMAL at the start. Retrying in {retry_delay} seconds. Make sure the chain node is running"
         )
         await asyncio.sleep(retry_delay)
-        retry_delay = min(retry_delay * 2, 30)
 
     logger.error(f"Failed to find hotkey {validator_hotkey} in stake info after {max_retries} attempts.")
     raise Exception(f"Failed to find hotkey {validator_hotkey} in stake info after {max_retries} attempts.")
