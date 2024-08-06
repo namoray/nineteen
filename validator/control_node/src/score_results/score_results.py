@@ -53,57 +53,31 @@ async def load_config() -> Config:
     )
 
 
-async def score_results(config: Config):
-    consecutive_errors = 0
+async def test_external_server_connection(config: Config) -> bool:
+    async with httpx.AsyncClient(timeout=10) as client:
+        try:
+            response = await client.get(config.external_server_url + "health")
+            response.raise_for_status()
+            logger.info("Successfully connected to the external scoring server.")
+            return True
+        except httpx.HTTPError as http_err:
+            logger.error(f"Failed to connect to the external scoring server: {http_err}")
+            return False
+        except Exception as e:
+            logger.error(f"Unexpected error when connecting to the external scoring server: {e}")
+            return False
 
+
+async def wait_for_external_server(config: Config):
+    max_sleep = 30
+    sleep_duration = 5
     while True:
-        async with await config.psql_db.connection() as connection:
-            tasks_and_results = await sql.select_tasks_and_number_of_results(connection)
+        if await test_external_server_connection(config):
+            break
+        logger.warning("Failed to connect to the external server. Retrying in 5 seconds...")
 
-        total_tasks_stored = sum(tasks_and_results.values())
-        min_tasks_to_start_scoring = (
-            config.minimum_tasks_to_start_scoring_testnet if config.testnet else config.minimum_tasks_to_start_scoring
-        )
-
-        if total_tasks_stored < min_tasks_to_start_scoring:
-            await asyncio.sleep(5)
-            continue
-
-        task_to_score = Task(
-            random.choices(list(tasks_and_results.keys()), weights=list(tasks_and_results.values()), k=1)[0]
-        )
-
-        data_and_hotkey = await db_functions.select_and_delete_task_result(config.psql_db, task_to_score)
-        if data_and_hotkey is None:
-            logger.warning(f"No data left to score for task {task_to_score}")
-            continue
-
-        checking_data, miner_hotkey = data_and_hotkey
-        results, synthetic_query, synapse_dict_str = (
-            checking_data["result"],
-            checking_data["synthetic_query"],
-            checking_data["synapse"],
-        )
-        synapse = json.loads(synapse_dict_str)
-
-        data = {
-            "synapse": synapse,
-            "synthetic_query": synthetic_query,
-            "result": results,
-            "task": task_to_score.value,
-        }
-
-        task_result, consecutive_errors = await send_result_for_scoring(config, data, consecutive_errors)
-        if task_result is None:
-            sleep_time = min(60 * (2 ** (consecutive_errors - 1)), 300)  # Max sleep time of 5 minutes
-            await asyncio.sleep(sleep_time)
-            continue
-
-        await process_and_store_score(
-            config, task_to_score, results, synapse, miner_hotkey, task_result, synthetic_query
-        )
-        consecutive_errors = 0
-        await asyncio.sleep(5)
+        await asyncio.sleep(min(sleep_duration, max_sleep))
+        sleep_duration += 0.5
 
 
 async def send_result_for_scoring(
@@ -180,9 +154,63 @@ async def process_and_store_score(
         logger.info(f"Successfully scored and stored data for task: {task}")
 
 
+async def score_results(config: Config):
+    consecutive_errors = 0
+
+    while True:
+        async with await config.psql_db.connection() as connection:
+            tasks_and_results = await sql.select_tasks_and_number_of_results(connection)
+
+        total_tasks_stored = sum(tasks_and_results.values())
+        min_tasks_to_start_scoring = (
+            config.minimum_tasks_to_start_scoring_testnet if config.testnet else config.minimum_tasks_to_start_scoring
+        )
+
+        if total_tasks_stored < min_tasks_to_start_scoring:
+            await asyncio.sleep(5)
+            continue
+
+        task_to_score = Task(
+            random.choices(list(tasks_and_results.keys()), weights=list(tasks_and_results.values()), k=1)[0]
+        )
+
+        data_and_hotkey = await db_functions.select_and_delete_task_result(config.psql_db, task_to_score)
+        if data_and_hotkey is None:
+            logger.warning(f"No data left to score for task {task_to_score}")
+            continue
+
+        checking_data, miner_hotkey = data_and_hotkey
+        results, synthetic_query, synapse_dict_str = (
+            checking_data["result"],
+            checking_data["synthetic_query"],
+            checking_data["synapse"],
+        )
+        synapse = json.loads(synapse_dict_str)
+
+        data = {
+            "synapse": synapse,
+            "synthetic_query": synthetic_query,
+            "result": results,
+            "task": task_to_score.value,
+        }
+
+        task_result, consecutive_errors = await send_result_for_scoring(config, data, consecutive_errors)
+        if task_result is None:
+            sleep_time = min(60 * (2 ** (consecutive_errors - 1)), 300)  # Max sleep time of 5 minutes
+            await asyncio.sleep(sleep_time)
+            continue
+
+        await process_and_store_score(
+            config, task_to_score, results, synapse, miner_hotkey, task_result, synthetic_query
+        )
+        consecutive_errors = 0
+        await asyncio.sleep(5)
+
+
 async def main():
     config = await load_config()
     try:
+        await wait_for_external_server(config)
         await score_results(config)
     finally:
         await config.psql_db.close()
