@@ -80,7 +80,7 @@ def _calculate_hotkey_effective_volume_for_task(
 async def calculate_scores_for_settings_weights(
     psql_db: PSQLDB,
     participants: list[Participant],
-) -> dict[str, float]:
+) -> dict[int, float]:
     total_hotkey_scores: dict[str, float] = {}
 
     for task in Task:
@@ -114,6 +114,6 @@ async def calculate_scores_for_settings_weights(
     logger.debug("Completed calculation of scores for settings weights")
 
     # TODO: Finish this because its not finished at the moment
-    hotkey_to_uid = {participant.miner_hotkey: participant.uid for participant in participants}
-    total_uid_scores = {}
-    return total_hotkey_scores
+    hotkey_to_uid = {participant.miner_hotkey: participant.miner_uid for participant in participants}
+    total_uid_scores = {hotkey_to_uid[hotkey]: score for hotkey, score in total_hotkey_scores.items()}
+    return total_uid_scores
