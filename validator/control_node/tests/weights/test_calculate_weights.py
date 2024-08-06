@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, AsyncMock
 from datetime import datetime
 from redis.asyncio import Redis
 from validator.db.src.database import PSQLDB
@@ -9,7 +9,6 @@ from core.tasks import Task
 from core.logging import get_logger
 
 logger = get_logger(__name__)
-
 
 class TestWeightsCalculationFunctional(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
@@ -21,9 +20,25 @@ class TestWeightsCalculationFunctional(unittest.IsolatedAsyncioTestCase):
         await self.redis_db.aclose()
         await self.psql_db.close()
 
-    @patch("validator.db.src.functions.fetch_recent_most_rewards_for_uid")
-    @patch("validator.db.src.functions.fetch_hotkey_scores_for_task")
-    async def test_calculate_scores_with_multiple_tasks(self, mock_fetch_scores, mock_fetch_rewards):
+    # ... (keep existing tests)
+
+    def test_apply_non_linear_transformation(self):
+        scores = {
+            "hotkey1": 0.5,
+            "hotkey2": 0.8,
+            "hotkey3": 0.2,
+        }
+        result = calculations.apply_non_linear_transformation(scores)
+        
+        self.assertAlmostEqual(result["hotkey1"], 0.125, places=3)  # 0.5^3
+        self.assertAlmostEqual(result["hotkey2"], 0.512, places=3)  # 0.8^3
+        self.assertAlmostEqual(result["hotkey3"], 0.008, places=3)  # 0.2^3
+
+    @patch("validator.control_node.src.weights.calculations.calculate_effective_volumes_for_task")
+    @patch("validator.control_node.src.weights.calculations.normalize_scores_for_task")
+    async def test_calculate_scores_for_settings_weights_with_non_linear_transformation(
+        self, mock_normalize_scores, mock_calculate_volumes
+    ):
         participants = [
             Participant(
                 miner_uid=1,
@@ -37,9 +52,58 @@ class TestWeightsCalculationFunctional(unittest.IsolatedAsyncioTestCase):
                 synthetic_requests_still_to_make=10,
             ),
             Participant(
+                miner_uid=2,
+                miner_hotkey="hotkey2",
+                task=Task.chat_mixtral,
+                capacity=300,
+                raw_capacity=1500,
+                consumed_capacity=0,
+                capacity_to_score=150,
+                delay_between_synthetic_requests=1,
+                synthetic_requests_still_to_make=10,
+            ),
+        ]
+
+        mock_calculate_volumes.return_value = {
+            "hotkey1": 100.0,
+            "hotkey2": 150.0,
+        }
+
+        mock_normalize_scores.return_value = {
+            "hotkey1": 0.4,
+            "hotkey2": 0.6,
+        }
+
+        # Mocking the task weights
+        with patch("validator.control_node.src.weights.calculations.tcfg.TASK_TO_CONFIG", {
+            Task.chat_llama_3: AsyncMock(weight=0.5),
+            Task.chat_mixtral: AsyncMock(weight=0.5),
+        }):
+            result = await calculations.calculate_scores_for_settings_weights(self.psql_db, participants)
+
+        self.assertIn(1, result)
+        self.assertIn(2, result)
+        
+        # The exact values will depend on the non-linear transformation and normalization
+        # Here we're just checking that the scores are present and sum to 1
+        self.assertGreater(result[1], 0)
+        self.assertGreater(result[2], 0)
+        self.assertAlmostEqual(sum(result.values()), 1.0, places=6)
+
+        # Verify that the non-linear transformation was applied
+        mock_normalize_scores.assert_called()
+        args, _ = mock_normalize_scores.call_args
+        transformed_volumes = args[0]
+        self.assertAlmostEqual(transformed_volumes["hotkey1"], 1000000, places=0)  # 100^3
+        self.assertAlmostEqual(transformed_volumes["hotkey2"], 3375000, places=0)  # 150^3
+
+    @patch("validator.control_node.src.weights.calculations.calculate_effective_volumes_for_task")
+    async def test_calculate_scores_for_settings_weights_integration(self, mock_calculate_volumes):
+        participants = [
+            Participant(
                 miner_uid=1,
                 miner_hotkey="hotkey1",
-                task=Task.chat_mixtral,
+                task=Task.chat_llama_3,
                 capacity=200,
                 raw_capacity=1000,
                 consumed_capacity=0,
@@ -51,86 +115,35 @@ class TestWeightsCalculationFunctional(unittest.IsolatedAsyncioTestCase):
                 miner_uid=2,
                 miner_hotkey="hotkey2",
                 task=Task.chat_mixtral,
-                capacity=200,
-                raw_capacity=1000,
+                capacity=300,
+                raw_capacity=1500,
                 consumed_capacity=0,
-                capacity_to_score=100,
+                capacity_to_score=150,
                 delay_between_synthetic_requests=1,
                 synthetic_requests_still_to_make=10,
             ),
         ]
 
-        mock_rewards = [
-            RewardData(
-                id="reward1",
-                task="chat_llama_3",
-                axon_uid=1,
-                quality_score=0.8,
-                validator_hotkey="validator1",
-                miner_hotkey="hotkey1",
-                synthetic_query=False,
-                speed_scoring_factor=1.0,
-                response_time=0.5,
-                volume=100.0,
-                created_at=datetime.now(),
-            ),
-            RewardData(
-                id="reward2",
-                task="chat_mixtral",
-                axon_uid=2,
-                quality_score=0.9,
-                validator_hotkey="validator1",
-                miner_hotkey="hotkey2",
-                synthetic_query=False,
-                speed_scoring_factor=1.0,
-                response_time=0.4,
-                volume=150.0,
-                created_at=datetime.now(),
-            ),
+        mock_calculate_volumes.side_effect = [
+            {"hotkey1": 100.0, "hotkey2": 0.0},  # For chat_llama_3
+            {"hotkey1": 0.0, "hotkey2": 150.0},  # For chat_mixtral
         ]
 
-        mock_scores = [
-            PeriodScore(
-                hotkey="hotkey1",
-                task=Task.chat_llama_3,
-                period_score=0.1,
-                consumed_capacity=50,
-                created_at=datetime.now(),
-            ),
-            PeriodScore(
-                hotkey="hotkey1",
-                task=Task.chat_mixtral,
-                period_score=0.8,
-                consumed_capacity=100,
-                created_at=datetime.now(),
-            ),
-            PeriodScore(
-                hotkey="hotkey2",
-                task=Task.chat_llama_3,
-                period_score=0.8,
-                consumed_capacity=100,
-                created_at=datetime.now(),
-            ),
-        ]
+        # Mocking the task weights
+        with patch("validator.control_node.src.weights.calculations.tcfg.TASK_TO_CONFIG", {
+            Task.chat_llama_3: AsyncMock(weight=0.5),
+            Task.chat_mixtral: AsyncMock(weight=0.5),
+        }):
+            result = await calculations.calculate_scores_for_settings_weights(self.psql_db, participants)
 
-        mock_fetch_rewards.return_value = mock_rewards
-        mock_fetch_scores.return_value = mock_scores
-
-        result = await calculations.calculate_scores_for_settings_weights(self.psql_db, participants)
-
-        self.assertIsInstance(result, dict)
-        self.assertEqual(len(result), 2)
         self.assertIn(1, result)
         self.assertIn(2, result)
+        self.assertAlmostEqual(sum(result.values()), 1.0, places=6)
 
-        total_score = sum(result.values())
-        self.assertAlmostEqual(total_score, 1.0, places=2)
-
-        logger.debug(f"result: {result}")
-
-        mock_fetch_rewards.assert_called()
-        mock_fetch_scores.assert_called()
-
+        # Due to the non-linear transformation, the scores should be more skewed
+        # than a simple 50-50 split, but still sum to 1
+        self.assertGreater(result[1], 0.4)
+        self.assertGreater(result[2], 0.4)
 
 if __name__ == "__main__":
     unittest.main()

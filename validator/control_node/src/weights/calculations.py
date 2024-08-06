@@ -77,6 +77,31 @@ def _calculate_hotkey_effective_volume_for_task(
     return combined_quality_score * normalised_period_score * volume
 
 
+async def calculate_effective_volumes_for_task(
+    psql_db: PSQLDB, participants: list[Participant], task: Task
+) -> dict[str, float]:
+    hotkey_to_effective_volumes: dict[str, float] = {}
+    for participant in [p for p in participants if p.task == task]:
+        combined_quality_score = await _calculate_combined_quality_score(psql_db, participant)
+        normalised_period_score = await _calculate_normalised_period_score(psql_db, participant)
+        effective_volume = _calculate_hotkey_effective_volume_for_task(
+            combined_quality_score, normalised_period_score, participant.capacity
+        )
+        hotkey_to_effective_volumes[participant.miner_hotkey] = effective_volume
+    return hotkey_to_effective_volumes
+
+
+def normalize_scores_for_task(effective_volumes: dict[str, float]) -> dict[str, float]:
+    sum_of_effective_volumes = sum(effective_volumes.values())
+    if sum_of_effective_volumes == 0:
+        return {}
+    return {hotkey: volume / sum_of_effective_volumes for hotkey, volume in effective_volumes.items()}
+
+
+def apply_non_linear_transformation(scores: dict[str, float]) -> dict[str, float]:
+    return {hotkey: score**3 for hotkey, score in scores.items()}
+
+
 async def calculate_scores_for_settings_weights(
     psql_db: PSQLDB,
     participants: list[Participant],
@@ -86,36 +111,19 @@ async def calculate_scores_for_settings_weights(
     for task in Task:
         task_weight = tcfg.TASK_TO_CONFIG[task].weight
         logger.debug(f"Processing task: {task}, weight: {task_weight}")
-        hotkey_to_effective_volumes: dict[str, float] = {}
 
-        for participant in [participant for participant in participants if participant.task == task]:
-            miner_hotkey = participant.miner_hotkey
-            combined_quality_score = await _calculate_combined_quality_score(psql_db, participant=participant)
-            normalised_period_score = await _calculate_normalised_period_score(psql_db, participant=participant)
-            effective_volume_for_task = _calculate_hotkey_effective_volume_for_task(
-                combined_quality_score, normalised_period_score, participant.capacity
-            )
-            hotkey_to_effective_volumes[miner_hotkey] = effective_volume_for_task
+        effective_volumes = await calculate_effective_volumes_for_task(psql_db, participants, task)
+        effective_volumes_after_non_linear_transformation = apply_non_linear_transformation(effective_volumes)
+        normalised_scores_for_task = normalize_scores_for_task(effective_volumes_after_non_linear_transformation)
 
-        sum_of_effective_volumes = sum(hotkey_to_effective_volumes.values())
-        if sum_of_effective_volumes == 0:
-            continue
-        normalised_scores_for_task = {
-            hotkey: effective_volume / sum_of_effective_volumes
-            for hotkey, effective_volume in hotkey_to_effective_volumes.items()
-        }
-        for hotkey in normalised_scores_for_task:
-            total_hotkey_scores[hotkey] = (
-                total_hotkey_scores.get(hotkey, 0) + normalised_scores_for_task[hotkey] * task_weight
-            )
+        for hotkey, score in normalised_scores_for_task.items():
+            total_hotkey_scores[hotkey] = total_hotkey_scores.get(hotkey, 0) + score * task_weight
 
         logger.debug(f"Completed processing task: {task}")
 
     logger.debug("Completed calculation of scores for settings weights")
 
-    # TODO: Finish this because its not finished at the moment
     hotkey_to_uid = {participant.miner_hotkey: participant.miner_uid for participant in participants}
-
     total_score = sum(total_hotkey_scores.values())
     total_uid_scores = {hotkey_to_uid[hotkey]: score / total_score for hotkey, score in total_hotkey_scores.items()}
     return total_uid_scores
