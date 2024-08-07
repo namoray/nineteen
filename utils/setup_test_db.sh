@@ -2,7 +2,6 @@
 
 set -e
 
-# Function to check if PostgreSQL is ready
 wait_for_postgres() {
   local retries=5
   local wait=5
