@@ -3,6 +3,7 @@ from unittest.mock import patch
 from raycoms.miner.security.nonce_management import NonceManager
 from raycoms.validator import generate_nonce
 
+
 class TestNonceManager(unittest.TestCase):
     def setUp(self):
         self.nonce_manager = NonceManager()
@@ -41,7 +42,6 @@ class TestNonceManager(unittest.TestCase):
 
         result = self.nonce_manager.nonce_is_valid(nonce)
         self.assertFalse(result)
-
 
     @patch("time.time")
     def test_cleanup_expired_nonces(self, mock_time):
