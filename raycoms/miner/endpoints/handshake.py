@@ -26,7 +26,7 @@ async def exchange_symmetric_key(payload: SymmetricKeyExchange, config: Config =
         signature=payload.signature,
     ):
         raise HTTPException(status_code=400, detail="Oi, invalid signature, you're not who you said you were!")
-    if config.encryption_keys_handler.nonce_manager.nonce_in_nonces(payload.nonce):
+    if config.encryption_keys_handler.nonce_manager.nonce_is_valid(payload.nonce):
         raise HTTPException(
             status_code=400, detail="Oi, I've seen that nonce before. Don't send me the nonce more than once"
         )

@@ -14,14 +14,14 @@ class TestNonceManager(unittest.TestCase):
 
     def test_nonce_in_nonces_new_nonce(self):
         nonce = "new_nonce"
-        result = self.nonce_manager.nonce_in_nonces(nonce)
+        result = self.nonce_manager.nonce_is_valid(nonce)
         self.assertFalse(result)
         self.assertIn(nonce, self.nonce_manager._nonces)
 
     def test_nonce_in_nonces_existing_nonce(self):
         nonce = "existing_nonce"
         self.nonce_manager.add_nonce(nonce)
-        result = self.nonce_manager.nonce_in_nonces(nonce)
+        result = self.nonce_manager.nonce_is_valid(nonce)
         self.assertTrue(result)
 
     @patch("time.time")

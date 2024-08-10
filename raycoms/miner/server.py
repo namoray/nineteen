@@ -1,9 +1,10 @@
 """
 TODO:
-- ADD THE VERIFY AND SIGNING METHODS
 - NONCES should also be numbers which are always bigger than the current hour we are in or something.
     - So expired nonces can be very easily rejected without having to store UUIDS
+
 - WRAP INTO GENERIC VALIDATOR AND MINER METHODS / FILES, BUT KEEP IT FUNCTIONAL. SHOULD BE QUITE EASY
+- MAKE SURE we have a standard way to veirfy and construct message signatures
 - ADD A 'POST DETAILS TO CHAIN' METHOD FOR MINERS TO POST THEIR AXON DETAILS TO THE CHAIN
 - INTEGRATE THIS NEW WAY OF DOING THINGS INTO THE SUBNET CODE, BYE BYE SYNAPSES AND DENDRITES
 - SINGING SERVICE NOW ONLY NEEDS TO SIGN THESE INITIAL MESSAGES - CAN ADD THAT INTO THE CODE
