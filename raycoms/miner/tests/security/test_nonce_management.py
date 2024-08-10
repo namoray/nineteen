@@ -19,10 +19,20 @@ class TestNonceManager(unittest.TestCase):
         self.assertIn(nonce, self.nonce_manager._nonces)
 
     def test_nonce_in_nonces_existing_nonce(self):
-        nonce = "existing_nonce"
+        nonce = generate_nonce.generate_nonce()
         self.nonce_manager.add_nonce(nonce)
         result = self.nonce_manager.nonce_is_valid(nonce)
         self.assertFalse(result)
+
+    @patch("time.time_monotonic_ns")
+    def test_old_nonce(self, mock_time):
+        mock_time.return_value = 1_000
+        nonce = generate_nonce.generate_nonce()
+        mock_time.return_value = 1_000_000
+
+        result = self.nonce_manager.nonce_is_valid(nonce)
+        self.assertFalse(result)
+
 
     @patch("time.time")
     def test_cleanup_expired_nonces(self, mock_time):
