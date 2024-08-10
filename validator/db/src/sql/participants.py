@@ -1,5 +1,5 @@
-from generic.tasks import Task
-from generic.logging import get_logger
+from core.tasks import Task
+from core.logging import get_logger
 
 from asyncpg import Connection
 from validator.models import Participant, PeriodScore

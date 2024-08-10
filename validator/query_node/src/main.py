@@ -4,8 +4,8 @@ import os
 import traceback
 import uuid
 from redis.asyncio import Redis
-from generic.tasks import Task
-from generic import tasks_config as tcfg, bittensor_overrides as bt
+from core.tasks import Task
+from core import tasks_config as tcfg, bittensor_overrides as bt
 from validator.db.src.database import PSQLDB
 from validator.db import sql
 from validator.utils import (
@@ -15,7 +15,7 @@ from validator.utils import (
 )
 from validator.utils import redis_constants as rcst
 from validator.query_node.src import utils
-from generic.logging import get_logger
+from core.logging import get_logger
 
 logger = get_logger(__name__)
 

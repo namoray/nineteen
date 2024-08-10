@@ -16,7 +16,7 @@ services:
     depends_on:
       - redis
       - postgresql
-      - core
+      - generic
     volumes:
       - .:/app
     networks:
@@ -52,7 +52,7 @@ services:
     depends_on:
       - redis
       - postgresql
-      - core
+      - generic
     volumes:
       - .:/app
     networks:
@@ -74,7 +74,7 @@ services:
       context: .
       dockerfile: dockerfiles/chain_node.dockerfile
     depends_on:
-      - core
+      - generic
       - postgresql
       - redis
 
@@ -114,7 +114,7 @@ services:
     depends_on:
       - redis
       - postgresql
-      - core
+      - generic
     volumes:
       - .:/app
     networks:

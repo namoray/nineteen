@@ -3,7 +3,7 @@ import datetime
 import json
 import time
 from pydantic import BaseModel
-from generic.tasks import Task
+from core.tasks import Task
 from redis.asyncio import Redis
 from validator.utils import (
     synthetic_utils as sutils,
@@ -11,7 +11,7 @@ from validator.utils import (
     synthetic_constants as scst,
 )
 from validator.control_node.src.synthetic_data import synthetic_generation_funcs
-from generic.logging import get_logger
+from core.logging import get_logger
 
 logger = get_logger(__name__)
 

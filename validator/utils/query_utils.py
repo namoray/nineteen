@@ -7,16 +7,16 @@ from validator.utils import (
     query_utils as qutils,
     redis_constants as rcst,
 )
-from generic import tasks_config as tcfg
+from core import tasks_config as tcfg
 from models import base_models, synapses
-from generic.bittensor_overrides.chain_data import AxonInfo
+from core.bittensor_overrides.chain_data import AxonInfo
 from PIL import Image
 import random
 import numpy as np
 import time
 from typing import Tuple
-from generic import bittensor_overrides as bt
-from generic.logging import get_logger
+from core import bittensor_overrides as bt
+from core.logging import get_logger
 from redis.asyncio import Redis
 
 logger = get_logger(__name__)

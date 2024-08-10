@@ -12,8 +12,8 @@ from validator.db.src.database import PSQLDB
 from validator.db.src import sql
 from validator.utils import redis_constants as rcst
 from validator.control_node.src.weights import calculations
-from generic.logging import get_logger
-from generic import constants as ccst
+from core.logging import get_logger
+from core import constants as ccst
 
 logger = get_logger(__name__)
 

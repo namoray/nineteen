@@ -64,7 +64,7 @@ services:
       - core
       - postgresql
       - redis
-
+      - signing_service
     volumes:
       - .:/app
     networks:

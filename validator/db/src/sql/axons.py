@@ -1,6 +1,6 @@
 from validator.db.src.database import PSQLDB
-from generic.bittensor_overrides import chain_data
-from generic.logging import get_logger
+from core.bittensor_overrides import chain_data
+from core.logging import get_logger
 
 from asyncpg import Connection
 from validator.utils import database_constants as dcst

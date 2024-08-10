@@ -4,10 +4,10 @@ import json
 import math
 from typing import Dict, Any, List, Union
 
-from generic.tasks import Task
-from generic import tasks_config as tcfg
+from core.tasks import Task
+from core import tasks_config as tcfg
 from models import base_models, utility_models
-from generic import bittensor_overrides as bt
+from core import bittensor_overrides as bt
 
 MAX_SPEED_BONUS = 1.4  # Adjust this value as needed
 BELOW_MEAN_EXPONENT = 0.5

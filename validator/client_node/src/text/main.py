@@ -12,11 +12,11 @@ from pydantic import BaseModel
 from redis.asyncio import Redis
 from models import base_models, synapses, utility_models, request_models
 from starlette.responses import StreamingResponse
-from generic import bittensor_overrides as bt
+from core import bittensor_overrides as bt
 from fastapi.routing import APIRouter
-from generic.tasks import Task
+from core.tasks import Task
 from validator.utils import redis_utils as rutils, redis_constants as rcst
-from generic.logging import get_logger
+from core.logging import get_logger
 
 
 logger = get_logger(__name__)

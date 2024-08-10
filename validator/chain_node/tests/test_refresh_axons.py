@@ -4,7 +4,7 @@ from asyncpg import Connection
 from validator.db.src.database import PSQLDB
 from src.refresh_axons import Config, get_and_store_axons
 import bittensor as bt
-from generic.bittensor_overrides.chain_data import AxonInfo
+from core.bittensor_overrides.chain_data import AxonInfo
 
 
 class TestRefreshAxons(unittest.IsolatedAsyncioTestCase):

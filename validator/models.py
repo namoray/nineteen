@@ -4,7 +4,7 @@ from collections import defaultdict
 
 
 from pydantic import BaseModel, Field
-from generic.tasks import Task
+from core.tasks import Task
 from typing import Optional
 from datetime import datetime
 

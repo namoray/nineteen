@@ -5,9 +5,9 @@ import json
 from typing import List, Dict, Any, Optional, Union
 
 
-from generic.tasks import Task
+from core.tasks import Task
 
-from generic import bittensor_overrides as bt
+from core import bittensor_overrides as bt
 from validator.db.src.database import PSQLDB
 from models import utility_models
 from validator.db.src import sql

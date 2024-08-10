@@ -7,7 +7,7 @@ Keep it as SynapseNameBase / SynapseNameIncoming / SynapseNameOutgoing
 from typing import Any
 from pydantic import BaseModel
 
-from generic.tasks import Task
+from core.tasks import Task
 
 
 class CapacityForTask(BaseModel):

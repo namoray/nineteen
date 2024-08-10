@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from generic.logging import get_logger
+from core.logging import get_logger
 
 logger = get_logger(__name__)
 

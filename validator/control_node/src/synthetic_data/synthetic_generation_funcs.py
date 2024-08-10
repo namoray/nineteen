@@ -7,14 +7,14 @@ from validator.utils import (
     synthetic_utils as sutils,
     synthetic_constants as scst,
 )
-from generic.tasks import Task
-from generic import dataclasses as dc, tasks_config
+from core.tasks import Task
+from core import dataclasses as dc, tasks_config
 
 import markovify
 import datasets
 import diskcache
 from functools import lru_cache
-from generic.logging import get_logger
+from core.logging import get_logger
 
 logger = get_logger(__name__)
 

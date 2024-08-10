@@ -4,8 +4,8 @@ from redis.asyncio import Redis
 from validator.db.src.database import PSQLDB
 from validator.models import Participant
 from validator.control_node.src.weights import calculations
-from generic.tasks import Task
-from generic.logging import get_logger
+from core.tasks import Task
+from core.logging import get_logger
 
 logger = get_logger(__name__)
 

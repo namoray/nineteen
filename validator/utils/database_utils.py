@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from generic.logging import get_logger
+from core.logging import get_logger
 
 logger = get_logger(__name__)
 load_dotenv(dotenv_path=".default.env", verbose=True)

@@ -1,5 +1,5 @@
 from typing import Dict, Any, Optional
-from generic import constants as ccst
+from core import constants as ccst
 from rich.prompt import Prompt
 
 

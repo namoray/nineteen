@@ -1,7 +1,7 @@
 import asyncio
 import unittest
 from redis.asyncio import Redis
-from generic.tasks import Task
+from core.tasks import Task
 from validator.db.src.database import PSQLDB
 from validator.utils import redis_constants as rcst
 from validator.utils import synthetic_utils as sutils

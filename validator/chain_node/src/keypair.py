@@ -6,7 +6,7 @@ from substrateinterface.keypair import KeypairType
 from redis import Redis
 from validator.utils import redis_constants as rcst, redis_dataclasses as rdc
 import uuid
-from generic.logging import get_logger
+from core.logging import get_logger
 from scalecodec.base import ScaleBytes
 
 logger = get_logger(__name__)

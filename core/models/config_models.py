@@ -1,7 +1,7 @@
 import os
 
 from pydantic import BaseModel
-from generic import constants as ccst
+from core import constants as ccst
 
 
 class CoreConfig(BaseModel):
