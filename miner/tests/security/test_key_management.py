@@ -1,13 +1,13 @@
-"""Definitely not AI generated"""
 import unittest
-from unittest.mock import patch, mock_open
+from unittest.mock import patch, mock_open, MagicMock
+from datetime import datetime, timedelta
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives.asymmetric import rsa
 from miner.core.config import _derive_key_from_string
 from miner.security.nonce_management import NonceManager
 from miner.security.key_management import KeyHandler
 from miner.core import miner_constants as mcst
-
+from miner.core.models.encryption import SymmetricKeyInfo
 
 class TestKeyHandler(unittest.TestCase):
     def setUp(self):
@@ -35,10 +35,33 @@ class TestKeyHandler(unittest.TestCase):
         retrieved_key = self.key_handler.get_symmetric_key("nonexistent_hotkey", "nonexistent_uuid")
         self.assertIsNone(retrieved_key)
 
+    def test_clean_expired_keys(self):
+        expired_key = SymmetricKeyInfo(b"expired", datetime.now() - timedelta(seconds=1))
+        valid_key = SymmetricKeyInfo(b"valid", datetime.now() + timedelta(seconds=300))
+        self.key_handler.symmetric_keys = {
+            "hotkey1": {"uuid1": expired_key, "uuid2": valid_key},
+            "hotkey2": {"uuid3": expired_key}
+        }
+        self.key_handler._clean_expired_keys()
+        self.assertEqual(self.key_handler.symmetric_keys, {"hotkey1": {"uuid2": valid_key}})
+
+    @patch('time.sleep', return_value=None)
+    def test_periodic_cleanup(self, mock_sleep):
+        self.key_handler._clean_expired_keys = MagicMock()
+        self.key_handler.nonce_manager.cleanup_expired_nonces = MagicMock()
+        self.key_handler._running = False  # Stop the loop after one iteration
+        self.key_handler._periodic_cleanup()
+        self.key_handler._clean_expired_keys.assert_called_once()
+        self.key_handler.nonce_manager.cleanup_expired_nonces.assert_called_once()
+        mock_sleep.assert_called_once_with(65)
+
     @patch('builtins.open', new_callable=mock_open)
     @patch('os.path.exists', return_value=True)
     def test_save_and_load_symmetric_keys(self, mock_exists, mock_file):
-        test_keys = {"hotkey1": {"uuid1": b"key1"}, "hotkey2": {"uuid2": b"key2"}}
+        test_keys = {
+            "hotkey1": {"uuid1": SymmetricKeyInfo(b"key1", datetime.now() + timedelta(seconds=300))},
+            "hotkey2": {"uuid2": SymmetricKeyInfo(b"key2", datetime.now() + timedelta(seconds=300))}
+        }
         self.key_handler.symmetric_keys = test_keys
         
         self.key_handler.save_symmetric_keys()
@@ -51,19 +74,10 @@ class TestKeyHandler(unittest.TestCase):
         self.key_handler.symmetric_keys = {}
         self.key_handler.load_symmetric_keys()
         
-        loaded_keys = {
-            hotkey: {uuid: key.decode() if isinstance(key, bytes) else key 
-                     for uuid, key in keys.items()}
-            for hotkey, keys in self.key_handler.symmetric_keys.items()
-        }
-        expected_keys = {
-            hotkey: {uuid: key.decode() if isinstance(key, bytes) else key 
-                     for uuid, key in keys.items()}
-            for hotkey, keys in test_keys.items()
-        }
-        
-        self.assertEqual(loaded_keys, expected_keys)
-
+        for hotkey, keys in self.key_handler.symmetric_keys.items():
+            for uuid, key_info in keys.items():
+                self.assertIsInstance(key_info, SymmetricKeyInfo)
+                self.assertEqual(key_info.key, test_keys[hotkey][uuid].key)
 
     @patch("os.path.exists", return_value=False)
     def test_load_symmetric_keys_file_not_exists(self, mock_exists):
@@ -80,7 +94,6 @@ class TestKeyHandler(unittest.TestCase):
     def test_close(self, mock_save):
         self.key_handler.close()
         mock_save.assert_called_once()
-
 
 if __name__ == "__main__":
     unittest.main()
