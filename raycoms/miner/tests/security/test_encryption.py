@@ -1,7 +1,7 @@
 from datetime import datetime
 import unittest
 from unittest.mock import Mock, patch
-from fastapi import Request, HTTPException
+from fastapi import HTTPException
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives.asymmetric import rsa
 from pydantic import BaseModel
