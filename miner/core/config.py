@@ -8,9 +8,11 @@ import os
 # Have this path passed in?
 load_dotenv(dotenv_path=".miner.env", verbose=True)
 
+
 @dataclass
 class Config:
     key_handler: key_management.KeyHandler
+
 
 @lru_cache
 def factory_config() -> Config:

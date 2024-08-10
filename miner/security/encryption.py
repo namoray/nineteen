@@ -8,9 +8,9 @@ from fastapi import Header
 from typing import Type, TypeVar
 
 from pydantic import BaseModel
-from miner.config import Config
-from miner.dependencies import get_config
-from miner.models import SymmetricKeyExchange
+from miner.core.config import Config
+from miner.core.dependencies import get_config
+from miner.core.models import SymmetricKeyExchange
 
 
 T = TypeVar("T", bound=BaseModel)

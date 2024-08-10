@@ -4,9 +4,9 @@ from fastapi import APIRouter, Depends, FastAPI, HTTPException
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding
 
-from miner.config import Config
-from miner.dependencies import get_config
-from miner.models import PublicKeyResponse, SymmetricKeyExchange
+from miner.core.config import Config
+from miner.core.dependencies import get_config
+from miner.core.models import PublicKeyResponse, SymmetricKeyExchange
 from miner import signatures
 
 app = FastAPI()

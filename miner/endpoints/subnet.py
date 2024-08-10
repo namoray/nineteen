@@ -1,7 +1,7 @@
 from functools import partial
 from fastapi import Depends
 
-from miner.encryption import decrypt_general_payload
+from miner.security.encryption import decrypt_general_payload
 from models import base_models
 from fastapi.routing import APIRouter
 

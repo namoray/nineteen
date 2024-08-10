@@ -1,7 +1,7 @@
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 
-from miner.nonce_management import NonceManager
+from miner.security.nonce_management import NonceManager
 
 
 class KeyHandler:
