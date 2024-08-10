@@ -10,7 +10,6 @@ import base64
 from substrateinterface import Keypair
 from beam.validator.security.encryption import public_key_encrypt
 from beam import constants as bcst
-from httpx import Response
 
 
 async def perform_handshake(
@@ -40,15 +39,12 @@ async def perform_handshake(
 async def get_public_encryption_key(
     httpx_client: httpx.AsyncClient, server_address: str, timeout: int = 3
 ) -> X25519PublicKey:
-    async with httpx_client.get(
-        url=f"{server_address}/{bcst.PUBLIC_ENCRYPTION_KEY_ENDPOINT}", timeout=timeout
-    ) as response:
-        response: Response
-        response.raise_for_status()
-        data = encryption.PublicKeyResponse(**(await response.json()))
-        public_key_pem = data.public_key.encode()
-        public_key_encryption_key = rust_openssl.keys.load_pem_public_key(public_key_pem, backend=default_backend())
-        return public_key_encryption_key
+    response = await httpx_client.get(url=f"{server_address}/{bcst.PUBLIC_ENCRYPTION_KEY_ENDPOINT}", timeout=timeout)
+    response.raise_for_status()
+    data = encryption.PublicKeyResponse(**response.json())
+    public_key_pem = data.public_key.encode()
+    public_key_encryption_key = rust_openssl.keys.load_pem_public_key(public_key_pem, backend=default_backend())
+    return public_key_encryption_key
 
 
 async def send_symmetric_key_to_server(
@@ -71,8 +67,7 @@ async def send_symmetric_key_to_server(
         "signature": signatures.sign_message(keypair, signatures.construct_public_key_message_to_sign()),
     }
 
-    async with httpx_client.post(
+    response = await httpx_client.post(
         f"{server_address}/{bcst.EXCHANGE_SYMMETRIC_KEY_ENDPOINT}", json=payload, timeout=timeout
-    ) as response:
-        response: Response
-        return response.status_code == 200
+    )
+    return response.status_code == 200
