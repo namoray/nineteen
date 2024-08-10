@@ -1,10 +1,10 @@
+from substrateinterface import Keypair
 
 
-def sign(message: str) -> str:
-    # TODO: IMPLEMENT WITH SUBSTRATE INTERFACE
-    return message
+def sign_message(keypair: Keypair, message: str) -> str:
+    return keypair.sign(message).hex()
 
 
-def verify_signature(message: str, hotkey: str, signature: str) -> bool:
-    # TODO: Implement!
-    return True
+def verify_signature(message: str, signature: str, ss58_address: str) -> bool:
+    keypair = Keypair(ss58_address=ss58_address)
+    return keypair.verify(message, signature)

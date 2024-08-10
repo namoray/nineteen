@@ -7,7 +7,7 @@ from cryptography.hazmat.primitives.asymmetric import padding
 from raycoms.miner.core.config import Config
 from raycoms.miner.core.dependencies import get_config
 from raycoms.miner.core.models.encryption import PublicKeyResponse, SymmetricKeyExchange
-from raycoms.miner import signatures
+from raycoms.miner.security import signatures
 
 app = FastAPI()
 
@@ -18,7 +18,7 @@ async def get_public_key(config: Config = Depends(get_config)):
         public_key=config.encryption_keys_handler.public_bytes.decode(),
         timestamp=time.time(),
         hotkey=config.encryption_keys_handler.hotkey,
-        signature=signatures.sign(f"{time.time()}{config.encryption_keys_handler.hotkey}"),
+        signature=signatures.sign_message(f"{time.time()}{config.encryption_keys_handler.hotkey}"),
     )
 
 
