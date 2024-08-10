@@ -3,7 +3,6 @@ import json
 import os
 import threading
 import time
-from typing import Any
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.fernet import Fernet
@@ -35,7 +34,11 @@ class KeyHandler:
 
     def save_symmetric_keys(self) -> None:
         serializable_keys = {
-            hotkey: {uuid: key.hex() for uuid, key in keys.items()} for hotkey, keys in self.symmetric_keys.items()
+            hotkey: {
+                uuid: {"key": key_info.key.hex(), "expiration_time": key_info.expiration_time.isoformat()}
+                for uuid, key_info in keys.items()
+            }
+            for hotkey, keys in self.symmetric_keys.items()
         }
         json_data = json.dumps(serializable_keys)
         encrypted_data = self.fernet.encrypt(json_data.encode())
@@ -49,7 +52,7 @@ class KeyHandler:
                 encrypted_data = f.read()
 
             decrypted_data = self.fernet.decrypt(encrypted_data)
-            loaded_keys: dict[str, dict[str, dict[str, Any]]] = json.loads(decrypted_data.decode())
+            loaded_keys: dict[str, dict[str, str]] = json.loads(decrypted_data.decode())
 
             self.symmetric_keys = {
                 hotkey: {
@@ -73,7 +76,7 @@ class KeyHandler:
         while self._running:
             self._clean_expired_keys()
             self.nonce_manager.cleanup_expired_nonces()
-            time.sleep(65)  # Sleep for 65 seconds (1 minute + 5 seconds - duh)
+            time.sleep(65)
 
     def load_asymmetric_keys(self) -> None:
         # TODO: Allow this to be passed in via env too
