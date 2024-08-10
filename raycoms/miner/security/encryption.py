@@ -10,7 +10,9 @@ from pydantic import BaseModel
 from raycoms.miner.core.dependencies import get_config
 from raycoms.miner.core.models.encryption import SymmetricKeyExchange
 from raycoms.miner.core.models.config import Config
+from raycoms.logging_utils import get_logger
 
+logger = get_logger(__name__)
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -37,13 +39,13 @@ def decrypt_general_payload(
     key_uuid: str = Header(...),
     hotkey: str = Header(...),
 ) -> T:
-    print(Config.encryption_keys_handler.symmetric_keys)
+    logger.debug(f"Symmetric keys: {Config.encryption_keys_handler.symmetric_keys}")
     symmetric_key = Config.encryption_keys_handler.get_symmetric_key(hotkey, key_uuid)
     if not symmetric_key:
         raise HTTPException(status_code=404, detail="No symmetric key found for that hotkey and uuid")
 
     f = Fernet(symmetric_key)
-    print("Encrypted payload type: ", type(encrypted_payload))
+    logger.debug(f"Encrypted payload type: {type(encrypted_payload)}")
     decrypted_data = f.decrypt(encrypted_payload)
 
     data_dict = json.loads(decrypted_data.decode())
