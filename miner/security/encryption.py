@@ -3,14 +3,12 @@ from fastapi import Depends, HTTPException, Request
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding
-
 from fastapi import Header
 from typing import Type, TypeVar
 
 from pydantic import BaseModel
-from miner.core.config import Config
 from miner.core.dependencies import get_config
-from miner.core.models import SymmetricKeyExchange
+from miner.core.models import SymmetricKeyExchange, Config
 
 
 T = TypeVar("T", bound=BaseModel)
@@ -49,3 +47,5 @@ def decrypt_general_payload(
 
     data_dict = json.loads(decrypted_data.decode())
     return model(**data_dict)
+
+
