@@ -8,7 +8,8 @@ from typing import Type, TypeVar
 
 from pydantic import BaseModel
 from miner.core.dependencies import get_config
-from miner.core.models import SymmetricKeyExchange, Config
+from miner.core.models.encryption import SymmetricKeyExchange
+from miner.core.models.config import Config
 
 
 T = TypeVar("T", bound=BaseModel)
@@ -47,5 +48,3 @@ def decrypt_general_payload(
 
     data_dict = json.loads(decrypted_data.decode())
     return model(**data_dict)
-
-

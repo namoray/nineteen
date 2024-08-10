@@ -6,7 +6,7 @@ from cryptography.hazmat.primitives.asymmetric import padding
 
 from miner.core.config import Config
 from miner.core.dependencies import get_config
-from miner.core.models import PublicKeyResponse, SymmetricKeyExchange
+from miner.core.models.encryption import PublicKeyResponse, SymmetricKeyExchange
 from miner import signatures
 
 app = FastAPI()

@@ -1,11 +1,19 @@
+from datetime import datetime, timedelta
 from pydantic import BaseModel
 from dataclasses import dataclass
-from miner.security import key_management
 
 
 @dataclass
-class Config:
-    key_handler: key_management.KeyHandler
+class SymmetricKeyInfo:
+    key: bytes
+    expiration_time: datetime
+
+    @classmethod
+    def create(cls, key: bytes, ttl_seconds: int = 60 * 60 * 5):
+        return cls(key, datetime.now() + timedelta(seconds=ttl_seconds))
+
+    def is_expired(self) -> bool:
+        return datetime.now() > self.expiration_time
 
 
 class SymmetricKeyExchange(BaseModel):

@@ -1,15 +1,16 @@
 from functools import lru_cache
-from miner.security import key_management
+
 from miner.security import nonce_management
 from dotenv import load_dotenv
 import os
-from miner.core.models import Config
+from miner.core.models.config import Config
 import base64
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from typing import TypeVar
 
 from pydantic import BaseModel
+
 T = TypeVar("T", bound=BaseModel)
 
 # Have this path passed in?
@@ -29,6 +30,8 @@ def _derive_key_from_string(input_string: str, salt: bytes = b"salt_") -> bytes:
 
 @lru_cache
 def factory_config() -> Config:
+    from miner.security import key_management
+
     nonce_manager = nonce_management.NonceManager()
     hotkey = "TODO: ALLOW THIS TO BE PASSED IN SOMEHOW"
     storage_encryption_key = os.getenv("STORAGE_ENCRYPTION_KEY")
