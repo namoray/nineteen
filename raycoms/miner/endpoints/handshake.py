@@ -41,7 +41,7 @@ async def exchange_symmetric_key(payload: SymmetricKeyExchange, config: Config =
 
 
 def factory_router() -> APIRouter:
-    router = APIRouter()
-    router.add_api_route("/public_key", get_public_key, tags=["handshake"], methods=["GET"])
-    router.add_api_route("/exchange_symmetric_key", exchange_symmetric_key, tags=["handshake"], methods=["POST"])
+    router = APIRouter(tags=["Handshake"])
+    router.add_api_route("/public-key", get_public_key,  methods=["GET"])
+    router.add_api_route("/exchange-symmetric-key", exchange_symmetric_key,  methods=["POST"])
     return router

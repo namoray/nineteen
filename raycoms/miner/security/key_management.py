@@ -24,7 +24,6 @@ class EncryptionKeysHandler:
         self._cleanup_thread.start()
 
     def add_symmetric_key(self, uuid: str, hotkey: str, symmetric_key: bytes) -> None:
-
         symmetric_key_info = SymmetricKeyInfo.create(symmetric_key)
         if hotkey not in self.symmetric_keys:
             self.symmetric_keys[hotkey] = {}

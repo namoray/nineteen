@@ -6,7 +6,7 @@ from models import base_models
 from fastapi.routing import APIRouter
 
 
-async def text_to_speech_endpoint(
+async def text_to_speech(
     decrypted_payload: base_models.TextToSpeechRequest = Depends(
         partial(decrypt_general_payload, base_models.TextToSpeechRequest)
     ),
@@ -17,5 +17,5 @@ async def text_to_speech_endpoint(
 
 def factory_router() -> APIRouter:
     router = APIRouter()
-    router.add_api_route("/text-to-speech", text_to_speech_endpoint, tags=["text-to-speech"], methods=["POST"])
+    router.add_api_route("/text-to-speech", text_to_speech, tags=["Subnet"], methods=["POST"])
     return router
