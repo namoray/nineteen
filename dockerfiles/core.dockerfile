@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 
 
-COPY generic /app/generic
+COPY core /app/core
 
 
 ENV PYTHONPATH=/app:$PYTHONPATH
