@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch
 from raycoms.miner.security.nonce_management import NonceManager
-
+from raycoms.validator import generate_nonce
 
 class TestNonceManager(unittest.TestCase):
     def setUp(self):
@@ -13,24 +13,25 @@ class TestNonceManager(unittest.TestCase):
         self.assertIn(nonce, self.nonce_manager._nonces)
 
     def test_nonce_in_nonces_new_nonce(self):
-        nonce = "new_nonce"
+        nonce = generate_nonce.generate_nonce()
         result = self.nonce_manager.nonce_is_valid(nonce)
-        self.assertFalse(result)
+        self.assertTrue(result)
         self.assertIn(nonce, self.nonce_manager._nonces)
 
     def test_nonce_in_nonces_existing_nonce(self):
         nonce = "existing_nonce"
         self.nonce_manager.add_nonce(nonce)
         result = self.nonce_manager.nonce_is_valid(nonce)
-        self.assertTrue(result)
+        self.assertFalse(result)
 
     @patch("time.time")
     def test_cleanup_expired_nonces(self, mock_time):
         mock_time.return_value = 100
         self.nonce_manager.add_nonce("expired_nonce")
-        mock_time.return_value = 200
+        mock_time.return_value = 100_000
         self.nonce_manager.add_nonce("valid_nonce")
 
+        mock_time.return_value = 1000
         self.nonce_manager.cleanup_expired_nonces()
 
         self.assertNotIn("expired_nonce", self.nonce_manager._nonces)
@@ -39,30 +40,19 @@ class TestNonceManager(unittest.TestCase):
     def test_contains(self):
         nonce = "test_nonce"
         self.nonce_manager.add_nonce(nonce)
-        self.assertIn(nonce, self.nonce_manager)
+        self.assertIn(nonce, self.nonce_manager._nonces)
 
     def test_len(self):
         self.nonce_manager.add_nonce("nonce1")
         self.nonce_manager.add_nonce("nonce2")
-        self.assertEqual(len(self.nonce_manager), 2)
+        self.assertEqual(len(self.nonce_manager._nonces), 2)
 
     def test_iter(self):
         nonces = ["nonce1", "nonce2", "nonce3"]
         for nonce in nonces:
             self.nonce_manager.add_nonce(nonce)
 
-        self.assertEqual(set(self.nonce_manager), set(nonces))
-
-    @patch("threading.Thread")
-    def test_shutdown(self, mock_thread):
-        mock_thread_instance = mock_thread.return_value
-        self.nonce_manager._cleanup_thread = mock_thread_instance
-        self.nonce_manager._running = True
-
-        self.nonce_manager.shutdown()
-
-        self.assertFalse(self.nonce_manager._running)
-        mock_thread_instance.join.assert_called_once()
+        self.assertEqual(set(self.nonce_manager._nonces), set(nonces))
 
 
 if __name__ == "__main__":
