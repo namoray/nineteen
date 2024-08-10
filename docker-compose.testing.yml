@@ -45,12 +45,6 @@ services:
       POSTGRES_NAME: test_db
       ENV: test
 
-  signing_service:
-    environment:
-      WALLET_NAME: new_test
-      HOTKEY_NAME: vali
-      ENV: test
-
   test_db:
     image: postgres:13
     environment:

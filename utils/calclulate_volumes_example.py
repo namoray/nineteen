@@ -4,10 +4,10 @@ If you prefer, you can remove the 'mean' estimation and instead insert your own 
 So you can more accurately calculate your own volume
 """
 
-from core.tasks import Task
-from core import constants as ccst
-from core.tasks_config import TaskType
-from core import tasks_config
+from generic.tasks import Task
+from generic import constants as ccst
+from generic.tasks_config import TaskType
+from generic import tasks_config
 
 
 def calculate_volume_for_task(

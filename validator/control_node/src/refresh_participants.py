@@ -9,20 +9,20 @@ from dataclasses import dataclass
 import os
 from typing import List
 
-from core.bittensor_overrides.chain_data import AxonInfo
+from generic.bittensor_overrides.chain_data import AxonInfo
 from validator.db.src import sql
 from validator.models import Participant
 
 from dotenv import load_dotenv
 from validator.db.src.database import PSQLDB
 from validator.utils import query_utils as qutils
-from core import tasks_config as tcfg
-from core import constants as ccst
-from core.tasks import Task
+from generic import tasks_config as tcfg
+from generic import constants as ccst
+from generic.tasks import Task
 from redis.asyncio import Redis
-from core import bittensor_overrides as bt
+from generic import bittensor_overrides as bt
 from models import synapses
-from core.logging import get_logger
+from generic.logging import get_logger
 from validator.utils import generic_utils as gutils
 
 logger = get_logger(__name__)

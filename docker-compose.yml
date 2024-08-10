@@ -64,7 +64,7 @@ services:
       - core
       - postgresql
       - redis
-      - signing_service
+
     volumes:
       - .:/app
     networks:
@@ -90,20 +90,6 @@ services:
     container_name: control_node
 
 
-  signing_service:
-    build:
-      context: .
-      dockerfile: dockerfiles/signing_service.dockerfile
-    depends_on:
-      - redis
-    volumes:
-      - ./validator/signing_service:/app/validator/signing_service
-      - ~/.bittensor:/root/.bittensor
-    networks:
-      - redis_network
-    entrypoint: ["python", "-u", "/app/validator/signing_service/src/main.py"]
-    container_name: signing_service
-     
   redis:
     image: redis/redis-stack:latest
     networks:

@@ -1,7 +1,6 @@
 from typing import Dict, Any, Optional
-from core import constants as ccst
+from generic import constants as ccst
 from rich.prompt import Prompt
-from mining.db.db_management import miner_db_manager
 
 
 def device_processing_func(input: str):

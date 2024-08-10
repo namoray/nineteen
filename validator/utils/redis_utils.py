@@ -4,7 +4,7 @@ from redis.asyncio import Redis
 import json
 from enum import Enum
 import copy
-from core.logging import get_logger
+from generic.logging import get_logger
 from validator.utils import redis_dataclasses as rdc, redis_constants as rcst
 
 logger = get_logger(__name__)

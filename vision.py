@@ -6,7 +6,7 @@ import typer
 from typing import Optional
 from rich.console import Console
 from rich.table import Table
-from config.create_config import get_config
+from generic.create_config import get_config
 from validator.db import sql
 
 cli = typer.Typer(name="Vision CLI")

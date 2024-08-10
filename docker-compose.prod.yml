@@ -54,15 +54,6 @@ services:
       restart_policy:
         condition: on-failure
 
-  signing_service:
-    environment:
-      WALLET_NAME: ${PROD_WALLET_NAME}
-      HOTKEY_NAME: ${PROD_HOTKEY_NAME}
-      ENV: prod
-    deploy:
-      restart_policy:
-        condition: on-failure
-
   postgresql:
     environment:
       POSTGRES_USER: ${PROD_DB_USER}

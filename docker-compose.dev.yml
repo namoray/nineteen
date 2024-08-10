@@ -49,13 +49,6 @@ services:
       ENV: dev
     container_name: dev_control_node
 
-  signing_service:
-    environment:
-      WALLET_NAME: t_and_c
-      HOTKEY_NAME: default
-      ENV: dev
-    container_name: dev_signing_service
-
   postgresql:
     ports:
       - "5432:5432"

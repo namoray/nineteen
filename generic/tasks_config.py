@@ -2,7 +2,7 @@ from enum import Enum
 from models import utility_models
 from models.base_models import CapacityForTask
 from pydantic import BaseModel
-from core.tasks import Task
+from generic.tasks import Task
 
 
 class TaskType(Enum):

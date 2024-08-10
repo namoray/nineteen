@@ -13,15 +13,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-COPY core/requirements.txt /app/core/requirements.txt
-
-RUN pip install --upgrade pip && \
-    pip install --no-cache-dir -r /app/core/requirements.txt
 
 
-COPY core /app/core
-COPY models /app/models
-COPY config /app/config
+COPY generic /app/generic
 
 
 ENV PYTHONPATH=/app:$PYTHONPATH

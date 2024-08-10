@@ -10,7 +10,7 @@ import io
 from redis import Redis
 from validator.utils import redis_constants as rcst, redis_dataclasses as rdc
 import json
-from core.logging import get_logger
+from generic.logging import get_logger
 
 logger = get_logger(__name__)
 

@@ -1,13 +1,13 @@
 # Schema for the db
 
 
-from core.tasks import Task
-from core import tasks_config as tcfg
+from generic.tasks import Task
+from generic import tasks_config as tcfg
 from validator.db.src import functions as db_functions
 from validator.db.src.database import PSQLDB
 from validator.models import Participant, PeriodScore
 from validator.models import RewardData
-from core.logging import get_logger
+from generic.logging import get_logger
 
 
 logger = get_logger(__name__)

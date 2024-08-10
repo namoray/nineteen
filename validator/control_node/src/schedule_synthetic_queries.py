@@ -19,7 +19,7 @@ from validator.models import Participant
 from validator.utils import participant_utils as putils
 from validator.utils import redis_utils as rutils
 from validator.utils import redis_constants as rcst
-from core.logging import get_logger
+from generic.logging import get_logger
 
 logger = get_logger(__name__)
 

@@ -1,6 +1,6 @@
 import unittest
 from redis.asyncio import Redis
-from core.tasks import Task
+from generic.tasks import Task
 from validator.db.src.database import PSQLDB
 from validator.db.src import sql
 from validator.models import Participant

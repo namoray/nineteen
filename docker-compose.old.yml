@@ -77,7 +77,7 @@ services:
       - core
       - postgresql
       - redis
-      - signing_service
+
     volumes:
       - .:/app
     networks:
@@ -121,26 +121,6 @@ services:
       - postgres_network
       - redis_network
     entrypoint: ["python", "-u", "/app/validator/core/src/main.py"]
-
-  signing_service:
-    container_name: signing_service
-    build:
-      context: .
-      dockerfile: dockerfiles/signing_service.dockerfile
-    depends_on:
-      - redis
-    volumes:
-      - ./validator/signing_service:/app/validator/signing_service
-      - ~/.bittensor:/root/.bittensor
-      
-    # Below needs to be from config somehow
-    environment:
-      WALLET_NAME: t_and_c
-      HOTKEY_NAME: default
-      ENV: dev
-    networks:
-      - redis_network
-    entrypoint: ["python", "-u", "/app/validator/signing_service/src/main.py"]
 
 
   redis:

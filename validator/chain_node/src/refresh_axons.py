@@ -11,10 +11,10 @@ from asyncpg import Connection
 import bittensor as bt
 from dotenv import load_dotenv
 
-from core.bittensor_overrides.chain_data import AxonInfo
+from generic.bittensor_overrides.chain_data import AxonInfo
 from validator.db.src.database import PSQLDB
 from validator.db.src import sql
-from core.logging import get_logger
+from generic.logging import get_logger
 
 logger = get_logger(__name__)
 

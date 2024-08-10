@@ -3,16 +3,16 @@ import random
 import time
 from typing import Any, AsyncIterator, Dict, List, Optional, Union
 from pydantic import BaseModel, ValidationError
-from core.tasks import Task
-from core.bittensor_overrides.chain_data import AxonInfo
+from generic.tasks import Task
+from generic.bittensor_overrides.chain_data import AxonInfo
 from models import base_models, utility_models
 from validator.db.src.database import PSQLDB
 from validator.models import Participant
-from core import bittensor_overrides as bt
+from generic import bittensor_overrides as bt
 from collections import OrderedDict
 import json
 from validator.utils import query_utils as qutils, work_and_speed_functions
-from core.logging import get_logger
+from generic.logging import get_logger
 from validator.db.src import functions as db_functions
 
 logger = get_logger(__name__)

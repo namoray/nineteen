@@ -12,7 +12,7 @@ from validator.utils import redis_constants as rcst, generic_utils as gutils
 from validator.chain_node.src.keypair import RedisGappedKeypair
 from validator.utils import redis_dataclasses as rdc
 from bittensor.utils import weight_utils
-from core.logging import get_logger
+from generic.logging import get_logger
 
 logger = get_logger(__name__)
 

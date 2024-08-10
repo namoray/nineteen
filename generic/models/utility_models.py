@@ -2,7 +2,7 @@ from typing import List, Optional, Any
 
 from pydantic import BaseModel
 
-from core.tasks import Task
+from generic.tasks import Task
 
 
 class QueryResult(BaseModel):

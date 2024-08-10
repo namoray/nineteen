@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from core.tasks import Task
+from generic.tasks import Task
 
 
 class TaskStatsForUID(BaseModel):

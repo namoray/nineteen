@@ -1,8 +1,8 @@
 import random
 from typing import Any
 
-from core.tasks import Task
-from core import tasks_config
+from generic.tasks import Task
+from generic import tasks_config
 from models import base_models
 from validator.utils import (
     redis_utils as rutils,
@@ -10,10 +10,10 @@ from validator.utils import (
     query_utils as qutils,
     synthetic_constants as scst,
 )
-from core import dataclasses as dc
+from generic import dataclasses as dc
 from redis.asyncio import Redis
 from models import synapses
-from core import bittensor_overrides as bt
+from generic import bittensor_overrides as bt
 import base64
 from io import BytesIO
 
@@ -22,7 +22,7 @@ import diskcache
 from PIL import Image
 import uuid
 import numpy as np
-from core.logging import get_logger
+from generic.logging import get_logger
 
 logger = get_logger(__name__)
 

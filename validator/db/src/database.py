@@ -5,7 +5,7 @@ import asyncpg
 from asyncpg import Pool
 
 from validator.utils import database_utils as dutils
-from core.logging import get_logger
+from generic.logging import get_logger
 
 logger = get_logger(__name__)
 
