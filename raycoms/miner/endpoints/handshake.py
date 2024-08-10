@@ -15,13 +15,16 @@ async def get_public_key(config: Config = Depends(get_config)):
         public_key=config.encryption_keys_handler.public_bytes.decode(),
         timestamp=time.time(),
         hotkey=config.keypair.ss58_address,
-        signature=signatures.sign_message(config.keypair, f"{time.time()}{config.encryption_keys_handler.hotkey}"),
+        signature=signatures.sign_message(
+            config.keypair,
+            signatures.construct_public_key_message_to_sign(),
+        ),
     )
 
 
 async def exchange_symmetric_key(payload: SymmetricKeyExchange, config: Config = Depends(get_config)):
     if not signatures.verify_signature(
-        message=f"{payload.timestamp}{payload.hotkey}",
+        message=signatures.construct_public_key_message_to_sign(),
         hotkey=payload.hotkey,
         signature=payload.signature,
     ):
