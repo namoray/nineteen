@@ -28,8 +28,16 @@ class TestNonceManager(unittest.TestCase):
     def test_old_nonce(self, mock_time):
         mock_time.return_value = 1_000_000_000
         nonce = generate_nonce.generate_nonce()
-        print(nonce)
         mock_time.return_value = 1_000_000_000_000
+
+        result = self.nonce_manager.nonce_is_valid(nonce)
+        self.assertFalse(result)
+
+    @patch("time.monotonic_ns")
+    def test_too_new_nonce(self, mock_time):
+        mock_time.return_value = 1_000_000_000_000
+        nonce = generate_nonce.generate_nonce()
+        mock_time.return_value = 1_000_000_000
 
         result = self.nonce_manager.nonce_is_valid(nonce)
         self.assertFalse(result)
