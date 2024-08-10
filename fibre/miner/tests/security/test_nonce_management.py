@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch
-from beam.miner.security.nonce_management import NonceManager
-from beam.validator import generate_nonce
+from fibre.miner.security.nonce_management import NonceManager
+from fibre.validator import generate_nonce
 
 
 class TestNonceManager(unittest.TestCase):

@@ -1,15 +1,15 @@
 import httpx
 from cryptography.hazmat.backends import default_backend
-from beam.miner.core.models import encryption
+from fibre.miner.core.models import encryption
 from cryptography.hazmat.bindings._rust import openssl as rust_openssl
 from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PublicKey
 import time
 import os
-from beam.miner.security import signatures
+from fibre.miner.security import signatures
 import base64
 from substrateinterface import Keypair
-from beam.validator.security.encryption import public_key_encrypt
-from beam import constants as bcst
+from fibre.validator.security.encryption import public_key_encrypt
+from fibre import constants as bcst
 
 
 async def perform_handshake(

@@ -1,8 +1,8 @@
 from functools import partial
 from fastapi import Depends
 
-from beam.miner.security.encryption import decrypt_general_payload
-from models import base_models
+from fibre.miner.security.encryption import decrypt_general_payload
+from fibre.chain_interface.models import base_models
 from fastapi.routing import APIRouter
 
 

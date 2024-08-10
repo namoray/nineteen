@@ -8,6 +8,8 @@ from bittensor.chain_data import AxonInfo
 from bittensor.utils.registration import torch
 
 
+
+
 class MetagraphMixin(ABC):
     netuid: int
     network: str
@@ -45,7 +47,6 @@ class MetagraphMixin(ABC):
             subtensor = bittensor.subtensor(network=self.network)
 
         self._assign_neurons(block, lite, subtensor)
-        self._set_metagraph_attributes(block, subtensor)
 
     def _assign_neurons(self, block, lite, subtensor: "bittensor.subtensor"):
         self.neurons = subtensor.neurons_lite(block=block, netuid=self.netuid)
