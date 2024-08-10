@@ -6,7 +6,7 @@ from typing import List, Dict, Optional, Any, Union
 
 from scalecodec.utils.ss58 import ss58_encode
 from scalecodec import ScaleBytes
-from fibre.chain_interactions.interface import create_scale_object
+from fibre.chain_interactions import utils as chain_utils
 from fibre import constants as fcst
 
 U16_MAX = 65535
@@ -281,7 +281,7 @@ def from_scale_encoding_using_type_string(
 
         as_scale_bytes = ScaleBytes(as_bytes)
 
-    scale_object = create_scale_object(type_string, as_scale_bytes)
+    scale_object = chain_utils.create_scale_object(type_string, as_scale_bytes)
 
     return scale_object.decode()
 
@@ -340,6 +340,8 @@ class NeuronInfoLite:
     validator_permit: bool
     pruning_score: int
     is_null: bool = False
+    prometheus_info: Any = None
+    axon_info: Any = None
 
     @classmethod
     def fix_decoded_values(cls, neuron_info_decoded: Any) -> "NeuronInfoLite":
@@ -383,7 +385,7 @@ class NeuronInfoLite:
         if decoded_list is None:
             return []
 
-        decoded_list = [NeuronInfoLite.fix_decoded_values(decoded) for decoded in decoded_list]
+        # decoded_list = [NeuronInfoLite.fix_decoded_values(decoded) for decoded in decoded_list]
         return decoded_list
 
     @staticmethod
@@ -404,7 +406,6 @@ class NeuronInfoLite:
             dividends=0,
             last_update=0,
             validator_permit=False,
-            prometheus_info=None,
             axon_info=None,
             is_null=True,
             coldkey="000000000000000000000000000000000000000000000000",

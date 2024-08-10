@@ -2,26 +2,17 @@ from typing import Any, TypedDict
 from substrateinterface import SubstrateInterface
 from fibre.chain_interactions import type_registry
 import scalecodec
-from scalecodec.base import RuntimeConfiguration
-from scalecodec.type_registry import load_type_registry_preset
+
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from fibre.chain_interactions.models import Node
 from fibre.chain_interactions import models
+from fibre.chain_interactions import utils as chain_utils
 
 
 class ParamWithTypes(TypedDict):
     name: str
     type: str  # ScaleType string of the parameter.
-
-
-def create_scale_object(return_type: str, as_scale_bytes: scalecodec.ScaleBytes) -> scalecodec.ScaleType:
-    rpc_runtime_config = RuntimeConfiguration()
-    rpc_runtime_config.update_type_registry(load_type_registry_preset("legacy"))
-    rpc_runtime_config.update_type_registry(type_registry.custom_rpc_type_registry)
-
-    scale_object = rpc_runtime_config.create_scale_object(return_type, as_scale_bytes)
-    return scale_object
 
 
 class ChainInterface:
@@ -96,7 +87,7 @@ class ChainInterface:
 
         as_scale_bytes = scalecodec.ScaleBytes(json_result["result"])
 
-        scale_object = create_scale_object(return_type, as_scale_bytes)
+        scale_object = chain_utils.create_scale_object(return_type, as_scale_bytes)
 
         if scale_object.data.to_hex() == "0x0400":
             return None
@@ -104,7 +95,7 @@ class ChainInterface:
         return scale_object.decode()
 
     def neurons_lite(self, netuid: int, block: int | None = None) -> list[models.NeuronInfoLite]:
-        hex_bytes_result = self.query_runtime_api(
+        hex_bytes_result = self._query_runtime_api(
             runtime_api="NeuronInfoRuntimeApi",
             method="get_neurons_lite",
             params=[netuid],
