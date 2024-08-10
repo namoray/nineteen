@@ -17,5 +17,5 @@ async def text_to_speech_endpoint(
 
 def factory_router() -> APIRouter:
     router = APIRouter()
-    router.add_api_route("/text-to-speech", text_to_speech_endpoint, tags=["text-to-speech"])
+    router.add_api_route("/text-to-speech", text_to_speech_endpoint, tags=["text-to-speech"], methods=["POST"])
     return router

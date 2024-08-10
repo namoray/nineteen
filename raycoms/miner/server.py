@@ -16,6 +16,7 @@ from raycoms.miner.endpoints.subnet import factory_router as subnet_factory_rout
 from raycoms.miner.endpoints.handshake import factory_router as handshake_factory_router
 from raycoms.miner.core.config import factory_config
 
+
 def factory_app() -> FastAPI:
     app = FastAPI()
 
@@ -27,10 +28,10 @@ def factory_app() -> FastAPI:
     return app
 
 
+app = factory_app()
+
 if __name__ == "__main__":
     import uvicorn
-
-    app = factory_app()
 
     # Caching some configuration
     factory_config()

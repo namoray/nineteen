@@ -11,6 +11,8 @@ from raycoms.miner.core.dependencies import get_config
 from raycoms.miner.core.models.encryption import SymmetricKeyExchange
 from raycoms.miner.core.models.config import Config
 from raycoms.logging_utils import get_logger
+import base64
+
 
 logger = get_logger(__name__)
 
@@ -21,7 +23,20 @@ async def get_body(request: Request) -> bytes:
     return await request.body()
 
 
-async def decrypt_symmetric_key_exchange(
+def get_symmetric_key_b64_from_payload(payload: SymmetricKeyExchange, private_key: Fernet) -> str:
+    encrypted_symmetric_key = base64.b64decode(payload.encrypted_symmetric_key)
+    try:
+        decrypted_symmetric_key = private_key.decrypt(
+            encrypted_symmetric_key,
+            padding.OAEP(mgf=padding.MGF1(algorithm=hashes.SHA256()), algorithm=hashes.SHA256(), label=None),
+        )
+    except ValueError:
+        raise HTTPException(status_code=401, detail="Oi, I can't decrypt that symmetric key, sorry")
+    base64_symmetric_key = base64.b64encode(decrypted_symmetric_key).decode()
+    return base64_symmetric_key
+
+
+async def decrypt_symmetric_key_exchange_payload(
     config: Config = Depends(get_config), encrypted_payload: bytes = Depends(get_body)
 ):
     decrypted_data = config.encryption_keys_handler.private_key.decrypt(
@@ -38,13 +53,14 @@ def decrypt_general_payload(
     encrypted_payload: bytes = Depends(get_body),
     key_uuid: str = Header(...),
     hotkey: str = Header(...),
+    config: Config = Depends(get_config),
 ) -> T:
-    logger.debug(f"Symmetric keys: {Config.encryption_keys_handler.symmetric_keys}")
-    symmetric_key = Config.encryption_keys_handler.get_symmetric_key(hotkey, key_uuid)
+    logger.debug(f"Symmetric keys: {config.encryption_keys_handler.symmetric_keys}")
+    symmetric_key = config.encryption_keys_handler.get_symmetric_key(hotkey, key_uuid)
     if not symmetric_key:
         raise HTTPException(status_code=404, detail="No symmetric key found for that hotkey and uuid")
 
-    f = Fernet(symmetric_key)
+    f = Fernet(symmetric_key.key)
     logger.debug(f"Encrypted payload type: {type(encrypted_payload)}")
     decrypted_data = f.decrypt(encrypted_payload)
 

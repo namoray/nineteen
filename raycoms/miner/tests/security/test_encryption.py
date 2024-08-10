@@ -10,7 +10,7 @@ from cryptography.hazmat.primitives.asymmetric import padding
 import asyncio
 
 from raycoms.miner.core.models.encryption import SymmetricKeyExchange
-from raycoms.miner.security.encryption import decrypt_symmetric_key_exchange, decrypt_general_payload
+from raycoms.miner.security.encryption import decrypt_symmetric_key_exchange_payload, decrypt_general_payload
 
 
 class TestModel(BaseModel):
@@ -30,7 +30,7 @@ class TestEncryption(unittest.IsolatedAsyncioTestCase):
         test_data = SymmetricKeyExchange(
             encrypted_symmetric_key="encrypted_key",
             symmetric_key_uuid="test-uuid",
-            hotkey="test-hotkey",
+            ss58_address="test-hotkey",
             timestamp=datetime.now().timestamp(),
             nonce="test-nonce",
             signature="test-signature",
@@ -40,12 +40,12 @@ class TestEncryption(unittest.IsolatedAsyncioTestCase):
             padding.OAEP(mgf=padding.MGF1(algorithm=hashes.SHA256()), algorithm=hashes.SHA256(), label=None),
         )
 
-        result = await decrypt_symmetric_key_exchange(self.config_mock, encrypted_payload)
+        result = await decrypt_symmetric_key_exchange_payload(self.config_mock, encrypted_payload)
 
         self.assertIsInstance(result, SymmetricKeyExchange)
         self.assertEqual(result.symmetric_key_uuid, test_data.symmetric_key_uuid)
         self.assertEqual(result.encrypted_symmetric_key, test_data.encrypted_symmetric_key)
-        self.assertEqual(result.hotkey, test_data.hotkey)
+        self.assertEqual(result.ss58_address, test_data.ss58_address)
         self.assertEqual(result.nonce, test_data.nonce)
         self.assertEqual(result.signature, test_data.signature)
 

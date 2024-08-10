@@ -9,7 +9,7 @@ class SymmetricKeyInfo:
     expiration_time: datetime
 
     @classmethod
-    def create(cls, key: bytes, ttl_seconds: int = 60 * 60 * 5):
+    def create(cls, key: bytes, ttl_seconds: int = 60 * 60 * 5):  # 5 hours
         return cls(key, datetime.now() + timedelta(seconds=ttl_seconds))
 
     def is_expired(self) -> bool:
@@ -19,7 +19,7 @@ class SymmetricKeyInfo:
 class SymmetricKeyExchange(BaseModel):
     encrypted_symmetric_key: str
     symmetric_key_uuid: str
-    hotkey: str
+    ss58_address: str
     timestamp: float
     nonce: str
     signature: str

@@ -24,11 +24,13 @@ class EncryptionKeysHandler:
         self._cleanup_thread.start()
 
     def add_symmetric_key(self, uuid: str, hotkey: str, symmetric_key: bytes) -> None:
+
+        symmetric_key_info = SymmetricKeyInfo.create(symmetric_key)
         if hotkey not in self.symmetric_keys:
             self.symmetric_keys[hotkey] = {}
-        self.symmetric_keys[hotkey][uuid] = symmetric_key
+        self.symmetric_keys[hotkey][uuid] = symmetric_key_info
 
-    def get_symmetric_key(self, hotkey: str, uuid: str) -> bytes | None:
+    def get_symmetric_key(self, hotkey: str, uuid: str) -> SymmetricKeyInfo | None:
         return self.symmetric_keys.get(hotkey, {}).get(uuid)
 
     def save_symmetric_keys(self) -> None:

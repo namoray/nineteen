@@ -67,7 +67,7 @@ class TestHandshake(unittest.TestCase):
         payload = SymmetricKeyExchange(
             encrypted_symmetric_key=base64.b64encode(encrypted_symmetric_key).decode(),
             symmetric_key_uuid="test_uuid",
-            hotkey="test_hotkey",
+            ss58_address="test_hotkey",
             timestamp=time.time(),
             nonce="test_nonce",
             signature="test_signature",
@@ -78,7 +78,7 @@ class TestHandshake(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), {"status": "Symmetric key exchanged successfully"})
         self.mock_encryption_keys_handler.add_symmetric_key.assert_called_once_with(
-            payload.symmetric_key_uuid, payload.hotkey, base64.b64encode(symmetric_key).decode()
+            payload.symmetric_key_uuid, payload.ss58_address, base64.b64encode(symmetric_key).decode()
         )
 
     @patch("raycoms.miner.security.signatures.verify_signature")
@@ -90,7 +90,7 @@ class TestHandshake(unittest.TestCase):
         payload = SymmetricKeyExchange(
             encrypted_symmetric_key=base64.b64encode(b"test_key").decode(),
             symmetric_key_uuid="test_uuid",
-            hotkey="test_hotkey",
+            ss58_address="test_hotkey",
             timestamp=time.time(),
             nonce="test_nonce",
             signature="invalid_signature",
@@ -110,7 +110,7 @@ class TestHandshake(unittest.TestCase):
         payload = SymmetricKeyExchange(
             encrypted_symmetric_key=base64.b64encode(b"test_key").decode(),
             symmetric_key_uuid="test_uuid",
-            hotkey="test_hotkey",
+            ss58_address="test_hotkey",
             timestamp=time.time(),
             nonce="duplicate_nonce",
             signature="test_signature",
