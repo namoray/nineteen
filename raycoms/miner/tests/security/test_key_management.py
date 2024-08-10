@@ -19,7 +19,6 @@ class TestKeyHandler(unittest.TestCase):
 
     def test_init(self):
         self.assertIsInstance(self.encryption_keys_handler.fernet, Fernet)
-        self.assertEqual(self.encryption_keys_handler.hotkey, self.hotkey)
         self.assertIsInstance(self.encryption_keys_handler.symmetric_keys, dict)
         self.assertIsInstance(self.encryption_keys_handler.private_key, rsa.RSAPrivateKey)
         self.assertIsInstance(self.encryption_keys_handler.public_key, rsa.RSAPublicKey)

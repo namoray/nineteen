@@ -14,8 +14,8 @@ async def get_public_key(config: Config = Depends(get_config)):
     return PublicKeyResponse(
         public_key=config.encryption_keys_handler.public_bytes.decode(),
         timestamp=time.time(),
-        hotkey=config.encryption_keys_handler.hotkey,
-        signature=signatures.sign_message(f"{time.time()}{config.encryption_keys_handler.hotkey}"),
+        hotkey=config.keypair.ss58_address,
+        signature=signatures.sign_message(config.keypair, f"{time.time()}{config.encryption_keys_handler.hotkey}"),
     )
 
 

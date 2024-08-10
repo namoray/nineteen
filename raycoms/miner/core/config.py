@@ -9,6 +9,7 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from typing import TypeVar
 from raycoms.miner.security import key_management
+from raycoms.miner.core import miner_constants as mcst
 from raycoms import keypair_utils
 from pydantic import BaseModel
 
@@ -42,6 +43,6 @@ def factory_config() -> Config:
     hotkey = "TODO: ALLOW THIS TO BE PASSED IN SOMEHOW"
     storage_encryption_key = os.getenv("STORAGE_ENCRYPTION_KEY")
     if storage_encryption_key is None:
-        storage_encryption_key = _derive_key_from_string(storage_encryption_key)
+        storage_encryption_key = _derive_key_from_string(mcst.DEFAULT_ENCRYPTION_STRING)
     encryption_keys_handler = key_management.EncryptionKeysHandler(nonce_manager, hotkey, storage_encryption_key)
     return Config(encryption_keys_handler=encryption_keys_handler, keypair=keypair)

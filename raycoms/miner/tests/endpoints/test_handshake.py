@@ -26,9 +26,12 @@ class TestHandshake(unittest.TestCase):
         self.mock_config.encryption_keys_handler = self.mock_encryption_keys_handler
 
         self.mock_encryption_keys_handler.public_bytes = b"mock_public_key"
-        self.mock_encryption_keys_handler.hotkey = "mock_hotkey"
         self.mock_encryption_keys_handler.nonce_manager = NonceManager()
         self.mock_encryption_keys_handler.private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+
+                self.mock_config.keypair = Mock()
+        self.mock_config.keypair.hotkey = "test_hotkey"
+        
 
     @patch("raycoms.miner.core.config.factory_config")
     @patch("raycoms.miner.security.signatures.sign_message")
@@ -45,7 +48,7 @@ class TestHandshake(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertEqual(data["public_key"], self.mock_encryption_keys_handler.public_bytes.decode())
-        self.assertEqual(data["hotkey"], self.mock_encryption_keys_handler.hotkey)
+        self.assertEqual(data["hotkey"], self.mock_config.keypair.hotkey)
         self.assertEqual(data["signature"], "mock_signature")
         self.assertIn("timestamp", data)
 

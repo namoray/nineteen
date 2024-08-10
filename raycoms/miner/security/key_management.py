@@ -13,7 +13,6 @@ from raycoms.miner.core import miner_constants as mcst
 
 class EncryptionKeysHandler:
     def __init__(self, nonce_manager: NonceManager, hotkey: str, storage_encryption_key: str):
-        self.hotkey = hotkey
         self.nonce_manager = nonce_manager
         self.fernet = Fernet(storage_encryption_key)
         self.symmetric_keys: dict[str, dict[str, SymmetricKeyInfo]] = {}

@@ -1,12 +1,13 @@
 import json
+from pathlib import Path
 from substrateinterface import Keypair
 from raycoms.logging_utils import get_logger
 
 logger = get_logger(__name__)
 
 
-def construct_wallet_path(wallet_name: str, hotkey_name: str) -> str:
-    return f"/root/.bittensor/wallets/{wallet_name}/hotkeys/{hotkey_name}"
+def construct_wallet_path(wallet_name: str, hotkey_name: str) -> Path:
+    return Path.home() / ".bittensor" / "wallets" / wallet_name / "hotkeys" / hotkey_name
 
 
 def load_keypair_from_file(file_path: str):
