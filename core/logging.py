@@ -33,16 +33,6 @@ class ColoredFormatter(logging.Formatter):
         return message
 
 
-class StreamlitHandler(logging.Handler):
-    def __init__(self, string_io):
-        super().__init__()
-        self.string_io = string_io
-
-    def emit(self, record):
-        log_entry = self.format(record)
-        self.string_io.write(log_entry + "\n")
-
-
 @lru_cache(maxsize=None)
 def get_logger(name: str):
     logger = logging.getLogger(name.split(".")[-1])

@@ -66,6 +66,10 @@ async def main() -> None:
     wallet_name = os.getenv("WALLET_NAME", "default")
     hotkey_name = os.getenv("HOTKEY_NAME", "default")
 
+    filepath = utils.construct_wallet_path(wallet_name, hotkey_name)
+    keypair = utils.load_keypair_from_file(filepath)
+
+
     redis_db = Redis(host="redis")
     run_once = os.getenv("RUN_ONCE", "false").lower() == "true"
 
@@ -78,8 +82,7 @@ async def main() -> None:
         cst.SIGNING_DENDRITE_QUEUE_KEY,
         json.dumps(starting_signing_service_data.to_dict()),
     )
-    filepath = utils.construct_wallet_path(wallet_name, hotkey_name)
-    keypair = utils.load_keypair_from_file(filepath)
+
 
     tasks = [
         post_and_refresh_public_key_info(redis_db, keypair, run_once),

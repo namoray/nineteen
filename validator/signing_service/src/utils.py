@@ -57,10 +57,6 @@ def construct_wallet_path(wallet_name: str, hotkey_name: str) -> str:
     return f"/root/.bittensor/wallets/{wallet_name}/hotkeys/{hotkey_name}"
 
 
-def construct_signed_message_key(job_id: str) -> str:
-    return f"{cst.SIGNED_MESSAGES_KEY}:{job_id}"
-
-
 def load_keypair_from_file(file_path: str):
     try:
         with open(file_path, "r") as file:
@@ -70,3 +66,7 @@ def load_keypair_from_file(file_path: str):
         return keypair
     except Exception as e:
         raise ValueError(f"Failed to load keypair: {str(e)}")
+
+
+def construct_signed_message_key(job_id: str) -> str:
+    return f"{cst.SIGNED_MESSAGES_KEY}:{job_id}"
