@@ -2,7 +2,7 @@ from functools import partial
 from fastapi import Depends
 
 from fibre.miner.security.encryption import decrypt_general_payload
-from fibre.chain_interface.models import base_models
+from core.models import base_models
 from fastapi.routing import APIRouter
 
 

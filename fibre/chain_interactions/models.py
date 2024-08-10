@@ -6,10 +6,8 @@ from typing import List, Dict, Optional, Any, Union
 
 from scalecodec.utils.ss58 import ss58_encode
 from scalecodec import ScaleBytes
-
-import bittensor
-
-from fibre.chain_interface.chain_interface import create_scale_object
+from fibre.chain_interactions.interface import create_scale_object
+from fibre import constants as fcst
 
 U16_MAX = 65535
 RAOPERTAO = 1e9
@@ -32,8 +30,8 @@ class Balance:
         tao: A float property that gives the balance in tao units.
     """
 
-    unit: str = bittensor.__tao_symbol__  # This is the tao unit
-    rao_unit: str = bittensor.__rao_symbol__  # This is the rao unit
+    unit: str = fcst.TAO_SYMBOL
+    rao_unit: str = fcst.RAO_SYMBOL
     rao: int
     tao: float
 
@@ -346,10 +344,10 @@ class NeuronInfoLite:
     @classmethod
     def fix_decoded_values(cls, neuron_info_decoded: Any) -> "NeuronInfoLite":
         """Fixes the values of the NeuronInfoLite object."""
-        neuron_info_decoded["hotkey"] = ss58_encode(neuron_info_decoded["hotkey"], bittensor.__ss58_format__)
-        neuron_info_decoded["coldkey"] = ss58_encode(neuron_info_decoded["coldkey"], bittensor.__ss58_format__)
+        neuron_info_decoded["hotkey"] = ss58_encode(neuron_info_decoded["hotkey"], fcst.SS58_FORMAT)
+        neuron_info_decoded["coldkey"] = ss58_encode(neuron_info_decoded["coldkey"], fcst.SS58_FORMAT)
         stake_dict = {
-            ss58_encode(coldkey, bittensor.__ss58_format__): Balance.from_rao(int(stake))
+            ss58_encode(coldkey, fcst.SS58_FORMAT): Balance.from_rao(int(stake))
             for coldkey, stake in neuron_info_decoded["stake"]
         }
         neuron_info_decoded["stake_dict"] = stake_dict

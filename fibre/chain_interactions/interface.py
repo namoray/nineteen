@@ -1,13 +1,13 @@
 from typing import Any, TypedDict
 from substrateinterface import SubstrateInterface
-from fibre.chain_interface import type_registry
+from fibre.chain_interactions import type_registry
 import scalecodec
 from scalecodec.base import RuntimeConfiguration
 from scalecodec.type_registry import load_type_registry_preset
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-from fibre.chain_interface.models import Node
-from fibre.chain_interface import models
+from fibre.chain_interactions.models import Node
+from fibre.chain_interactions import models
 
 
 class ParamWithTypes(TypedDict):
