@@ -1,6 +1,6 @@
 import base64
 import time
-from fastapi import APIRouter, Depends, FastAPI, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding
 
@@ -9,10 +9,7 @@ from raycoms.miner.core.dependencies import get_config
 from raycoms.miner.core.models.encryption import PublicKeyResponse, SymmetricKeyExchange
 from raycoms.miner.security import signatures
 
-app = FastAPI()
 
-
-@app.get("/public_key")
 async def get_public_key(config: Config = Depends(get_config)):
     return PublicKeyResponse(
         public_key=config.encryption_keys_handler.public_bytes.decode(),
@@ -22,7 +19,6 @@ async def get_public_key(config: Config = Depends(get_config)):
     )
 
 
-@app.post("/exchange_symmetric_key")
 async def exchange_symmetric_key(payload: SymmetricKeyExchange, config: Config = Depends(get_config)):
     if not signatures.verify_signature(
         message=f"{payload.timestamp}{payload.hotkey}",
@@ -49,6 +45,6 @@ async def exchange_symmetric_key(payload: SymmetricKeyExchange, config: Config =
 
 def factory_router() -> APIRouter:
     router = APIRouter()
-    router.add_api_route("/exchange_symmetric_key", exchange_symmetric_key, tags=["handshake"])
-    router.add_api_route("/public_key", get_public_key, tags=["handshake"])
+    router.add_api_route("/public_key", get_public_key, tags=["handshake"], methods=["GET"])
+    router.add_api_route("/exchange_symmetric_key", exchange_symmetric_key, tags=["handshake"], methods=["POST"])
     return router
