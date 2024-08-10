@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch
-from raycoms.miner.security.nonce_management import NonceManager
-from raycoms.validator import generate_nonce
+from beam.miner.security.nonce_management import NonceManager
+from beam.validator import generate_nonce
 
 
 class TestNonceManager(unittest.TestCase):

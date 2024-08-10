@@ -8,10 +8,10 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding
 
-from raycoms.miner.endpoints.handshake import factory_router
-from raycoms.miner.core.models.encryption import SymmetricKeyExchange
-from raycoms.miner.core.config import Config
-from raycoms.miner.security.nonce_management import NonceManager
+from beam.miner.endpoints.handshake import factory_router
+from beam.miner.core.models.encryption import SymmetricKeyExchange
+from beam.miner.core.config import Config
+from beam.miner.security.nonce_management import NonceManager
 
 
 class TestHandshake(unittest.TestCase):

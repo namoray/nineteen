@@ -9,8 +9,8 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding
 import asyncio
 
-from raycoms.miner.core.models.encryption import SymmetricKeyExchange
-from raycoms.miner.security.encryption import decrypt_symmetric_key_exchange_payload, decrypt_general_payload
+from beam.miner.core.models.encryption import SymmetricKeyExchange
+from beam.miner.security.encryption import decrypt_symmetric_key_exchange_payload, decrypt_general_payload
 
 
 class TestModel(BaseModel):

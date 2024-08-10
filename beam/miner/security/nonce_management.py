@@ -1,5 +1,5 @@
 import time
-from raycoms.miner.core import miner_constants as mcst
+from beam.miner.core import miner_constants as mcst
 
 
 class NonceManager:

@@ -7,10 +7,10 @@ from fastapi import Header
 from typing import Type, TypeVar
 
 from pydantic import BaseModel
-from raycoms.miner.core.dependencies import get_config
-from raycoms.miner.core.models.encryption import SymmetricKeyExchange
-from raycoms.miner.core.models.config import Config
-from raycoms.logging_utils import get_logger
+from beam.miner.core.dependencies import get_config
+from beam.miner.core.models.encryption import SymmetricKeyExchange
+from beam.miner.core.models.config import Config
+from beam.logging_utils import get_logger
 import base64
 
 

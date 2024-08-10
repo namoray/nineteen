@@ -6,9 +6,9 @@ import time
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.fernet import Fernet
-from raycoms.miner.core.models.encryption import SymmetricKeyInfo
-from raycoms.miner.security.nonce_management import NonceManager
-from raycoms.miner.core import miner_constants as mcst
+from beam.miner.core.models.encryption import SymmetricKeyInfo
+from beam.miner.security.nonce_management import NonceManager
+from beam.miner.core import miner_constants as mcst
 
 
 class EncryptionKeysHandler:

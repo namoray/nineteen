@@ -12,9 +12,9 @@ TODO:
 """
 
 from fastapi import FastAPI
-from raycoms.miner.endpoints.subnet import factory_router as subnet_factory_router
-from raycoms.miner.endpoints.handshake import factory_router as handshake_factory_router
-from raycoms.miner.core.config import factory_config
+from beam.miner.endpoints.subnet import factory_router as subnet_factory_router
+from beam.miner.endpoints.handshake import factory_router as handshake_factory_router
+from beam.miner.core.config import factory_config
 from scalar_fastapi import get_scalar_api_reference
 
 

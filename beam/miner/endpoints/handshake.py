@@ -1,11 +1,11 @@
 import time
 from fastapi import APIRouter, Depends, HTTPException
 
-from raycoms.miner.core.config import Config
-from raycoms.miner.core.dependencies import get_config
-from raycoms.miner.core.models.encryption import PublicKeyResponse, SymmetricKeyExchange
-from raycoms.miner.security import signatures
-from raycoms.miner.security.encryption import get_symmetric_key_b64_from_payload
+from beam.miner.core.config import Config
+from beam.miner.core.dependencies import get_config
+from beam.miner.core.models.encryption import PublicKeyResponse, SymmetricKeyExchange
+from beam.miner.security import signatures
+from beam.miner.security.encryption import get_symmetric_key_b64_from_payload
 
 
 async def get_public_key(config: Config = Depends(get_config)):
@@ -42,6 +42,6 @@ async def exchange_symmetric_key(payload: SymmetricKeyExchange, config: Config =
 
 def factory_router() -> APIRouter:
     router = APIRouter(tags=["Handshake"])
-    router.add_api_route("/public-key", get_public_key,  methods=["GET"])
-    router.add_api_route("/exchange-symmetric-key", exchange_symmetric_key,  methods=["POST"])
+    router.add_api_route("/public-encryption-key", get_public_key, methods=["GET"])
+    router.add_api_route("/exchange-symmetric-key", exchange_symmetric_key, methods=["POST"])
     return router

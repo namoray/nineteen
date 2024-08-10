@@ -1,16 +1,16 @@
 from functools import lru_cache
 
-from raycoms.miner.security import nonce_management
+from beam.miner.security import nonce_management
 from dotenv import load_dotenv
 import os
-from raycoms.miner.core.models.config import Config
+from beam.miner.core.models.config import Config
 import base64
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from typing import TypeVar
-from raycoms.miner.security import key_management
-from raycoms.miner.core import miner_constants as mcst
-from raycoms import keypair_utils
+from beam.miner.security import key_management
+from beam.miner.core import miner_constants as mcst
+from beam import keypair_utils
 from pydantic import BaseModel
 
 T = TypeVar("T", bound=BaseModel)

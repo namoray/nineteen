@@ -3,11 +3,11 @@ from unittest.mock import patch, mock_open
 from datetime import datetime, timedelta
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives.asymmetric import rsa
-from raycoms.miner.core.config import _derive_key_from_string
-from raycoms.miner.security.nonce_management import NonceManager
-from raycoms.miner.security.key_management import EncryptionKeysHandler
-from raycoms.miner.core import miner_constants as mcst
-from raycoms.miner.core.models.encryption import SymmetricKeyInfo
+from beam.miner.core.config import _derive_key_from_string
+from beam.miner.security.nonce_management import NonceManager
+from beam.miner.security.key_management import EncryptionKeysHandler
+from beam.miner.core import miner_constants as mcst
+from beam.miner.core.models.encryption import SymmetricKeyInfo
 
 
 class TestKeyHandler(unittest.TestCase):

@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 from substrateinterface import Keypair
-from raycoms.logging_utils import get_logger
+from beam.logging_utils import get_logger
 
 logger = get_logger(__name__)
 
