@@ -5,7 +5,7 @@ from miner.nonce_management import NonceManager
 
 
 class KeyHandler:
-    def __init__(self, nonce_manager: NonceManager, hotkey: str):
+    def __init__(self, nonce_manager: NonceManager, hotkey: str, storage_encryption_key: str):
         self.symmetric_keys: dict[str, dict[str, bytes]] = {}
         self.private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
         self.public_key = self.private_key.public_key()
@@ -15,6 +15,7 @@ class KeyHandler:
         )
         self.hotkey = hotkey
         self.nonce_manager = nonce_manager
+        self.storage_encryption_key = storage_encryption_key
 
     def add_symmetric_key(self, uuid: str, hotkey: str, symmetric_key: bytes) -> None:
         self.symmetric_keys[hotkey] = {uuid: symmetric_key}
