@@ -1,6 +1,6 @@
 import json
 from typing import Any
-import requests
+import aiohttp
 from cryptography.hazmat.backends import default_backend
 from beam.miner.core.models import encryption
 from cryptography.hazmat.bindings._rust import openssl as rust_openssl
@@ -15,11 +15,12 @@ from beam import constants as bcst
 from cryptography.fernet import Fernet
 
 
-def perform_handshake(
+async def perform_handshake(
+    aio_client: aiohttp.ClientSession,
     server_address: str,
     keypair: Keypair,
 ):
-    public_key_encryption_key = get_public_encryption_key(server_address)
+    public_key_encryption_key = await get_public_encryption_key(aio_client, server_address)
 
     symmetric_key: bytes = os.urandom(32)
     symmetric_key_uuid: str = os.urandom(16).hex()
@@ -35,24 +36,28 @@ def perform_handshake(
     return symmetric_key, symmetric_key_uuid
 
 
-def get_public_encryption_key(server_address: str) -> X25519PublicKey:
-    response = requests.get(f"{server_address}/{bcst.PUBLIC_ENCRYPTION_KEY_ENDPOINT}")
-    if response.status_code == 200:
-        data = encryption.PublicKeyResponse(**response.json())
-        public_key_pem = data.public_key.encode()
-        public_key_encryption_key = rust_openssl.keys.load_pem_public_key(public_key_pem, backend=default_backend())
-        return public_key_encryption_key
-    else:
-        raise Exception(f"Failed to get public key: {response.text}")
+async def get_public_encryption_key(
+    aio_client: aiohttp.ClientSession, server_address: str, timeout: int = 3
+) -> X25519PublicKey:
+    async with aio_client.get(f"{server_address}/{bcst.PUBLIC_ENCRYPTION_KEY_ENDPOINT}", timeout=timeout) as response:
+        if response.status == 200:
+            data = encryption.PublicKeyResponse(**(await response.json()))
+            public_key_pem = data.public_key.encode()
+            public_key_encryption_key = rust_openssl.keys.load_pem_public_key(public_key_pem, backend=default_backend())
+            return public_key_encryption_key
+        else:
+            raise Exception(f"Failed to get public key: {await response.text()}")
 
 
-def exchange_symmetric_key(
+async def exchange_symmetric_key(
+    aio_client: aiohttp.ClientSession,
     server_address: str,
     keypair: Keypair,
     public_key_encryption_key: X25519PublicKey,
     symmetric_key: bytes,
     symmetric_key_uuid: str,
-) -> tuple[bytes, str]:
+    timeout: int = 3,
+) -> bool:
     payload = {
         "encrypted_symmetric_key": base64.b64encode(
             public_key_encrypt(public_key_encryption_key, symmetric_key)
@@ -64,14 +69,10 @@ def exchange_symmetric_key(
         "signature": signatures.sign_message(keypair, signatures.construct_public_key_message_to_sign()),
     }
 
-    response: requests.Response = requests.post(
-        f"{server_address}/{bcst.EXCHANGE_SYMMETRIC_KEY_ENDPOINT}", json=payload, timeout=1
-    )
-
-    if response.status_code == 200:
-        return True
-    else:
-        raise Exception(f"Failed to exchange symmetric key: {response.text}")
+    async with aio_client.post(
+        f"{server_address}/{bcst.EXCHANGE_SYMMETRIC_KEY_ENDPOINT}", json=payload, timeout=timeout
+    ) as response:
+        return response.status == 200
 
 
 def get_encrypted_payload(
