@@ -15,8 +15,8 @@ from pydantic import BaseModel
 
 T = TypeVar("T", bound=BaseModel)
 
-# Have this path passed in?
-load_dotenv(dotenv_path=".miner.env", verbose=True)
+# TODO: Have this path passed in?
+load_dotenv()
 
 
 def _derive_key_from_string(input_string: str, salt: bytes = b"salt_") -> bytes:

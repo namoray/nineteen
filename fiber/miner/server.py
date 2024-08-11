@@ -9,35 +9,21 @@ TODO:
 """
 
 from fastapi import FastAPI
-from fiber.miner.endpoints.subnet import factory_router as subnet_factory_router
 from fiber.miner.endpoints.handshake import factory_router as handshake_factory_router
-from fiber.miner.core.config import factory_config
 from scalar_fastapi import get_scalar_api_reference
 
 
-def factory_app() -> FastAPI:
+def factory_app(scalar_doc: bool = True) -> FastAPI:
     app = FastAPI()
 
-    subnet_router = subnet_factory_router()
+    if scalar_doc:
+
+        async def scalar_html():
+            return get_scalar_api_reference(openapi_url=app.openapi_url, title=app.title)
+
+        app.add_api_route("/doc", scalar_html, include_in_schema=False)
+
     handshake_router = handshake_factory_router()
-    app.include_router(subnet_router)
     app.include_router(handshake_router)
 
     return app
-
-
-app = factory_app()
-
-
-@app.get("/scalar", include_in_schema=False)
-async def scalar_html():
-    return get_scalar_api_reference(openapi_url=app.openapi_url, title=app.title)
-
-
-if __name__ == "__main__":
-    import uvicorn
-
-    # Caching some configuration
-    factory_config()
-
-    uvicorn.run(app, host="127.0.0.1", port=7999)

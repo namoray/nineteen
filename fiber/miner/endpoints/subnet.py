@@ -1,21 +1,28 @@
+"""
+THIS IS AN EXAMPLE FILE OF A SUBNET ENDPOINT!
+
+PLEASE IMPLEMENT YOUR OWN :)
+"""
+
 from functools import partial
 from fastapi import Depends
+from pydantic import BaseModel
 
 from fiber.miner.security.encryption import decrypt_general_payload
-from core.models import base_models
 from fastapi.routing import APIRouter
 
 
-async def text_to_speech(
-    decrypted_payload: base_models.TextToSpeechRequest = Depends(
-        partial(decrypt_general_payload, base_models.TextToSpeechRequest)
-    ),
+class ExampleSubnetRequest(BaseModel):
+    pass
+
+
+async def example_subnet_request(
+    decrypted_payload: ExampleSubnetRequest = Depends(partial(decrypt_general_payload, ExampleSubnetRequest)),
 ):
-    print(decrypted_payload)
-    return {"status": "Text-to-speech request received"}
+    return {"status": "Example request received"}
 
 
 def factory_router() -> APIRouter:
     router = APIRouter()
-    router.add_api_route("/text-to-speech", text_to_speech, tags=["Subnet"], methods=["POST"])
+    router.add_api_route("/example-subnet-request", example_subnet_request, tags=["Example"], methods=["POST"])
     return router
