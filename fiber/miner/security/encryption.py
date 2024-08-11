@@ -55,6 +55,11 @@ def decrypt_general_payload(
     hotkey: str = Header(...),
     config: Config = Depends(get_config),
 ) -> T:
+    """
+    TODO: Add handling when the symmetric key is incorrect.
+    Also, we should probably keep track of the Fernets and pass them in,
+    so we're not re-creating them every time. key uuid to fernet
+    """
     logger.debug(f"Symmetric keys: {config.encryption_keys_handler.symmetric_keys}")
     symmetric_key = config.encryption_keys_handler.get_symmetric_key(hotkey, key_uuid)
     if not symmetric_key:
