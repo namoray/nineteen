@@ -1,12 +1,12 @@
 from scalecodec.base import RuntimeConfiguration
 from scalecodec.type_registry import load_type_registry_preset
-from fibre.chain_interactions import type_registries
+from fiber.chain_interactions import type_registries
 from scalecodec import ScaleBytes, ScaleType
 import json
 from pathlib import Path
 from substrateinterface import Keypair
-from fibre.logging_utils import get_logger
-from fibre.chain_interactions import chain_utils as chain_utils
+from fiber.logging_utils import get_logger
+from fiber.chain_interactions import chain_utils as chain_utils
 
 logger = get_logger(__name__)
 

@@ -2,7 +2,7 @@ import json
 from typing import Any
 
 import httpx
-from fibre import constants as bcst
+from fiber import constants as bcst
 from cryptography.fernet import Fernet
 
 

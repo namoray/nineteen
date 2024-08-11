@@ -1,5 +1,5 @@
 import time
-from fibre.miner.core import miner_constants as mcst
+from fiber.miner.core import miner_constants as mcst
 
 
 class NonceManager:

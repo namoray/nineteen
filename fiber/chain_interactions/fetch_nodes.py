@@ -4,13 +4,13 @@ import scalecodec
 
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-from fibre.chain_interactions import models
-from fibre.chain_interactions import chain_utils as chain_utils
-from fibre import constants as fcst
+from fiber.chain_interactions import models
+from fiber.chain_interactions import chain_utils as chain_utils
+from fiber import constants as fcst
 
 import netaddr
 from scalecodec.utils.ss58 import ss58_encode
-from fibre.chain_interactions import type_registries
+from fiber.chain_interactions import type_registries
 
 
 def _normalise_u16_float(x: int) -> float:

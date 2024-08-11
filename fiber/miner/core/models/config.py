@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from fibre.miner.security import key_management
+from fiber.miner.security import key_management
 from substrateinterface import Keypair
 
 @dataclass

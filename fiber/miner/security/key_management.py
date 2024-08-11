@@ -6,9 +6,9 @@ import time
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.fernet import Fernet
-from fibre.miner.core.models.encryption import SymmetricKeyInfo
-from fibre.miner.security.nonce_management import NonceManager
-from fibre.miner.core import miner_constants as mcst
+from fiber.miner.core.models.encryption import SymmetricKeyInfo
+from fiber.miner.security.nonce_management import NonceManager
+from fiber.miner.core import miner_constants as mcst
 
 
 class EncryptionKeysHandler:

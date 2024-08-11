@@ -3,8 +3,8 @@ from tenacity import retry
 from substrateinterface import Keypair, SubstrateInterface
 from scalecodec import ScaleType
 from scalecodec.types import GenericExtrinsic
-from fibre import constants as fcst
-from fibre.logging_utils import get_logger
+from fiber import constants as fcst
+from fiber.logging_utils import get_logger
 
 from tenacity import stop_after_attempt, wait_exponential
 from functools import wraps

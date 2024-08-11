@@ -9,8 +9,8 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding
 import asyncio
 
-from fibre.miner.core.models.encryption import SymmetricKeyExchange
-from fibre.miner.security.encryption import decrypt_symmetric_key_exchange_payload, decrypt_general_payload
+from fiber.miner.core.models.encryption import SymmetricKeyExchange
+from fiber.miner.security.encryption import decrypt_symmetric_key_exchange_payload, decrypt_general_payload
 
 
 class TestModel(BaseModel):

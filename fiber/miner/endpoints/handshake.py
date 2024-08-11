@@ -1,11 +1,11 @@
 import time
 from fastapi import APIRouter, Depends, HTTPException
 
-from fibre.miner.core.config import Config
-from fibre.miner.core.dependencies import get_config
-from fibre.miner.core.models.encryption import PublicKeyResponse, SymmetricKeyExchange
-from fibre.miner.security import signatures
-from fibre.miner.security.encryption import get_symmetric_key_b64_from_payload
+from fiber.miner.core.config import Config
+from fiber.miner.core.dependencies import get_config
+from fiber.miner.core.models.encryption import PublicKeyResponse, SymmetricKeyExchange
+from fiber.miner.security import signatures
+from fiber.miner.security.encryption import get_symmetric_key_b64_from_payload
 
 
 async def get_public_key(config: Config = Depends(get_config)):

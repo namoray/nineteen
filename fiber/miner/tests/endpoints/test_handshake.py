@@ -8,10 +8,10 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding
 
-from fibre.miner.endpoints.handshake import factory_router
-from fibre.miner.core.models.encryption import SymmetricKeyExchange
-from fibre.miner.core.config import Config
-from fibre.miner.security.nonce_management import NonceManager
+from fiber.miner.endpoints.handshake import factory_router
+from fiber.miner.core.models.encryption import SymmetricKeyExchange
+from fiber.miner.core.config import Config
+from fiber.miner.security.nonce_management import NonceManager
 
 
 class TestHandshake(unittest.TestCase):
