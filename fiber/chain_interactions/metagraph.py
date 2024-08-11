@@ -39,12 +39,19 @@ class Metagraph:
     def periodically_sync_nodes(self) -> None:
         logger.info("Periodically syncing nodes...")
 
+        # This is here in the case of loading nodes initially.
+        # Don't move into the while loop, lest we sync after
+        # a stop event
+        if self.is_in_sync:
+            logger.info("Metagraph is in sync, waiting 5 mins... 💤")
+            self.stop_event.wait(60 * 5)
+
         while not self.stop_event.is_set():
+            self.sync_nodes()
+            self.is_in_sync = True
             if self.is_in_sync:
                 logger.info("Metagraph is in sync, waiting 5 mins... 💤")
                 self.stop_event.wait(60 * 5)
-            self.sync_nodes()
-            self.is_in_sync = True
 
     def sync_nodes(self) -> None:
         logger.info("Syncing nodes...")
@@ -65,7 +72,7 @@ class Metagraph:
                 json.dump(nodes_as_dict, f)
         else:
             logger.warning(f"Loading old nodes is not enabled, so I wont save the {len(self.nodes)} nodes I have")
- 
+
     def load_nodes(self) -> None:
         logger.info(f"Loading nodes from {fcst.SAVE_NODES_FILEPATH}")
         try:
