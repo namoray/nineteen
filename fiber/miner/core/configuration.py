@@ -1,5 +1,6 @@
 from functools import lru_cache
 
+from fiber.chain_interactions.metagraph import Metagraph
 from fiber.miner.security import nonce_management
 from dotenv import load_dotenv
 import os
@@ -11,6 +12,7 @@ from typing import TypeVar
 from fiber.miner.security import key_management
 from fiber.miner.core import miner_constants as mcst
 from fiber.chain_interactions import chain_utils
+from fiber.chain_interactions import interface
 from pydantic import BaseModel
 
 T = TypeVar("T", bound=BaseModel)
@@ -36,12 +38,29 @@ def factory_config() -> Config:
 
     wallet_name = os.getenv("WALLET_NAME", "default")
     hotkey_name = os.getenv("HOTKEY_NAME", "default")
+    netuid = os.getenv("NETUID")
+    chain_network = os.getenv("CHAIN_NETWORK")
+    chain_address = os.getenv("CHAIN_ADDRESS")
+    load_old_nodes = bool(os.getenv("LOAD_OLD_NODES", True))
+    min_stake_threshold = int(os.getenv("MIN_STAKE_THRESHOLD", 1_000))
+
+    substrate_interface = interface.get_substrate_interface(chain_network, chain_address)
+    metagraph = Metagraph(substrate_interface=substrate_interface, netuid=netuid, load_old_nodes=load_old_nodes)
+
+    if netuid is None:
+        raise ValueError("Must set NETUID env var please x)")
 
     keypair = chain_utils.load_keypair(wallet_name, hotkey_name)
 
-    hotkey = "TODO: ALLOW THIS TO BE PASSED IN SOMEHOW"
     storage_encryption_key = os.getenv("STORAGE_ENCRYPTION_KEY")
     if storage_encryption_key is None:
         storage_encryption_key = _derive_key_from_string(mcst.DEFAULT_ENCRYPTION_STRING)
-    encryption_keys_handler = key_management.EncryptionKeysHandler(nonce_manager, hotkey, storage_encryption_key)
-    return Config(encryption_keys_handler=encryption_keys_handler, keypair=keypair)
+
+    encryption_keys_handler = key_management.EncryptionKeysHandler(nonce_manager, storage_encryption_key)
+
+    return Config(
+        encryption_keys_handler=encryption_keys_handler,
+        keypair=keypair,
+        metagraph=metagraph,
+        min_stake_threshold=min_stake_threshold,
+    )

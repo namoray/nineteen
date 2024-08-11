@@ -1,8 +1,8 @@
 import time
 from fastapi import APIRouter, Depends, HTTPException
 
-from fiber.miner.core.config import Config
-from fiber.miner.core.dependencies import get_config
+from fiber.miner.core.configuration import Config
+from fiber.miner.core.dependencies import get_config, blacklist_low_stake
 from fiber.miner.core.models.encryption import PublicKeyResponse, SymmetricKeyExchange
 from fiber.miner.security import signatures
 from fiber.miner.security.encryption import get_symmetric_key_b64_from_payload
@@ -20,7 +20,9 @@ async def get_public_key(config: Config = Depends(get_config)):
     )
 
 
-async def exchange_symmetric_key(payload: SymmetricKeyExchange, config: Config = Depends(get_config)):
+async def exchange_symmetric_key(
+    payload: SymmetricKeyExchange, config: Config = Depends(get_config), _=Depends(blacklist_low_stake)
+):
     if not signatures.verify_signature(
         message=signatures.construct_public_key_message_to_sign(),
         ss58_address=payload.ss58_address,

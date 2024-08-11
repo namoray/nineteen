@@ -7,31 +7,31 @@ from fiber import constants as fcst
 logger = get_logger(__name__)
 
 
-def _get_chain_endpoint(chain_network: str | None, chain_endpoint: str | None) -> str:
-    if chain_network is None and chain_endpoint is None:
-        raise ValueError("chain_network and chain_endpoint cannot both be None")
+def _get_chain_endpoint(chain_network: str | None, chain_address: str | None) -> str:
+    if chain_network is None and chain_address is None:
+        raise ValueError("chain_network and chain_address cannot both be None")
 
-    if chain_endpoint is not None:
-        logger.info(f"Using chain endpoint: {chain_endpoint}")
-        return chain_endpoint
+    if chain_address is not None:
+        logger.info(f"Using chain address: {chain_address}")
+        return chain_address
 
     if chain_network not in fcst.CHAIN_NETWORK_TO_CHAIN_ADDRESS:
         raise ValueError(f"Unrecognized chain network: {chain_network}")
 
-    chain_endpoint = fcst.CHAIN_NETWORK_TO_CHAIN_ADDRESS[chain_network]
-    logger.info(f"Using the chain network: {chain_network} and therefore chain endpoint: {chain_endpoint}")
-    return chain_endpoint
+    chain_address = fcst.CHAIN_NETWORK_TO_CHAIN_ADDRESS[chain_network]
+    logger.info(f"Using the chain network: {chain_network} and therefore chain address: {chain_address}")
+    return chain_address
 
 
 def get_substrate_interface(
-    chain_network: str | None = fcst.FINNEY_NETWORK, chain_endpoint: str | None = None
+    chain_network: str | None = fcst.FINNEY_NETWORK, chain_address: str | None = None
 ) -> SubstrateInterface:
-    chain_endpoint = _get_chain_endpoint(chain_network, chain_endpoint)
+    chain_address = _get_chain_endpoint(chain_network, chain_address)
 
     type_registry = type_registries.get_type_registry()
     substrate_interface = SubstrateInterface(
-        ss58_format=42, use_remote_preset=True, url=chain_endpoint, type_registry=type_registry
+        ss58_format=42, use_remote_preset=True, url=chain_address, type_registry=type_registry
     )
-    logger.info(f"Connected to {chain_endpoint}")
+    logger.info(f"Connected to {chain_address}")
 
     return substrate_interface

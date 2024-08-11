@@ -1,6 +1,7 @@
 """
 TODO:
 - Add metagraph for miner so it can check validators are in the metagraph and their stake
+- Miners to store the fernet keys instead of symmetric keys
 - add the blacklist functionality. Middleware?
 - ADD A 'POST DETAILS TO CHAIN' METHOD FOR MINERS TO POST THEIR AXON DETAILS TO THE CHAIN
 - INTEGRATE THIS NEW WAY OF DOING THINGS INTO THE SUBNET CODE, BYE BYE SYNAPSES AND DENDRITES
@@ -8,13 +9,33 @@ TODO:
 - THEN TEST motha
 """
 
+from contextlib import asynccontextmanager
+import threading
 from fastapi import FastAPI
 from fiber.miner.endpoints.handshake import factory_router as handshake_factory_router
+from fiber.miner.core import configuration
 from scalar_fastapi import get_scalar_api_reference
+from fiber.logging_utils import get_logger
+
+logger = get_logger(__name__)
 
 
 def factory_app(scalar_doc: bool = True) -> FastAPI:
-    app = FastAPI()
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        config = configuration.factory_config()
+        metagraph = config.metagraph
+        sync_thread = threading.Thread(target=metagraph.periodically_sync_nodes, daemon=True)
+        sync_thread.start()
+
+        yield
+
+        logger.info("Shutting down...")
+
+        metagraph.shutdown()
+        sync_thread.join()
+
+    app = FastAPI(lifespan=lifespan)
 
     if scalar_doc:
 
@@ -27,3 +48,4 @@ def factory_app(scalar_doc: bool = True) -> FastAPI:
     app.include_router(handshake_router)
 
     return app
+ 

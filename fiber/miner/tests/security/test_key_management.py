@@ -3,7 +3,7 @@ from unittest.mock import patch, mock_open
 from datetime import datetime, timedelta
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives.asymmetric import rsa
-from fiber.miner.core.config import _derive_key_from_string
+from fiber.miner.core.configuration import _derive_key_from_string
 from fiber.miner.security.nonce_management import NonceManager
 from fiber.miner.security.key_management import EncryptionKeysHandler
 from fiber.miner.core import miner_constants as mcst

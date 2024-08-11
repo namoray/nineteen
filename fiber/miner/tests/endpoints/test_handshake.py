@@ -10,7 +10,7 @@ from cryptography.hazmat.primitives.asymmetric import padding
 
 from fiber.miner.endpoints.handshake import factory_router
 from fiber.miner.core.models.encryption import SymmetricKeyExchange
-from fiber.miner.core.config import Config
+from fiber.miner.core.configuration import Config
 from fiber.miner.security.nonce_management import NonceManager
 
 
