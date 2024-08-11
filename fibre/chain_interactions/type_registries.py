@@ -1,4 +1,7 @@
-type_registry = {
+from typing import Any
+
+
+TYPE_REGISTERY = {
     "types": {
         "Balance": "u64",  # Need to override default u128
     },
@@ -113,7 +116,7 @@ type_registry = {
 }
 
 
-custom_rpc_type_registry = {
+CUSTOM_TYPE_REGISTRY = {
     "types": {
         "SubnetInfo": {
             "type": "struct",
@@ -279,3 +282,11 @@ custom_rpc_type_registry = {
         },
     }
 }
+
+
+def get_type_registry() -> dict[str, dict[str, Any]]:
+    return TYPE_REGISTERY
+
+
+def get_custom_type_registry() -> dict[str, dict[str, Any]]:
+    return CUSTOM_TYPE_REGISTRY

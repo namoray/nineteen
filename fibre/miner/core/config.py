@@ -10,7 +10,7 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from typing import TypeVar
 from fibre.miner.security import key_management
 from fibre.miner.core import miner_constants as mcst
-from fibre import keypair_utils
+from fibre.chain_interactions import chain_utils
 from pydantic import BaseModel
 
 T = TypeVar("T", bound=BaseModel)
@@ -37,8 +37,7 @@ def factory_config() -> Config:
     wallet_name = os.getenv("WALLET_NAME", "default")
     hotkey_name = os.getenv("HOTKEY_NAME", "default")
 
-    filepath = keypair_utils.construct_wallet_path(wallet_name, hotkey_name)
-    keypair = keypair_utils.load_keypair_from_file(filepath)
+    keypair = chain_utils.load_keypair(wallet_name, hotkey_name)
 
     hotkey = "TODO: ALLOW THIS TO BE PASSED IN SOMEHOW"
     storage_encryption_key = os.getenv("STORAGE_ENCRYPTION_KEY")

@@ -4,5 +4,16 @@ SYMMETRIC_KEY_UUID = "symmetric-key-uuid"
 SS58_ADDRESS = "ss58-address"
 NEURON_INFO_LITE = "NeuronInfoLite"
 
+FINNEY_NETWORK = "finney"
+FINNEY_TEST_NETWORK = "test"
+FINNEY_CHAIN_ADDRESS = "wss://entrypoint-finney.opentensor.ai:443"
+FINNEY_TEST_CHAIN_ADDRESS = "wss://test.finney.opentensor.ai:443/"
+
+CHAIN_NETWORK_TO_CHAIN_ADDRESS = {
+    FINNEY_NETWORK: FINNEY_CHAIN_ADDRESS,
+    FINNEY_TEST_NETWORK: FINNEY_TEST_CHAIN_ADDRESS,
+}
+
+
 SS58_FORMAT = 42
 U16_MAX = 65535

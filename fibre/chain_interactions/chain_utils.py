@@ -1,16 +1,21 @@
 from scalecodec.base import RuntimeConfiguration
 from scalecodec.type_registry import load_type_registry_preset
-from fibre.chain_interactions import type_registry
+from fibre.chain_interactions import type_registries
 from scalecodec import ScaleBytes, ScaleType
+import json
+from pathlib import Path
+from substrateinterface import Keypair
+from fibre.logging_utils import get_logger
+from fibre.chain_interactions import chain_utils as chain_utils
 
-
-from fibre.chain_interactions import utils as chain_utils
+logger = get_logger(__name__)
 
 
 def create_scale_object_from_scale_bytes(return_type: str, as_scale_bytes: ScaleBytes) -> ScaleType:
+    custom_rpc_type_registry = type_registries.get_custom_type_registry()
     rpc_runtime_config = RuntimeConfiguration()
     rpc_runtime_config.update_type_registry(load_type_registry_preset("legacy"))
-    rpc_runtime_config.update_type_registry(type_registry.custom_rpc_type_registry)
+    rpc_runtime_config.update_type_registry(custom_rpc_type_registry)
     scale_object = rpc_runtime_config.create_scale_object(return_type, as_scale_bytes)
     return scale_object
 
@@ -43,3 +48,15 @@ def create_scale_object_from_scale_encoding(
     scale_object = chain_utils.create_scale_object_from_scale_bytes(type_string, as_scale_bytes)
 
     return scale_object.decode()
+
+
+def load_keypair(wallet_name: str, hotkey_name: str) -> Keypair:
+    file_path = Path.home() / ".bittensor" / "wallets" / wallet_name / "hotkeys" / hotkey_name
+    try:
+        with open(file_path, "r") as file:
+            keypair_data = json.load(file)
+        keypair = Keypair.create_from_seed(keypair_data["secretSeed"])
+        logger.info(f"Loaded keypair from {file_path}")
+        return keypair
+    except Exception as e:
+        raise ValueError(f"Failed to load keypair: {str(e)}")
