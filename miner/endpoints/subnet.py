@@ -11,7 +11,6 @@ async def text_to_speech(
         partial(decrypt_general_payload, base_models.TextToSpeechRequest)
     ),
 ):
-    print(decrypted_payload)
     return {"status": "Text-to-speech request received"}
 
 

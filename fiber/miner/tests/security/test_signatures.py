@@ -1,7 +1,9 @@
 import unittest
 from substrateinterface import Keypair
 from unittest.mock import patch
+from fiber.logging_utils import get_logger
 
+logger = get_logger(__name__)
 
 def sign_message(keypair: Keypair, message: str) -> str:
     return keypair.sign(message).hex()
@@ -21,7 +23,7 @@ class TestSignatureVerification(unittest.TestCase):
         self.keypair = Keypair.create_from_mnemonic(self.mnemonic)
         self.message = "Test message"
         self.ss58_address = self.keypair.ss58_address
-        print(self.ss58_address)
+        logger.debug(f"SS58 address: {self.ss58_address}")
 
     def test_sign_and_verify(self):
         signature = sign_message(self.keypair, self.message)
