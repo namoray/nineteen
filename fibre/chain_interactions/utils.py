@@ -5,7 +5,6 @@ from scalecodec import ScaleBytes, ScaleType
 
 
 from fibre.chain_interactions import utils as chain_utils
-from fibre.chain_interactions.models import ChainDataType
 
 
 def create_scale_object_from_scale_bytes(return_type: str, as_scale_bytes: ScaleBytes) -> ScaleType:
@@ -18,13 +17,11 @@ def create_scale_object_from_scale_bytes(return_type: str, as_scale_bytes: Scale
 
 def create_scale_object_from_scale_encoding(
     input_: list[int] | bytes | ScaleBytes,
-    type_name: ChainDataType,
+    type_name: str,
     is_vec: bool = False,
     is_option: bool = False,
 ) -> dict | None:
-    type_string = type_name.name
-    if type_name == ChainDataType.DelegatedInfo:
-        type_string = f"({ChainDataType.DelegateInfo.name}, Compact<u64>)"
+    type_string = type_name
     if is_option:
         type_string = f"Option<{type_string}>"
     if is_vec:
