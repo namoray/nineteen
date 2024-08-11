@@ -46,4 +46,3 @@ def factory_app(scalar_doc: bool = True) -> FastAPI:
     app.include_router(handshake_router)
 
     return app
- 

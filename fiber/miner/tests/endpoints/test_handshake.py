@@ -32,8 +32,8 @@ class TestHandshake(unittest.TestCase):
         self.mock_config.keypair = Mock()
         self.mock_config.keypair.hotkey = "test_hotkey"
 
-    @patch("raycoms.miner.core.config.factory_config")
-    @patch("raycoms.miner.security.signatures.sign_message")
+    @patch("fiber.miner.core.config.factory_config")
+    @patch("fiber.miner.security.signatures.sign_message")
     def test_get_public_key(self, mock_sign_message, mock_factory_config):
         # Configure the mock_factory_config
         mock_factory_config.return_value = self.mock_config
@@ -53,8 +53,8 @@ class TestHandshake(unittest.TestCase):
 
         mock_factory_config.assert_called_once()
 
-    @patch("raycoms.miner.security.signatures.verify_signature")
-    @patch("raycoms.miner.core.config.factory_config")
+    @patch("fiber.miner.security.signatures.verify_signature")
+    @patch("fiber.miner.core.config.factory_config")
     def test_exchange_symmetric_key_success(self, mock_factory_config, mock_verify_signature):
         mock_factory_config.return_value = self.mock_config
         mock_verify_signature.return_value = True
@@ -81,8 +81,8 @@ class TestHandshake(unittest.TestCase):
             payload.symmetric_key_uuid, payload.ss58_address, base64.b64encode(symmetric_key).decode()
         )
 
-    @patch("raycoms.miner.security.signatures.verify_signature")
-    @patch("raycoms.miner.core.config.factory_config")
+    @patch("fiber.miner.security.signatures.verify_signature")
+    @patch("fiber.miner.core.config.factory_config")
     def test_exchange_symmetric_key_invalid_signature(self, mock_factory_config, mock_verify_signature):
         mock_factory_config.return_value = self.mock_config
         mock_verify_signature.return_value = False
@@ -101,8 +101,8 @@ class TestHandshake(unittest.TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertIn("invalid signature", response.json()["detail"])
 
-    @patch("raycoms.miner.security.signatures.verify_signature")
-    @patch("raycoms.miner.core.config.factory_config")
+    @patch("fiber.miner.security.signatures.verify_signature")
+    @patch("fiber.miner.core.config.factory_config")
     def test_exchange_symmetric_key_duplicate_nonce(self, mock_factory_config, mock_verify_signature):
         mock_factory_config.return_value = self.mock_config
         mock_verify_signature.return_value = True

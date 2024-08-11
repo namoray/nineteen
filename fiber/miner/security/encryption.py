@@ -56,14 +56,13 @@ def decrypt_general_payload(
     config: Config = Depends(get_config),
 ) -> T:
 
-    logger.debug(f"Symmetric keys: {config.encryption_keys_handler.symmetric_keys}")
-    symmetric_key = config.encryption_keys_handler.get_symmetric_key(hotkey, key_uuid)
-    if not symmetric_key:
+    symmetric_key_info = config.encryption_keys_handler.get_symmetric_key(hotkey, key_uuid)
+    if not symmetric_key_info:
         raise HTTPException(status_code=400, detail="No symmetric key found for that hotkey and uuid")
 
-    f = Fernet(symmetric_key.key)
+
     logger.debug(f"Encrypted payload type: {type(encrypted_payload)}")
-    decrypted_data = f.decrypt(encrypted_payload)
+    decrypted_data = symmetric_key_info.fernet.decrypt(encrypted_payload)
 
     data_dict = json.loads(decrypted_data.decode())
     return model(**data_dict)

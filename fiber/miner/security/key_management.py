@@ -1,3 +1,4 @@
+import base64
 from datetime import datetime
 import json
 import os
@@ -14,8 +15,8 @@ from fiber.miner.core import miner_constants as mcst
 class EncryptionKeysHandler:
     def __init__(self, nonce_manager: NonceManager, storage_encryption_key: str):
         self.nonce_manager = nonce_manager
-        self.fernet = Fernet(storage_encryption_key)
-        self.symmetric_keys: dict[str, dict[str, SymmetricKeyInfo]] = {}
+        self.asymmetric_fernet = Fernet(storage_encryption_key)
+        self.symmetric_keys_fernets: dict[str, dict[str, SymmetricKeyInfo]] = {}
         self.load_asymmetric_keys()
         self.load_symmetric_keys()
 
@@ -23,25 +24,30 @@ class EncryptionKeysHandler:
         self._cleanup_thread: threading.Thread = threading.Thread(target=self._periodic_cleanup, daemon=True)
         self._cleanup_thread.start()
 
-    def add_symmetric_key(self, uuid: str, hotkey: str, symmetric_key: bytes) -> None:
-        symmetric_key_info = SymmetricKeyInfo.create(symmetric_key)
-        if hotkey not in self.symmetric_keys:
-            self.symmetric_keys[hotkey] = {}
-        self.symmetric_keys[hotkey][uuid] = symmetric_key_info
+    def add_symmetric_key(self, uuid: str, hotkey: str, fernet: Fernet) -> None:
+        symmetric_key_info = SymmetricKeyInfo.create(fernet)
+        if hotkey not in self.symmetric_keys_fernets:
+            self.symmetric_keys_fernets[hotkey] = {}
+        self.symmetric_keys_fernets[hotkey][uuid] = symmetric_key_info
 
     def get_symmetric_key(self, hotkey: str, uuid: str) -> SymmetricKeyInfo | None:
-        return self.symmetric_keys.get(hotkey, {}).get(uuid)
+        return self.symmetric_keys_fernets.get(hotkey, {}).get(uuid)
 
     def save_symmetric_keys(self) -> None:
         serializable_keys = {
             hotkey: {
-                uuid: {"key": key_info.key.hex(), "expiration_time": key_info.expiration_time.isoformat()}
+                uuid: {
+                    "key": base64.urlsafe_b64encode(
+                        key_info.fernet._signing_key + key_info.fernet._encryption_key
+                    ).decode(),
+                    "expiration_time": key_info.expiration_time.isoformat(),
+                }
                 for uuid, key_info in keys.items()
             }
-            for hotkey, keys in self.symmetric_keys.items()
+            for hotkey, keys in self.symmetric_keys_fernets.items()
         }
         json_data = json.dumps(serializable_keys)
-        encrypted_data = self.fernet.encrypt(json_data.encode())
+        encrypted_data = self.asymmetric_fernet.encrypt(json_data.encode())
 
         with open(mcst.SYMMETRIC_KEYS_FILENAME, "wb") as file:
             file.write(encrypted_data)
@@ -51,26 +57,26 @@ class EncryptionKeysHandler:
             with open(mcst.SYMMETRIC_KEYS_FILENAME, "rb") as f:
                 encrypted_data = f.read()
 
-            decrypted_data = self.fernet.decrypt(encrypted_data)
+            decrypted_data = self.asymmetric_fernet.decrypt(encrypted_data)
             loaded_keys: dict[str, dict[str, str]] = json.loads(decrypted_data.decode())
 
-            self.symmetric_keys = {
+            self.symmetric_keys_fernets = {
                 hotkey: {
-                    uuid: SymmetricKeyInfo(
-                        bytes.fromhex(key_data["key"]), datetime.fromisoformat(key_data["expiration_time"])
-                    )
+                    uuid: SymmetricKeyInfo(Fernet(key_data["key"]), datetime.fromisoformat(key_data["expiration_time"]))
                     for uuid, key_data in keys.items()
                 }
                 for hotkey, keys in loaded_keys.items()
             }
 
     def _clean_expired_keys(self) -> None:
-        for hotkey in list(self.symmetric_keys.keys()):
-            self.symmetric_keys[hotkey] = {
-                uuid: key_info for uuid, key_info in self.symmetric_keys[hotkey].items() if not key_info.is_expired()
+        for hotkey in list(self.symmetric_keys_fernets.keys()):
+            self.symmetric_keys_fernets[hotkey] = {
+                uuid: key_info
+                for uuid, key_info in self.symmetric_keys_fernets[hotkey].items()
+                if not key_info.is_expired()
             }
-            if not self.symmetric_keys[hotkey]:
-                del self.symmetric_keys[hotkey]
+            if not self.symmetric_keys_fernets[hotkey]:
+                del self.symmetric_keys_fernets[hotkey]
 
     def _periodic_cleanup(self) -> None:
         while self._running:

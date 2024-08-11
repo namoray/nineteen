@@ -1,7 +1,7 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import unittest
-from unittest.mock import Mock, patch
-from fastapi import HTTPException
+from unittest.mock import MagicMock, Mock, patch
+from fastapi import Depends, HTTPException
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives.asymmetric import rsa
 from pydantic import BaseModel
@@ -9,7 +9,8 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding
 import asyncio
 
-from fiber.miner.core.models.encryption import SymmetricKeyExchange
+from fiber.miner.core.models.config import Config
+from fiber.miner.core.models.encryption import SymmetricKeyExchange, SymmetricKeyInfo
 from fiber.miner.security.encryption import decrypt_symmetric_key_exchange_payload, decrypt_general_payload
 
 
@@ -23,7 +24,7 @@ class TestEncryption(unittest.IsolatedAsyncioTestCase):
         self.config_mock = Mock()
         self.config_mock.encryption_keys_handler.private_key = self.private_key
 
-    @patch("raycoms.miner.security.encryption.get_config")
+    @patch("fiber.miner.security.encryption.get_config")
     async def test_decrypt_symmetric_key_exchange(self, mock_get_config):
         mock_get_config.return_value = self.config_mock
 
@@ -49,30 +50,69 @@ class TestEncryption(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result.nonce, test_data.nonce)
         self.assertEqual(result.signature, test_data.signature)
 
-    @patch("raycoms.miner.security.encryption.Config")
-    def test_decrypt_general_payload(self, mock_config):
-        symmetric_key = Fernet.generate_key()
-        f = Fernet(symmetric_key)
+    @patch("fiber.miner.security.encryption.get_config")
+    @patch("fiber.miner.security.encryption.get_body")
+    def test_decrypt_general_payload(self, mock_get_body, mock_get_config):
+        fernet = Fernet(Fernet.generate_key())
 
         test_data = TestModel(field="test")
-        encrypted_payload = f.encrypt(test_data.model_dump_json().encode())
+        encrypted_payload = fernet.encrypt(test_data.model_dump_json().encode())
 
-        mock_config.encryption_keys_handler.get_symmetric_key.return_value = symmetric_key
+        mock_get_body.return_value = encrypted_payload
 
-        result = decrypt_general_payload(TestModel, encrypted_payload, "test-uuid", "test-hotkey")
+        mock_config = MagicMock(spec=Config)
+
+        mock_encryption_keys_handler = MagicMock()
+
+        symmetric_key_info = SymmetricKeyInfo(fernet=fernet, expiration_time=datetime.now() + timedelta(hours=1))
+
+        mock_encryption_keys_handler.get_symmetric_key.return_value = symmetric_key_info
+
+        mock_config.encryption_keys_handler = mock_encryption_keys_handler
+
+        mock_get_config.return_value = mock_config
+
+        result = decrypt_general_payload(
+            model=TestModel,
+            encrypted_payload=encrypted_payload,
+            key_uuid="test-uuid",
+            hotkey="test-hotkey",
+            config=mock_config,
+        )
 
         self.assertIsInstance(result, TestModel)
         self.assertEqual(result.field, test_data.field)
 
-    @patch("raycoms.miner.security.encryption.Config")
-    def test_decrypt_general_payload_no_key(self, mock_config):
-        mock_config.encryption_keys_handler.get_symmetric_key.return_value = None
+        # Verify that get_symmetric_key was called with correct arguments
+        mock_encryption_keys_handler.get_symmetric_key.assert_called_once_with("test-hotkey", "test-uuid")
+
+    @patch("fiber.miner.security.encryption.get_config")
+    @patch("fiber.miner.security.encryption.get_body")
+    def test_decrypt_general_payload_no_key(self, mock_get_body, mock_get_config):
+        mock_config = MagicMock(spec=Config)
+
+        mock_encryption_keys_handler = MagicMock()
+        mock_encryption_keys_handler.get_symmetric_key.return_value = None
+
+        mock_config.encryption_keys_handler = mock_encryption_keys_handler
+
+        mock_get_config.return_value = mock_config
+
+        mock_get_body.return_value = b"test"
 
         with self.assertRaises(HTTPException) as context:
-            decrypt_general_payload(TestModel, b"test", "test-uuid", "test-hotkey")
+            decrypt_general_payload(
+                model=TestModel,
+                encrypted_payload=b"test",
+                key_uuid="test-uuid",
+                hotkey="test-hotkey",
+                config=mock_config,
+            )
 
-        self.assertEqual(context.exception.status_code, 404)
+        self.assertEqual(context.exception.status_code, 400)
         self.assertEqual(context.exception.detail, "No symmetric key found for that hotkey and uuid")
+
+        mock_encryption_keys_handler.get_symmetric_key.assert_called_once_with("test-hotkey", "test-uuid")
 
 
 if __name__ == "__main__":
