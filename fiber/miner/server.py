@@ -1,8 +1,6 @@
 """
 TODO:
-- Add metagraph for miner so it can check validators are in the metagraph and their stake
 - Miners to store the fernet keys instead of symmetric keys
-- add the blacklist functionality. Middleware?
 - ADD A 'POST DETAILS TO CHAIN' METHOD FOR MINERS TO POST THEIR AXON DETAILS TO THE CHAIN
 - INTEGRATE THIS NEW WAY OF DOING THINGS INTO THE SUBNET CODE, BYE BYE SYNAPSES AND DENDRITES
 - BIN SIGNING SERVICE AND BAKE ALL THIS INTO THE SUBNET
