@@ -19,7 +19,8 @@ dependencies = [
     "colorama==0.4.6",
     "fastapi==0.112.0",
     "uvicorn==0.30.5",
-    "cryptography==43.0.0"
+    "cryptography==43.0.0",
+    "python-dotenv==1.0.1"
 ]
 
 [project.scripts]
