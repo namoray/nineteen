@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "fiber"
-version = "0.1.0"
+version = "1.0.0"
 description = "The ultra lightweight network for miner-validator communication"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -19,6 +19,7 @@ dependencies = [
     "colorama==0.4.6",
     "fastapi==0.112.0",
     "uvicorn==0.30.5",
+    "cryptography==43.0.0"
 ]
 
 [project.scripts]
