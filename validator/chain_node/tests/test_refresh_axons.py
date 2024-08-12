@@ -82,21 +82,21 @@ class TestRefreshAxons(unittest.IsolatedAsyncioTestCase):
             conn: Connection
 
 
-            await conn.execute("DELETE FROM axon_info; DELETE FROM axon_info_history;")
+            await conn.execute("DELETE FROM node; DELETE FROM node_history;")
 
             await get_and_store_axons(self.config)
 
-            axon_info = await conn.fetch("SELECT * FROM axon_info ORDER BY hotkey")
-            self.assertEqual(len(axon_info), 3, "Expected 3 axons in axon_info table")
+            node = await conn.fetch("SELECT * FROM node ORDER BY hotkey")
+            self.assertEqual(len(node), 3, "Expected 3 axons in node table")
 
-            self.assertEqual(axon_info[0]["hotkey"], "test-hotkey1")
-            self.assertEqual(axon_info[1]["hotkey"], "test-hotkey2")
-            self.assertEqual(axon_info[2]["hotkey"], "test-vali")
+            self.assertEqual(node[0]["hotkey"], "test-hotkey1")
+            self.assertEqual(node[1]["hotkey"], "test-hotkey2")
+            self.assertEqual(node[2]["hotkey"], "test-vali")
 
             await get_and_store_axons(self.config)
 
-            axon_history = await conn.fetch("SELECT * FROM axon_info_history ORDER BY hotkey")
-            self.assertEqual(len(axon_history), 3, "Expected 3 entries in axon_info_history table")
+            axon_history = await conn.fetch("SELECT * FROM node_history ORDER BY hotkey")
+            self.assertEqual(len(axon_history), 3, "Expected 3 entries in node_history table")
 
 
 if __name__ == "__main__":

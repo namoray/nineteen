@@ -1,20 +1,22 @@
 """
-Gets the latest axons from the network and stores them in the database,
-migrating the old axons to history in the process
+Gets the latest nodes from the network and stores them in the database,
+migrating the old nodes to history in the process
 """
 
 import asyncio
 import os
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 
 from asyncpg import Connection
-import bittensor as bt
 from dotenv import load_dotenv
 
-from core.bittensor_overrides.chain_data import AxonInfo
 from validator.db.src.database import PSQLDB
-from validator.db.src import sql
+from validator.db.src.sql.nodes import migrate_nodes_to_history, insert_nodes
 from core.logging import get_logger
+from substrateinterface import SubstrateInterface, Keypair
+from fiber.chain_interactions import interface
+from fiber.chain_interactions import chain_utils, fetch_nodes
+from fiber.chain_interactions.models import Node
 
 logger = get_logger(__name__)
 
@@ -27,9 +29,9 @@ class Config:
     network: str
     netuid: int
     seconds_between_syncs: int
-    metagraph: bt.metagraph
+    substrate_interface: SubstrateInterface
     sync: bool
-    subtensor: bt.subtensor | None
+    keypair: Keypair
 
 
 def load_config() -> Config:
@@ -37,74 +39,55 @@ def load_config() -> Config:
     psql_db = PSQLDB()
     run_once = os.getenv("RUN_ONCE", "true").lower() == "true"
     test_env = os.getenv("ENV", "test").lower() == "test"
-    network = os.getenv("NETWORK", "finney")
+    chain_network = os.getenv("CHAIN_NETWORK")
+    chain_address = os.getenv("CHAIN_ADDRESS")
+    wallet_name = os.getenv("WALLET_NAME", "default")
+    hotkey_name = os.getenv("HOTKEY_NAME", "default")
     netuid = int(os.getenv("NETUID", "19"))
     seconds_between_syncs = int(os.getenv("SECONDS_BETWEEN_SYNCS", "1200"))
-    metagraph = bt.metagraph(netuid=netuid, network=network, lite=True, sync=False)
     sync = True
-    subtensor = None  # Initialize if needed
+    substrate_interface = interface.get_substrate_interface(chain_network=chain_network, chain_address=chain_address)
+    keypair = chain_utils.load_hotkey_keypair(wallet_name=wallet_name, hotkey_name=hotkey_name)
 
     return Config(
         psql_db=psql_db,
         run_once=run_once,
         test_env=test_env,
-        network=network,
+        network=chain_network,
         netuid=netuid,
         seconds_between_syncs=seconds_between_syncs,
-        metagraph=metagraph,
         sync=sync,
-        subtensor=subtensor,
+        substrate_interface=substrate_interface,
+        keypair=keypair,
     )
 
 
-async def fetch_axon_infos_from_metagraph(config: Config) -> None:
-    logger.info("Fetching axon infos from the metagraph. First, syncing...")
-    await asyncio.to_thread(config.metagraph.sync, subtensor=config.subtensor, lite=True)
-    logger.info("Metagraph synced, now extracting axon infos")
-
-    new_axons = [
-        AxonInfo(
-            **asdict(axon),
-            axon_uid=uid,
-            incentive=incentive,
-            netuid=config.metagraph.netuid,
-            network=config.metagraph.network,
-            stake=stake,
-        )
-        for axon, uid, incentive, stake in zip(
-            config.metagraph.axons,
-            config.metagraph.uids,
-            config.metagraph.incentive.tolist(),
-            config.metagraph.S.tolist(),
-        )
-    ]
-
-    logger.info(f"Synced {len(new_axons)} axons from the metagraph")
-    config.metagraph.axons = new_axons
+async def fetch_nodes_from_metagraph(config: Config) -> list[Node]:
+    nodes = await asyncio.to_thread(fetch_nodes.get_nodes_for_netuid(config.substrate_interface, config.netuid))
+    return nodes
 
 
-async def store_and_migrate_old_axons(config: Config, connection: Connection) -> None:
-    logger.debug("Storing and migrating old axons...")
+async def store_and_migrate_old_nodes(connection: Connection, nodes: list[Node]) -> None:
+    logger.debug("Storing and migrating old nodes...")
 
-    await sql.migrate_axons_to_axon_history(connection)
-    await sql.insert_axon_info(connection, config.metagraph.axons)
-    logger.info(f"Stored {len(config.metagraph.axons)} axons from the metagraph")
+    await migrate_nodes_to_history(connection)
+    await insert_nodes(connection, nodes)
+    logger.info(f"Stored {len(nodes)} nodes from the metagraph")
 
 
-async def get_and_store_axons(config: Config) -> None:
-
+async def get_and_store_nodes(config: Config) -> None:
     if config.sync:
-        await fetch_axon_infos_from_metagraph(config)
+        nodes = await fetch_nodes_from_metagraph(config)
 
     async with await config.psql_db.connection() as connection:
-        await store_and_migrate_old_axons(config, connection)
+        await store_and_migrate_old_nodes(config, connection)
 
-    logger.info(f"Stored {len(config.metagraph.axons)} axons. Sleeping for {config.seconds_between_syncs} seconds.")
+    logger.info(f"Stored {len(nodes)} nodes. Sleeping for {config.seconds_between_syncs} seconds.")
 
 
-async def periodically_get_and_store_axons(config: Config) -> None:
+async def periodically_get_and_store_nodes(config: Config) -> None:
     while True:
-        await get_and_store_axons(config)
+        await get_and_store_nodes(config)
         await asyncio.sleep(config.seconds_between_syncs)
 
 
@@ -116,9 +99,9 @@ async def main():
 
         if config.run_once:
             logger.warning("Running once only!")
-            await get_and_store_axons(config)
+            await get_and_store_nodes(config)
         else:
-            await periodically_get_and_store_axons(config)
+            await periodically_get_and_store_nodes(config)
     except Exception as e:
         logger.error(f"Unexpected error: {str(e)}")
         raise
