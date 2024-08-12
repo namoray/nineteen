@@ -31,10 +31,10 @@ tasks:
     cmds:
       - docker-compose run {{.CLI_ARGS}} --entrypoint python control_node  validator/core/calculate_weights/main.py
 
-  test_chain_node_refresh_axons:
+  test_chain_node_refresh_nodes:
     cmds:
       - docker-compose -f docker-compose.yml -f docker-compose.testing.yml run --rm dbmate up
-      - docker-compose -f docker-compose.yml -f docker-compose.testing.yml run --rm -e NEST_ASYNCIO=0 --entrypoint python chain_node /app/validator/chain_node/tests/test_refresh_axons.py
+      - docker-compose -f docker-compose.yml -f docker-compose.testing.yml run --rm -e NEST_ASYNCIO=0 --entrypoint python chain_node /app/validator/chain_node/tests/test_refresh_nodes.py
   test_chain_node_set_weights:
     cmds:
       - docker-compose -f docker-compose.yml -f docker-compose.testing.yml run --rm dbmate up

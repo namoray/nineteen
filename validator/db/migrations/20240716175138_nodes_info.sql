@@ -1,5 +1,5 @@
 -- migrate:up
-CREATE TABLE node_history (
+CREATE TABLE nodes_history (
     id SERIAL PRIMARY KEY,
     hotkey TEXT NOT NULL,
     coldkey TEXT NOT NULL,

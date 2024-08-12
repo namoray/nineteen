@@ -30,7 +30,6 @@ class Config:
     netuid: int
     seconds_between_syncs: int
     substrate_interface: SubstrateInterface
-    sync: bool
     keypair: Keypair
 
 
@@ -45,7 +44,6 @@ def load_config() -> Config:
     hotkey_name = os.getenv("HOTKEY_NAME", "default")
     netuid = int(os.getenv("NETUID", "19"))
     seconds_between_syncs = int(os.getenv("SECONDS_BETWEEN_SYNCS", "1200"))
-    sync = True
     substrate_interface = interface.get_substrate_interface(chain_network=chain_network, chain_address=chain_address)
     keypair = chain_utils.load_hotkey_keypair(wallet_name=wallet_name, hotkey_name=hotkey_name)
 
@@ -56,7 +54,6 @@ def load_config() -> Config:
         network=chain_network,
         netuid=netuid,
         seconds_between_syncs=seconds_between_syncs,
-        sync=sync,
         substrate_interface=substrate_interface,
         keypair=keypair,
     )
@@ -67,20 +64,19 @@ async def fetch_nodes_from_metagraph(config: Config) -> list[Node]:
     return nodes
 
 
-async def store_and_migrate_old_nodes(connection: Connection, nodes: list[Node]) -> None:
+async def store_and_migrate_old_nodes(connection: Connection, nodes: list[Node], config: Config) -> None:
     logger.debug("Storing and migrating old nodes...")
 
     await migrate_nodes_to_history(connection)
-    await insert_nodes(connection, nodes)
+    await insert_nodes(connection, nodes, config.network)
     logger.info(f"Stored {len(nodes)} nodes from the metagraph")
 
 
 async def get_and_store_nodes(config: Config) -> None:
-    if config.sync:
-        nodes = await fetch_nodes_from_metagraph(config)
+    nodes = await fetch_nodes_from_metagraph(config)
 
     async with await config.psql_db.connection() as connection:
-        await store_and_migrate_old_nodes(config, connection)
+        await store_and_migrate_old_nodes(connection, nodes, config)
 
     logger.info(f"Stored {len(nodes)} nodes. Sleeping for {config.seconds_between_syncs} seconds.")
 

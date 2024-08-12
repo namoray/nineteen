@@ -11,11 +11,15 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     curl \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
 
 
 COPY core /app/core
+COPY fiber /app/fiber 
+
+RUN pip install /app/fiber
 
 
 ENV PYTHONPATH=/app:$PYTHONPATH

@@ -14,7 +14,8 @@ CREATE TABLE nodes (
     protocol INTEGER NOT NULL DEFAULT 4,
     network TEXT NOT NULL,
     symmetric_key TEXT,
-    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC') PRIMARY KEY (hotkey, netuid)
+    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC'),
+    PRIMARY KEY (hotkey, netuid)
 );
 
 -- migrate:down
