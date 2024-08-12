@@ -24,7 +24,7 @@ class TestEncryption(unittest.IsolatedAsyncioTestCase):
         self.config_mock = Mock()
         self.config_mock.encryption_keys_handler.private_key = self.private_key
 
-    @patch("fiber.miner.security.encryption.get_config")
+    @patch("fiber.src.miner.security.encryption.get_config")
     async def test_decrypt_symmetric_key_exchange(self, mock_get_config):
         mock_get_config.return_value = self.config_mock
 
@@ -50,8 +50,8 @@ class TestEncryption(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result.nonce, test_data.nonce)
         self.assertEqual(result.signature, test_data.signature)
 
-    @patch("fiber.miner.security.encryption.get_config")
-    @patch("fiber.miner.security.encryption.get_body")
+    @patch("fiber.src.miner.security.encryption.get_config")
+    @patch("fiber.src.miner.security.encryption.get_body")
     def test_decrypt_general_payload(self, mock_get_body, mock_get_config):
         fernet = Fernet(Fernet.generate_key())
 
@@ -86,8 +86,8 @@ class TestEncryption(unittest.IsolatedAsyncioTestCase):
         # Verify that get_symmetric_key was called with correct arguments
         mock_encryption_keys_handler.get_symmetric_key.assert_called_once_with("test-hotkey", "test-uuid")
 
-    @patch("fiber.miner.security.encryption.get_config")
-    @patch("fiber.miner.security.encryption.get_body")
+    @patch("fiber.src.miner.security.encryption.get_config")
+    @patch("fiber.src.miner.security.encryption.get_body")
     def test_decrypt_general_payload_no_key(self, mock_get_body, mock_get_config):
         mock_config = MagicMock(spec=Config)
 

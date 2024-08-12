@@ -50,8 +50,30 @@ def create_scale_object_from_scale_encoding(
     return scale_object.decode()
 
 
-def load_keypair(wallet_name: str, hotkey_name: str) -> Keypair:
+def get_hotkey_file_path(wallet_name: str, hotkey_name: str) -> Path:
     file_path = Path.home() / ".bittensor" / "wallets" / wallet_name / "hotkeys" / hotkey_name
+    return file_path
+
+
+def get_coldkeypub_file_path(wallet_name: str) -> Path:
+    file_path = Path.home() / ".bittensor" / "wallets" / wallet_name / "coldkeypub.txt"
+    return file_path
+
+
+def load_coldkeypub_keypair(wallet_name: str) -> Keypair:
+    file_path = get_coldkeypub_file_path(wallet_name)
+    try:
+        with open(file_path, "r") as file:
+            keypair_data = json.load(file)
+        keypair = Keypair(ss58_address=keypair_data["ss58Address"])
+        logger.info(f"Loaded keypair from {file_path}")
+        return keypair
+    except Exception as e:
+        raise ValueError(f"Failed to load keypair: {str(e)}")
+
+
+def load_hotkey_keypair(wallet_name: str, hotkey_name: str) -> Keypair:
+    file_path = get_hotkey_file_path(wallet_name, hotkey_name)
     try:
         with open(file_path, "r") as file:
             keypair_data = json.load(file)

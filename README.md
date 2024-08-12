@@ -54,7 +54,7 @@ Validators begin by determining the percentage of the miner's capacity they will
 
 At the end of the scoring period, validators calculate a ﻿period score for each miner. This score reflects the percentage of requests that were correctly responded to. Miners are penalized for missed queries based on the volume left unqueried. If the announced volume is fully utilized, no penalties are imposed. However, if a miner is queried only once or twice and fails to respond, the penalties are more severe.
 
-Simultaneously, validators assess the quality of all responses from fiber.miners, maintaining a running tally of their 'quality scores' and 'speed factors' (rewarding both speed and correctness). When it is time to set weights, validators calculate a volume-weighted average period score for each miner. This score is then multiplied by the miner's combined quality score to derive an overall score for that specific task.
+Simultaneously, validators assess the quality of all responses from fiber.src.miners, maintaining a running tally of their 'quality scores' and 'speed factors' (rewarding both speed and correctness). When it is time to set weights, validators calculate a volume-weighted average period score for each miner. This score is then multiplied by the miner's combined quality score to derive an overall score for that specific task.
 
 Finally, the overall scores for each miner are combined across all tasks - which is what makes the tasks completely optional for miners. The different scores for all tasks are then summed up to derive a final overall score for each miner, which is used to set weights appropriately.
 

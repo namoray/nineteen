@@ -50,7 +50,7 @@ def factory_config() -> Config:
     if netuid is None:
         raise ValueError("Must set NETUID env var please x)")
 
-    keypair = chain_utils.load_keypair(wallet_name, hotkey_name)
+    keypair = chain_utils.load_hotkey_keypair(wallet_name, hotkey_name)
 
     storage_encryption_key = os.getenv("STORAGE_ENCRYPTION_KEY")
     if storage_encryption_key is None:
