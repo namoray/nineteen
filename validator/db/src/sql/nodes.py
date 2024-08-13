@@ -96,6 +96,23 @@ async def migrate_nodes_to_history(connection: Connection) -> None:  # noqa: F82
     await connection.execute(f"DELETE FROM {dcst.NODES_TABLE}")
 
 
+async def insert_symmetric_keys_for_nodes(
+    connection: Connection, nodes: list[Node], symmetric_keys: list[str], symmetric_key_uuids: list[str]
+) -> None:
+    logger.debug(f"Inserting {len(nodes)} nodes into {dcst.NODES_TABLE}...")
+    await connection.executemany(
+        f"""
+        UPDATE {dcst.NODES_TABLE}
+        SET {dcst.SYMMETRIC_KEY} = $1, {dcst.SYMMETRIC_KEY_UUID} = $2
+        WHERE {dcst.HOTKEY} = $3 and {dcst.NETUID} = $4
+        """,
+        [
+            (key, key_uuid, node.hotkey, node.netuid)
+            for key, key_uuid, node in zip(symmetric_keys, symmetric_key_uuids, nodes)
+        ],
+    )
+
+
 async def get_nodes(psql_db: PSQLDB, netuid: int) -> list[Node]:
     query = f"""
         SELECT 

@@ -1,7 +1,7 @@
 """
-Calculates period scores for participants
-Converts axons to participants by querying them for their tasks. (Axon + Task = Participant)
-Migrates old participants and adds the new participants to the db
+Calculates period scores for contenders
+Converts axons to contenders by querying them for their tasks. (Axon + Task = Contender)
+Migrates old contenders and adds the new contenders to the db
 """
 
 import asyncio
@@ -9,9 +9,9 @@ from dataclasses import dataclass
 import os
 from typing import List
 
-from core.bittensor_overrides.chain_data import AxonInfo
+
 from validator.db.src import sql
-from validator.models import Participant
+from validator.models import Contender
 
 from dotenv import load_dotenv
 from validator.db.src.database import PSQLDB
@@ -20,8 +20,7 @@ from core import tasks_config as tcfg
 from core import constants as ccst
 from core.tasks import Task
 from redis.asyncio import Redis
-from core import bittensor_overrides as bt
-from models import synapses
+
 from core.logging import get_logger
 from validator.utils import generic_utils as gutils
 
@@ -44,7 +43,6 @@ class AxonCapacity:
 class Config:
     psql_db: PSQLDB
     redis_db: Redis
-    dendrite: bt.dendrite
     validator_hotkey: str
     netuid: int
 
@@ -54,14 +52,13 @@ async def load_config() -> Config:
     psql_db = PSQLDB()
     await psql_db.connect()
     redis_db = Redis(host=os.getenv("REDIS_HOST", "redis"))
-    dendrite = bt.dendrite(redis_db)
     public_keypair_info = await gutils.get_public_keypair_info(redis_db)
     validator_hotkey = public_keypair_info.ss58_address
     netuid = int(os.getenv("NETUID", 19))
     return Config(psql_db, redis_db, dendrite, validator_hotkey, netuid)
 
 
-def _calculate_period_score(participant: Participant) -> float:
+def _calculate_period_score(contender: Contender) -> float:
     """
     Calculate a period score (not including quality which is scored separately)
 
@@ -72,18 +69,18 @@ def _calculate_period_score(participant: Participant) -> float:
     But if I barely queried your volume, and you still rate limited me loads (429),
     then you're very naughty, you.
     """
-    if participant.total_requests_made == 0 or participant.capacity == 0:
+    if contender.total_requests_made == 0 or contender.capacity == 0:
         return None
 
-    participant.capacity = max(participant.capacity, 1)
-    volume_unqueried = max(participant.capacity - participant.consumed_capacity, 0)
+    contender.capacity = max(contender.capacity, 1)
+    volume_unqueried = max(contender.capacity - contender.consumed_capacity, 0)
 
-    percentage_of_volume_unqueried = volume_unqueried / participant.capacity
-    percentage_of_429s = participant.requests_429 / participant.total_requests_made
-    percentage_of_500s = participant.requests_500 / participant.total_requests_made
+    percentage_of_volume_unqueried = volume_unqueried / contender.capacity
+    percentage_of_429s = contender.requests_429 / contender.total_requests_made
+    percentage_of_500s = contender.requests_500 / contender.total_requests_made
     percentage_of_good_requests = (
-        participant.total_requests_made - participant.requests_429 - participant.requests_500
-    ) / participant.total_requests_made
+        contender.total_requests_made - contender.requests_429 - contender.requests_500
+    ) / contender.total_requests_made
 
     # NOTE: Punish rate limit slightly less, to encourage only completing that which you can do
     rate_limit_punishment_factor = percentage_of_429s**2 * percentage_of_volume_unqueried
@@ -96,14 +93,14 @@ def _calculate_period_score(participant: Participant) -> float:
     return period_score
 
 
-async def add_period_scores_to_current_participants(psql_db: PSQLDB) -> None:
+async def add_period_scores_to_current_contenders(psql_db: PSQLDB) -> None:
     async with await psql_db.connection() as connection:
-        participants = await sql.fetch_all_participants(connection, None)
-        for participant in participants:
-            period_score = _calculate_period_score(participant)
-            participant.period_score = period_score
+        contenders = await sql.fetch_all_contenders(connection, None)
+        for contender in contenders:
+            period_score = _calculate_period_score(contender)
+            contender.period_score = period_score
 
-        await sql.update_participants_period_scores(connection, participants)
+        await sql.update_contenders_period_scores(connection, contenders)
 
 
 async def query_axon(dendrite: bt.dendrite, axon: AxonInfo) -> AxonCapacity:
@@ -159,20 +156,20 @@ async def _fetch_axon_capacities(config: Config, validator_stake_proportion: flo
     return axon_capacities
 
 
-async def store_and_migrate_old_participants(config: Config, participants: List[Participant]):
-    logger.info("Calculating period scores & refreshing participants")
+async def store_and_migrate_old_contenders(config: Config, contenders: List[Contender]):
+    logger.info("Calculating period scores & refreshing contenders")
     async with await config.psql_db.connection() as connection:
-        await sql.migrate_participants_to_participant_history(connection)
-        await sql.insert_participants(connection, participants, config.validator_hotkey)
+        await sql.migrate_contenders_to_contender_history(connection)
+        await sql.insert_contenders(connection, contenders, config.validator_hotkey)
 
 
-async def get_participants_from_axons(config: Config, validator_stake_proportion: float) -> List[Participant]:
+async def get_contenders_from_axons(config: Config, validator_stake_proportion: float) -> List[Contender]:
     validator_stake_proportion = await get_validator_stake_proportion(
         config.psql_db, config.validator_hotkey, config.netuid
     )
     axon_capacities = await _fetch_axon_capacities(config, validator_stake_proportion)
-    participants = [
-        Participant(
+    contenders = [
+        Contender(
             miner_hotkey=ac.hotkey,
             miner_uid=ac.miner_uid,
             task=ac.task,
@@ -185,7 +182,7 @@ async def get_participants_from_axons(config: Config, validator_stake_proportion
         for ac in axon_capacities
     ]
 
-    return participants
+    return contenders
 
 
 async def get_validator_stake_proportion(psql_db: PSQLDB, validator_hotkey: str, netuid: int) -> float:
@@ -208,20 +205,20 @@ async def get_validator_stake_proportion(psql_db: PSQLDB, validator_hotkey: str,
 async def main():
     config = await load_config()
     try:
-        await add_period_scores_to_current_participants(config.psql_db)
+        await add_period_scores_to_current_contenders(config.psql_db)
 
         validator_stake_proportion = await get_validator_stake_proportion(
             config.psql_db, config.validator_hotkey, config.netuid
         )
 
         if validator_stake_proportion > 0:
-            participants = await get_participants_from_axons(config, validator_stake_proportion)
-            await store_and_migrate_old_participants(config, participants)
+            contenders = await get_contenders_from_axons(config, validator_stake_proportion)
+            await store_and_migrate_old_contenders(config, contenders)
         else:
             logger.error("Unable to proceed without valid stake proportion.")
 
     except Exception as e:
-        logger.error(f"Unexpected error in fetching participants: {str(e)}")
+        logger.error(f"Unexpected error in fetching contenders: {str(e)}")
     finally:
         await config.psql_db.close()
         await config.redis_db.aclose()

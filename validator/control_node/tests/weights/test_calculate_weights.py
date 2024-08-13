@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import patch, AsyncMock
 from redis.asyncio import Redis
 from validator.db.src.database import PSQLDB
-from validator.models import Participant
+from validator.models import Contender
 from validator.control_node.src.weights import calculations
 from core.tasks import Task
 from core.logging import get_logger
@@ -46,8 +46,8 @@ class TestWeightsCalculationFunctional(unittest.IsolatedAsyncioTestCase):
 
     @patch("validator.control_node.src.weights.calculations.calculate_effective_volumes_for_task")
     async def test_calculate_scores_for_settings_weights_with_double_normalization(self, mock_calculate_volumes):
-        participants = [
-            Participant(
+        contenders = [
+            Contender(
                 miner_uid=1,
                 miner_hotkey="hotkey1",
                 task=Task.chat_llama_3,
@@ -58,7 +58,7 @@ class TestWeightsCalculationFunctional(unittest.IsolatedAsyncioTestCase):
                 delay_between_synthetic_requests=1,
                 synthetic_requests_still_to_make=10,
             ),
-            Participant(
+            Contender(
                 miner_uid=2,
                 miner_hotkey="hotkey2",
                 task=Task.chat_mixtral,
@@ -84,7 +84,7 @@ class TestWeightsCalculationFunctional(unittest.IsolatedAsyncioTestCase):
                 Task.chat_mixtral: AsyncMock(weight=0.5),
             },
         ):
-            result = await calculations.calculate_scores_for_settings_weights(self.psql_db, participants)
+            result = await calculations.calculate_scores_for_settings_weights(self.psql_db, contenders)
 
         self.assertIn(1, result)
         self.assertIn(2, result)
@@ -101,8 +101,8 @@ class TestWeightsCalculationFunctional(unittest.IsolatedAsyncioTestCase):
 
     @patch("validator.control_node.src.weights.calculations.calculate_effective_volumes_for_task")
     async def test_calculate_scores_for_settings_weights_integration(self, mock_calculate_effective_volumes):
-        participants = [
-            Participant(
+        contenders = [
+            Contender(
                 miner_uid=1,
                 miner_hotkey="hotkey1",
                 task=Task.chat_llama_3,
@@ -113,7 +113,7 @@ class TestWeightsCalculationFunctional(unittest.IsolatedAsyncioTestCase):
                 delay_between_synthetic_requests=1,
                 synthetic_requests_still_to_make=10,
             ),
-            Participant(
+            Contender(
                 miner_uid=1,
                 miner_hotkey="hotkey1",
                 task=Task.chat_mixtral,
@@ -124,7 +124,7 @@ class TestWeightsCalculationFunctional(unittest.IsolatedAsyncioTestCase):
                 delay_between_synthetic_requests=1,
                 synthetic_requests_still_to_make=10,
             ),
-            Participant(
+            Contender(
                 miner_uid=2,
                 miner_hotkey="hotkey2",
                 task=Task.chat_llama_3,
@@ -150,7 +150,7 @@ class TestWeightsCalculationFunctional(unittest.IsolatedAsyncioTestCase):
                 Task.chat_mixtral: AsyncMock(weight=0.5),
             },
         ):
-            result = await calculations.calculate_scores_for_settings_weights(self.psql_db, participants)
+            result = await calculations.calculate_scores_for_settings_weights(self.psql_db, contenders)
 
         self.assertIn(1, result)
         self.assertIn(2, result)
@@ -167,8 +167,8 @@ class TestWeightsCalculationFunctional(unittest.IsolatedAsyncioTestCase):
     @patch("validator.control_node.src.weights.calculations._calculate_combined_quality_score")
     @patch("validator.control_node.src.weights.calculations._calculate_normalised_period_score")
     async def test_calculate_effective_volumes_for_task(self, mock_normalised_score, mock_quality_score):
-        participants = [
-            Participant(
+        contenders = [
+            Contender(
                 miner_uid=1,
                 miner_hotkey="hotkey1",
                 task=Task.chat_llama_3,
@@ -179,7 +179,7 @@ class TestWeightsCalculationFunctional(unittest.IsolatedAsyncioTestCase):
                 delay_between_synthetic_requests=1,
                 synthetic_requests_still_to_make=10,
             ),
-            Participant(
+            Contender(
                 miner_uid=2,
                 miner_hotkey="hotkey2",
                 task=Task.chat_llama_3,
@@ -196,7 +196,7 @@ class TestWeightsCalculationFunctional(unittest.IsolatedAsyncioTestCase):
         mock_quality_score.side_effect = [0.8, 0.9]
         mock_normalised_score.side_effect = [0.7, 0.6]
 
-        result = await calculations.calculate_effective_volumes_for_task(self.psql_db, participants, Task.chat_llama_3)
+        result = await calculations.calculate_effective_volumes_for_task(self.psql_db, contenders, Task.chat_llama_3)
 
         self.assertIn("hotkey1", result)
         self.assertIn("hotkey2", result)
@@ -207,11 +207,11 @@ class TestWeightsCalculationFunctional(unittest.IsolatedAsyncioTestCase):
         self.assertAlmostEqual(result["hotkey1"], 112.0, places=1)
         self.assertAlmostEqual(result["hotkey2"], 162.0, places=1)
 
-        # Check that the mocked functions were called with the correct participants
-        mock_quality_score.assert_any_call(self.psql_db, participants[0])
-        mock_quality_score.assert_any_call(self.psql_db, participants[1])
-        mock_normalised_score.assert_any_call(self.psql_db, participants[0])
-        mock_normalised_score.assert_any_call(self.psql_db, participants[1])
+        # Check that the mocked functions were called with the correct contenders
+        mock_quality_score.assert_any_call(self.psql_db, contenders[0])
+        mock_quality_score.assert_any_call(self.psql_db, contenders[1])
+        mock_normalised_score.assert_any_call(self.psql_db, contenders[0])
+        mock_normalised_score.assert_any_call(self.psql_db, contenders[1])
 
 
 

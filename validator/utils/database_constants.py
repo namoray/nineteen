@@ -2,8 +2,8 @@
 HOTKEY_INFO_TABLE = "hotkey_info"
 NODES_TABLE = "nodes"
 NODES_HISTORY_TABLE = "nodes_history"
-PARTICIPANTS_TABLE = "participants"
-PARTICIPANTS_HISTORY_TABLE = "participants_history"
+CONTENDERS_TABLE = "contenders"
+CONTENDERS_HISTORY_TABLE = "contenders_history"
 
 TABLE_TASKS = "tasks"
 TABLE_REWARD_DATA = "reward_data"
@@ -32,6 +32,7 @@ PORT = "port"
 PROTOCOL = "protocol"
 NETWORK = "network"
 SYMMETRIC_KEY = "symmetric_key"
+SYMMETRIC_KEY_UUID = "symmetric_key_uuid"
 CREATED_AT = "created_at"
 
 
@@ -51,11 +52,12 @@ CREATED_AT = "created_at"
 # PROTOCOL = "protocol"
 # NETWORK = "network"
 # SYMMETRIC_KEY = "symmetric_key"
+# SYMMETRIC_KEY_UUID = "symmetric_key_uuid"
 # CREATED_AT = "created_at"
 EXPIRED_AT = "expired_at"
 
-# Participants table
-PARTICIPANT_ID = "participant_id"
+# Contenders table
+CONTENDER_ID = "contender_id"
 MINER_HOTKEY = "miner_hotkey"
 MINER_UID = "miner_uid"
 TASK = "task"
@@ -73,9 +75,9 @@ PERIOD_SCORE = "period_score"
 CREATED_AT = "created_at"
 UPDATED_AT = "updated_at"
 
-# Participants history table
+# Contenders history table
 
-# PARTICIPANT_ID = "participant_id"
+# CONTENDER_ID = "contender_id"
 # MINER_HOTKEY = "miner_hotkey"
 # TASK = "task"
 # VALIDATOR_HOTKEY = "validator_hotkey"

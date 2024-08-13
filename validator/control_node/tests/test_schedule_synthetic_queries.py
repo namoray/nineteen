@@ -3,9 +3,9 @@ from redis.asyncio import Redis
 from core.tasks import Task
 from validator.db.src.database import PSQLDB
 from validator.db.src import sql
-from validator.models import Participant
+from validator.models import Contender
 from validator.utils import redis_constants as rcst
-from validator.control_node.src.schedule_synthetic_queries import (
+from validator.control_node.src.synthetic_data.schedule_synthetic_queries import (
     Config,
     schedule_synthetics_until_done,
 )
@@ -18,7 +18,7 @@ class TestSyntheticSchedulerFunctional(unittest.IsolatedAsyncioTestCase):
         await self.psql_db.connect()
 
         self.config = Config(
-            psql_db=self.psql_db, redis_db=self.redis_db, run_once=False, test_env=True, specific_participant=None
+            psql_db=self.psql_db, redis_db=self.redis_db, run_once=False, test_env=True, specific_contender=None
         )
 
         await self.redis_db.flushdb()
@@ -32,7 +32,7 @@ class TestSyntheticSchedulerFunctional(unittest.IsolatedAsyncioTestCase):
     ):
         num_synthetics = 3
         delay = 1.0
-        participant = Participant(
+        contender = Contender(
             miner_hotkey="test_hotkey",
             miner_uid=0,
             task=Task.chat_llama_3,
@@ -46,8 +46,8 @@ class TestSyntheticSchedulerFunctional(unittest.IsolatedAsyncioTestCase):
         )
 
         async with await self.psql_db.connection() as connection:
-            await connection.execute("DELETE FROM participants")
-            await sql.insert_participants(connection, [participant], "test_vali")
+            await connection.execute("DELETE FROM contenders")
+            await sql.insert_contenders(connection, [contender], "test_vali")
 
         await schedule_synthetics_until_done(self.config)
 

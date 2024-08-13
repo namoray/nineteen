@@ -9,7 +9,7 @@ from core import tasks_config as tcfg, bittensor_overrides as bt
 from validator.db.src.database import PSQLDB
 from validator.db import sql
 from validator.utils import (
-    participant_utils as putils,
+    contender_utils as putils,
     synthetic_utils as sutils,
     query_utils as qutils,
 )
@@ -31,41 +31,41 @@ async def process_job(
     # TODO: This should be nicer
     synthetic_query = job_data["query_type"].lower() == "synthetic"
     if synthetic_query:
-        participant_id = job_data["query_payload"].get("participant_id", None)
-        participant = await putils.load_participant(psql_db, participant_id)
-        if participant is None:
-            logger.error(f"Participant {participant_id} not found in db... can't process")
+        contender_id = job_data["query_payload"].get("contender_id", None)
+        contender = await putils.load_contender(psql_db, contender_id)
+        if contender is None:
+            logger.error(f"Contender {contender_id} not found in db... can't process")
             return
 
     # TODO: Change this so we have all sorts of retry logic for organics
     else:
         task = job_data["query_payload"]["task"]
         async with await psql_db.connection() as connection:
-            participant = await sql.get_participant_for_task(connection, Task(task))
-        if participant is None:
-            logger.error(f"Participant for task {task} not found in db... can't process")
+            contender = await sql.get_contender_for_task(connection, Task(task))
+        if contender is None:
+            logger.error(f"Contender for task {task} not found in db... can't process")
             return
 
-    task = participant.task
-    participant_id = participant.id
+    task = contender.task
+    contender_id = contender.id
 
     axon = await sql.get_axon(
         psql_db,
-        participant.miner_hotkey,
+        contender.miner_hotkey,
         netuid,
     )
 
-    await redis_db.hset(f"job:{participant.id}", "state", "processing")
+    await redis_db.hset(f"job:{contender.id}", "state", "processing")
 
     try:
-        synthetic_synapse = await sutils.fetch_synthetic_data_for_task(redis_db, task=participant.task)
+        synthetic_synapse = await sutils.fetch_synthetic_data_for_task(redis_db, task=contender.task)
         stream = tcfg.TASK_TO_CONFIG[task].is_stream
 
         if stream:
             generator = utils.query_miner_stream(
                 psql_db,
                 axon,
-                participant,
+                contender,
                 synthetic_synapse,
                 dendrite,
                 synthetic_query=synthetic_query,
@@ -75,13 +75,13 @@ async def process_job(
                 redis_db, generator, job_id=job_data["query_payload"].get("job_id"), synthetic_query=synthetic_query
             )
 
-        await redis_db.hset(f"job:{participant_id}", "state", "completed")
-        logger.debug(f"Job {participant_id} completed successfully")
+        await redis_db.hset(f"job:{contender_id}", "state", "completed")
+        logger.debug(f"Job {contender_id} completed successfully")
     except Exception as e:
         full_traceback = traceback.format_exc()
-        logger.error(f"Job {participant_id} failed. Full traceback:\n{full_traceback}")
-        await redis_db.hset(f"job:{participant_id}", "state", "failed")
-        await redis_db.hset(f"job:{participant_id}", "error", str(e))
+        logger.error(f"Job {contender_id} failed. Full traceback:\n{full_traceback}")
+        await redis_db.hset(f"job:{contender_id}", "state", "failed")
+        await redis_db.hset(f"job:{contender_id}", "error", str(e))
 
 
 async def process_job_with_timeout(
@@ -90,10 +90,10 @@ async def process_job_with_timeout(
     try:
         await asyncio.wait_for(process_job(redis_db, psql_db, dendrite, job_data, netuid, debug), timeout=JOB_TIMEOUT)
     except asyncio.TimeoutError:
-        participant_id = job_data["participant_id"]
-        logger.error(f"Job {participant_id} timed out after {JOB_TIMEOUT} seconds")
-        await redis_db.hset(f"job:{participant_id}", "state", "timeout")
-        await redis_db.hset(f"job:{participant_id}", "error", f"Job timed out after {JOB_TIMEOUT} seconds")
+        contender_id = job_data["contender_id"]
+        logger.error(f"Job {contender_id} timed out after {JOB_TIMEOUT} seconds")
+        await redis_db.hset(f"job:{contender_id}", "state", "timeout")
+        await redis_db.hset(f"job:{contender_id}", "error", f"Job timed out after {JOB_TIMEOUT} seconds")
 
 
 async def worker_loop(

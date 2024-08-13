@@ -1,6 +1,6 @@
 -- migrate:up
-CREATE TABLE IF NOT EXISTS participants (
-    participant_id TEXT PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS contenders (
+    contender_id TEXT PRIMARY KEY,
     miner_hotkey TEXT NOT NULL,
     miner_uid INTEGER NOT NULL,
     task TEXT NOT NULL,
@@ -19,9 +19,9 @@ CREATE TABLE IF NOT EXISTS participants (
     updated_at TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC')
 );
 
-CREATE TABLE IF NOT EXISTS participants_history (
+CREATE TABLE IF NOT EXISTS contenders_history (
     id SERIAL PRIMARY KEY,
-    participant_id TEXT NOT NULL,
+    contender_id TEXT NOT NULL,
     miner_hotkey TEXT NOT NULL,
     miner_uid INTEGER NOT NULL,
     task TEXT NOT NULL,
@@ -43,5 +43,5 @@ CREATE TABLE IF NOT EXISTS participants_history (
 
 -- migrate:down
 
-DROP TABLE IF EXISTS participants;
-DROP TABLE IF EXISTS participants_history;
+DROP TABLE IF EXISTS contenders;
+DROP TABLE IF EXISTS contenders_history;

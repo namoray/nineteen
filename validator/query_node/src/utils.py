@@ -7,7 +7,7 @@ from core.tasks import Task
 from core.bittensor_overrides.chain_data import AxonInfo
 from models import base_models, utility_models
 from validator.db.src.database import PSQLDB
-from validator.models import Participant
+from validator.models import Contender
 from core import bittensor_overrides as bt
 from collections import OrderedDict
 import json
@@ -106,14 +106,14 @@ async def _get_debug_text_generator():
 async def query_miner_stream(
     psql_db: PSQLDB,
     axon: AxonInfo,
-    participant: Participant,
+    contender: Contender,
     synapse: bt.Synapse,
     dendrite: bt.dendrite,
     synthetic_query: bool,
     debug: bool = False,
 ) -> AsyncIterator[str]:
     axon_uid = axon.axon_uid
-    task = participant.task
+    task = contender.task
 
     logger.debug(
         f"Querying axon {axon_uid} for a stream, and task: {task}. Debug: {bool(debug)}. Synthetic: {synthetic_query}."
@@ -176,47 +176,47 @@ async def query_miner_stream(
                 error_message=error_message,
             )
 
-        await adjust_participant_from_result(psql_db, query_result, synapse, participant, synthetic_query)
+        await adjust_contender_from_result(psql_db, query_result, synapse, contender, synthetic_query)
 
 
-async def adjust_participant_from_result(
+async def adjust_contender_from_result(
     psql_db: PSQLDB,
     query_result: utility_models.QueryResult,
     synapse: bt.Synapse,
-    participant: Participant,
+    contender: Contender,
     synthetic_query: bool,
 ):
-    participant.total_requests_made += 1
+    contender.total_requests_made += 1
 
     if synthetic_query:
-        participant.synthetic_requests_still_to_make -= 1
+        contender.synthetic_requests_still_to_make -= 1
 
     if query_result.status_code == 200 and query_result.success:
         work = work_and_speed_functions.calculate_work(query_result.task, query_result, synapse=synapse.model_dump())
-        participant.consumed_capacity += work
+        contender.consumed_capacity += work
 
         await db_functions.potentially_store_result_in_sql_lite_db(
             psql_db, query_result, query_result.task, synapse, synthetic_query=synthetic_query
         )
-        logger.debug(f"Adjusted participant: {participant.id} for task: {query_result.task}")
+        logger.debug(f"Adjusted contender: {contender.id} for task: {query_result.task}")
 
     elif query_result.status_code == 429:
-        participant.requests_429 += 1
+        contender.requests_429 += 1
     else:
-        participant.requests_500 += 1
+        contender.requests_500 += 1
     return query_result
 
 
 async def query_miner_no_stream(
-    participant: Participant,
+    contender: Contender,
     synapse: bt.Synapse,
     outgoing_model: BaseModel,
     task: Task,
     dendrite: bt.dendrite,
     synthetic_query: bool,
 ) -> utility_models.QueryResult:
-    axon_uid = participant.miner_hotkey
-    axon = participant.axon
+    axon_uid = contender.miner_hotkey
+    axon = contender.axon
     resulting_synapse, response_time = await qutils.query_individual_axon(
         synapse=synapse, dendrite=dendrite, axon=axon, uid=axon_uid, log_requests_and_responses=False
     )
@@ -234,11 +234,11 @@ async def query_miner_no_stream(
             response_time=response_time,
             task=task,
             success=True,
-            miner_hotkey=participant.miner_hotkey,
+            miner_hotkey=contender.miner_hotkey,
             status_code=resulting_synapse.axon.status_code,
             error_message=resulting_synapse.error_message,
         )
-        # create_scoring_adjustment_task(query_result, synapse, participant, synthetic_query)
+        # create_scoring_adjustment_task(query_result, synapse, contender, synthetic_query)
         return query_result
 
     elif task == Task.avatar:
@@ -248,11 +248,11 @@ async def query_miner_no_stream(
             response_time=response_time,
             task=task,
             success=False,
-            miner_hotkey=participant.miner_hotkey,
+            miner_hotkey=contender.miner_hotkey,
             status_code=resulting_synapse.axon.status_code,
             error_message=resulting_synapse.error_message,
         )
-        # create_scoring_adjustment_task(query_result, synapse, participant, synthetic_query)
+        # create_scoring_adjustment_task(query_result, synapse, contender, synthetic_query)
 
     else:
         query_result = utility_models.QueryResult(
@@ -263,9 +263,9 @@ async def query_miner_no_stream(
             task=task,
             status_code=resulting_synapse.axon.status_code,
             success=False,
-            miner_hotkey=participant.miner_hotkey,
+            miner_hotkey=contender.miner_hotkey,
         )
-        # create_scoring_adjustment_task(query_result, synapse, participant, synthetic_query)
+        # create_scoring_adjustment_task(query_result, synapse, contender, synthetic_query)
         return query_result
 
 

@@ -7,9 +7,14 @@ from pydantic import BaseModel, Field
 from core.tasks import Task
 from typing import Optional
 from datetime import datetime
+from cryptography.fernet import Fernet
+from fiber.chain_interactions.models import Node
 
 task_data = defaultdict(lambda: defaultdict(list))
 
+class NodeWKey(Node):
+    fernet: Fernet
+    symmetric_key_uuid: str
 
 class PeriodScore(BaseModel):
     hotkey: str
@@ -19,7 +24,7 @@ class PeriodScore(BaseModel):
     created_at: datetime
 
 
-class Participant(BaseModel):
+class Contender(BaseModel):
     class Config:
         arbitrary_types_allowed = True
         # Deprecated?
@@ -41,8 +46,8 @@ class Participant(BaseModel):
 
     @property
     def id(self) -> str:
-        participant_id = self.miner_hotkey + "-" + self.task.value
-        return participant_id
+        contender_id = self.miner_hotkey + "-" + self.task.value
+        return contender_id
 
     def calculate_period_score(self) -> float:
         """

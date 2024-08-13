@@ -1,5 +1,5 @@
 """
-Schedules and processes synthetic queries for participants.
+Schedules and processes synthetic queries for contenders.
 Manages a queue of scheduled queries in Redis, executing them when due.
 Provides performance metrics for the scheduling process.
 """
@@ -15,8 +15,8 @@ from typing import Optional
 from dotenv import load_dotenv
 from validator.db.src.database import PSQLDB
 from redis.asyncio import Redis
-from validator.models import Participant
-from validator.utils import participant_utils as putils
+from validator.models import Contender
+from validator.utils import contender_utils as putils
 from validator.utils import redis_utils as rutils
 from validator.utils import redis_constants as rcst
 from core.logging import get_logger
@@ -42,7 +42,7 @@ class PerformanceMetrics:
 
 @dataclass
 class SyntheticQueueItem:
-    participant_id: str
+    contender_id: str
     delay: float
 
 
@@ -56,9 +56,9 @@ async def load_config() -> Config:
     return Config(psql_db, redis_db, run_once, test_env)
 
 
-async def _get_synthetic_queue_item(participant_id: str, delay: float) -> Optional[SyntheticQueueItem]:
+async def _get_synthetic_queue_item(contender_id: str, delay: float) -> Optional[SyntheticQueueItem]:
     json_to_add = {
-        "participant_id": participant_id,
+        "contender_id": contender_id,
         "delay": delay,
     }
 
@@ -95,57 +95,57 @@ def _log_performance_metrics(metrics: "PerformanceMetrics") -> None:
         logger.error("Average sleep time is ~0 - may not be keeping up with synthetic scheduling demand!")
 
 
-async def schedule_synthetic_query(redis_db: Redis, participant_id: str, delay: float) -> None:
-    synthetic_queue_item = await _get_synthetic_queue_item(participant_id, delay)
+async def schedule_synthetic_query(redis_db: Redis, contender_id: str, delay: float) -> None:
+    synthetic_queue_item = await _get_synthetic_queue_item(contender_id, delay)
     time_to_execute_query = _get_time_to_execute_query(delay)
     await rutils.add_to_sorted_set(
         redis_db, rcst.SYNTHETIC_SCHEDULING_QUEUE_KEY, data=asdict(synthetic_queue_item), score=time_to_execute_query
     )
 
 
-async def schedule_initial_synthetics(config: Config, participants: list[Participant]) -> None:
+async def schedule_initial_synthetics(config: Config, contenders: list[Contender]) -> None:
     await rutils.clear_sorted_set(config.redis_db, rcst.SYNTHETIC_SCHEDULING_QUEUE_KEY)
 
-    for participant in participants:
+    for contender in contenders:
         await schedule_synthetic_query(
             config.redis_db,
-            participant.id,
-            participant.delay_between_synthetic_requests,
+            contender.id,
+            contender.delay_between_synthetic_requests,
         )
 
-    logger.debug(f"Scheduled the first query for {len(participants)} participants")
+    logger.debug(f"Scheduled the first query for {len(contenders)} contenders")
 
 
-async def remove_participant(config: Config, participant_id: str, delay: float) -> None:
-    synthetic_queue_item = await _get_synthetic_queue_item(participant_id, delay)
+async def remove_contender(config: Config, contender_id: str, delay: float) -> None:
+    synthetic_queue_item = await _get_synthetic_queue_item(contender_id, delay)
     await rutils.remove_from_sorted_set(
         config.redis_db, rcst.SYNTHETIC_SCHEDULING_QUEUE_KEY, asdict(synthetic_queue_item)
     )
 
 
-async def reschedule_participant(
+async def reschedule_contender(
     config: Config, details: SyntheticQueueItem, metrics: PerformanceMetrics, overspilled_time: float
 ) -> None:
-    participant_id = details.participant_id
+    contender_id = details.contender_id
     delay = details.delay
 
-    requests_remaining = await putils.get_requests_remaining_and_decrement(config.psql_db, participant_id)
+    requests_remaining = await putils.get_requests_remaining_and_decrement(config.psql_db, contender_id)
     if requests_remaining is None:
         logger.error(
-            f"Could not find participant {participant_id} when trying to decrement synthetic requests remaining"
+            f"Could not find contender {contender_id} when trying to decrement synthetic requests remaining"
         )
-        await remove_participant(config, participant_id, delay)
+        await remove_contender(config, contender_id, delay)
 
         return
 
     if requests_remaining == 0:
-        logger.debug(f"Participant {participant_id} has no more requests remaining. Removing...")
+        logger.debug(f"Contender {contender_id} has no more requests remaining. Removing...")
 
-        await remove_participant(config, participant_id, delay)
+        await remove_contender(config, contender_id, delay)
         return
 
-    await putils.add_synthetic_query_to_queue(config.redis_db, participant_id)
-    await schedule_synthetic_query(config.redis_db, participant_id, delay)
+    await putils.add_synthetic_query_to_queue(config.redis_db, contender_id)
+    await schedule_synthetic_query(config.redis_db, contender_id, delay)
     metrics.cumulative_late_time += abs(overspilled_time)
     metrics.processed_items += 1
 
@@ -153,7 +153,7 @@ async def reschedule_participant(
 async def schedule_synthetics_until_done(config: Config) -> None:
     logger.debug(f"Scheduling any synthetic queries which are ready. Scheduling just once: {config.run_once}")
 
-    pariticipants = await putils.load_participants(config.psql_db)
+    pariticipants = await putils.load_contenders(config.psql_db)
     await schedule_initial_synthetics(config, pariticipants)
 
     if config.run_once:
@@ -176,7 +176,7 @@ async def schedule_synthetics_until_done(config: Config) -> None:
         overspilled_time = timestamp - current_time
 
         if overspilled_time <= 0:
-            await reschedule_participant(config, SyntheticQueueItem(**raw_details), metrics, overspilled_time)
+            await reschedule_contender(config, SyntheticQueueItem(**raw_details), metrics, overspilled_time)
 
         else:
             await _sleep_until_next_query(overspilled_time, metrics)

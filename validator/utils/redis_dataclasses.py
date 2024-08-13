@@ -12,8 +12,8 @@ class PublicKeypairInfo:
 
 @dataclass
 class WeightsToSet:
-    uids: list[int]
-    values: list[float]
+    node_ids: list[int]
+    node_weights: list[float]
     version_key: int
     netuid: int = 19
 

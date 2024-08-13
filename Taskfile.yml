@@ -1,12 +1,12 @@
 version: "3"
 
 tasks:
-  refresh_participants:
+  refresh_contenders:
     cmds:
-      - docker-compose run -e ENV=test -e NETUID=19 {{.CLI_ARGS}} control_node python validator/core/manage_participants/refresh_participants.py
-  schedule_participants:
+      - docker-compose run -e ENV=test -e NETUID=19 {{.CLI_ARGS}} control_node python validator/core/manage_contenders/refresh_contenders.py
+  schedule_contenders:
     cmds:
-      - docker-compose run -e ENV=test -e NETUID=19  {{.CLI_ARGS}} --entrypoint python control_node validator/core/manage_participants/scheduling_participants.py
+      - docker-compose run -e ENV=test -e NETUID=19  {{.CLI_ARGS}} --entrypoint python control_node validator/core/manage_contenders/scheduling_contenders.py
   generate_synthetic_data:
     cmds:
       - docker-compose exec -e ENV=test {{.CLI_ARGS}} control_node python validator/core/store_synthetic_data/generate_synthetic_data.py
@@ -35,10 +35,7 @@ tasks:
     cmds:
       - docker-compose -f docker-compose.yml -f docker-compose.testing.yml run --rm dbmate up
       - docker-compose -f docker-compose.yml -f docker-compose.testing.yml run --rm -e NEST_ASYNCIO=0 --entrypoint python chain_node /app/validator/chain_node/tests/test_refresh_nodes.py
-  test_chain_node_set_weights:
-    cmds:
-      - docker-compose -f docker-compose.yml -f docker-compose.testing.yml run --rm dbmate up
-      - docker-compose -f docker-compose.yml -f docker-compose.testing.yml run --rm -e NEST_ASYNCIO=0 --entrypoint python chain_node /app/validator/chain_node/tests/test_set_weights.py
+
   test_control_node_schedule_synthetic_queries:
     cmds:
       - docker-compose -f docker-compose.yml -f docker-compose.testing.yml run --rm dbmate up
