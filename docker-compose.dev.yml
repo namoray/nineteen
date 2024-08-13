@@ -1,5 +1,30 @@
+version: '3'
+
 services:
+  core:
+    build:
+      context: .
+      dockerfile: dockerfiles/core.dockerfile
+    image: core
+    networks:
+      - postgres_network
+      - redis_network
+    container_name: dev_core
+
   client_node:
+    build:
+      context: .
+      dockerfile: dockerfiles/client_node.dockerfile
+    depends_on:
+      - redis
+      - postgresql
+      - core
+    volumes:
+      - .:/app
+    networks:
+      - postgres_network
+      - redis_network
+    entrypoint: ["python", "-u", "/app/validator/client_node/src/main.py"]
     ports:
       - "8000:8000"
     environment:
@@ -12,8 +37,33 @@ services:
     container_name: dev_client_node
 
   query_node:
+    build:
+      context: .
+      dockerfile: dockerfiles/query_node.dockerfile
     deploy:
       replicas: 1
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+      restart_policy:
+        condition: on-failure
+      update_config:
+        parallelism: 1
+        delay: 10s
+      rollback_config:
+        parallelism: 1
+        delay: 10s
+    depends_on:
+      - redis
+      - postgresql
+      - core
+    volumes:
+      - .:/app
+    networks:
+      - postgres_network
+      - redis_network
+    entrypoint: ["python", "-u", "/app/validator/query_node/src/main.py"]
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
@@ -22,9 +72,22 @@ services:
       POSTGRES_NAME: mydb
       ENV: dev
       NETUID: 19
-      container_name: dev_query_node
+    container_name: dev_query_node
 
   chain_node:
+    build:
+      context: .
+      dockerfile: dockerfiles/chain_node.dockerfile
+    depends_on:
+      - core
+      - postgresql
+      - redis
+    volumes:
+      - .:/app
+    networks:
+      - postgres_network
+      - redis_network
+    entrypoint: ["python", "-u", "/app/validator/chain_node/src/main.py"]
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
@@ -40,6 +103,19 @@ services:
     container_name: dev_chain_node
 
   control_node:
+    build:
+      context: .
+      dockerfile: dockerfiles/control_node.dockerfile
+    depends_on:
+      - redis
+      - postgresql
+      - core
+    volumes:
+      - .:/app
+    networks:
+      - postgres_network
+      - redis_network
+    entrypoint: ["python", "-u", "/app/validator/control_node/src/main.py"]
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
@@ -49,7 +125,25 @@ services:
       ENV: dev
     container_name: dev_control_node
 
+  redis:
+    image: redis/redis-stack:latest
+    networks:
+      - redis_network
+    ports:
+      - "6379:6379"
+    container_name: 0_redis
+
   postgresql:
+    image: postgres:latest
+    volumes:
+      - ./postgres_data:/host_postgres_data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d mydb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - postgres_network
     ports:
       - "5432:5432"
     environment:
@@ -58,14 +152,26 @@ services:
       POSTGRES_DB: mydb
       POSTGRES_PORT: 5432
       POSTGRES_NAME: mydb
-    volumes:
-      - ./postgres_data:/host_postgres_data
     container_name: 0_dev_postgresql
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    container_name: 0_prometheus
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:latest
+    depends_on:
+      - prometheus
+    container_name: 0_grafana
+    ports:
+      - "3000:3000"
 
   dbmate:
     image: amacneil/dbmate
-    environment:
-      DATABASE_URL: postgres://user:password@postgresql:5432/mydb?sslmode=disable
     volumes:
       - ./validator/db:/db
     command: up
@@ -74,4 +180,15 @@ services:
         condition: service_healthy
     networks:
       - postgres_network
+    environment:
+      DATABASE_URL: postgres://user:password@postgresql:5432/mydb?sslmode=disable
     container_name: 0_dbmate
+
+networks:
+  postgres_network:
+    driver: bridge
+  redis_network:
+    driver: bridge
+
+volumes:
+  postgres_data:

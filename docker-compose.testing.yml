@@ -1,5 +1,33 @@
+version: '3'
+
 services:
+  core:
+    build:
+      context: .
+      dockerfile: dockerfiles/core.dockerfile
+    image: core
+    networks:
+      - postgres_network
+      - redis_network
+    container_name: test_core
+
   client_node:
+    build:
+      context: .
+      dockerfile: dockerfiles/client_node.dockerfile
+    depends_on:
+      - redis
+      - test_db
+      - core
+    volumes:
+      - .:/app
+    networks:
+      - postgres_network
+      - redis_network
+    entrypoint: ["python", "-u", "/app/validator/client_node/src/main.py"]
+    ports:
+      - "8000:8000"
+    container_name: test_client_node
     environment:
       POSTGRES_USER: test_user
       POSTGRES_PASSWORD: test_password
@@ -10,6 +38,33 @@ services:
       ENV: test
 
   query_node:
+    build:
+      context: .
+      dockerfile: dockerfiles/query_node.dockerfile
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+      restart_policy:
+        condition: on-failure
+      update_config:
+        parallelism: 1
+        delay: 10s
+      rollback_config:
+        parallelism: 1
+        delay: 10s
+    depends_on:
+      - redis
+      - test_db
+      - core
+    volumes:
+      - .:/app
+    networks:
+      - postgres_network
+      - redis_network
+    entrypoint: ["python", "-u", "/app/validator/query_node/src/main.py"]
+    container_name: test_query_node
     environment:
       POSTGRES_USER: test_user
       POSTGRES_PASSWORD: test_password
@@ -21,6 +76,20 @@ services:
       NETUID: 19
 
   chain_node:
+    build:
+      context: .
+      dockerfile: dockerfiles/chain_node.dockerfile
+    depends_on:
+      - core
+      - test_db
+      - redis
+    volumes:
+      - .:/app
+    networks:
+      - postgres_network
+      - redis_network
+    entrypoint: ["python", "-u", "/app/validator/chain_node/src/main.py"]
+    container_name: test_chain_node
     environment:
       POSTGRES_USER: test_user
       POSTGRES_PASSWORD: test_password
@@ -36,6 +105,20 @@ services:
       SECONDS_BETWEEN_SYNC: 60
 
   control_node:
+    build:
+      context: .
+      dockerfile: dockerfiles/control_node.dockerfile
+    depends_on:
+      - redis
+      - test_db
+      - core
+    volumes:
+      - .:/app
+    networks:
+      - postgres_network
+      - redis_network
+    entrypoint: ["python", "-u", "/app/validator/control_node/src/main.py"]
+    container_name: test_control_node
     environment:
       POSTGRES_USER: test_user
       POSTGRES_PASSWORD: test_password
@@ -44,6 +127,14 @@ services:
       POSTGRES_HOST: test_db
       POSTGRES_NAME: test_db
       ENV: test
+
+  redis:
+    image: redis/redis-stack:latest
+    networks:
+      - redis_network
+    ports:
+      - "6379:6379"
+    container_name: 0_redis
 
   test_db:
     image: postgres:13
@@ -57,7 +148,43 @@ services:
     networks:
       - postgres_network
     container_name: 0_test_db
-  
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    container_name: 0_prometheus
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:latest
+    depends_on:
+      - prometheus
+    container_name: 0_grafana
+    ports:
+      - "3000:3000"
+
+  dbmate:
+    image: amacneil/dbmate
+    volumes:
+      - ./validator/db:/db
+    command: up
+    depends_on:
+      test_db:
+        condition: service_started
+    networks:
+      - postgres_network
+    container_name: 0_dbmate
+    environment:
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_password
+      POSTGRES_DB: test_db
+      POSTGRES_PORT: 5432
+      POSTGRES_HOST: test_db
+      POSTGRES_NAME: test_db
+      DATABASE_URL: "postgres://test_user:test_password@test_db:5432/test_db?sslmode=disable"
+
   adminer:
     image: adminer
     restart: always
@@ -70,16 +197,14 @@ services:
     networks:
       - postgres_network
     depends_on:
-      - postgresql
+      - test_db
     container_name: 0_test_adminer
 
+networks:
+  postgres_network:
+    driver: bridge
+  redis_network:
+    driver: bridge
 
-  dbmate:
-    environment:
-      POSTGRES_USER: test_user
-      POSTGRES_PASSWORD: test_password
-      POSTGRES_DB: test_db
-      POSTGRES_PORT: 5432
-      POSTGRES_HOST: test_db
-      POSTGRES_NAME: test_db
-      DATABASE_URL: "postgres://test_user:test_password@test_db:5432/test_db?sslmode=disable"
+volumes:
+  postgres_data:

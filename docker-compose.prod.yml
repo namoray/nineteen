@@ -1,5 +1,33 @@
+version: '3'
+
 services:
+  core:
+    build:
+      context: .
+      dockerfile: dockerfiles/core.dockerfile
+    image: core
+    networks:
+      - postgres_network
+      - redis_network
+    container_name: core
+
   client_node:
+    build:
+      context: .
+      dockerfile: dockerfiles/client_node.dockerfile
+    depends_on:
+      - redis
+      - postgresql
+      - core
+    volumes:
+      - .:/app
+    networks:
+      - postgres_network
+      - redis_network
+    entrypoint: ["python", "-u", "/app/validator/client_node/src/main.py"]
+    ports:
+      - "8000:8000"
+    container_name: client_node
     environment:
       POSTGRES_USER: ${PROD_DB_USER}
       POSTGRES_PASSWORD: ${PROD_DB_PASSWORD}
@@ -12,6 +40,34 @@ services:
         condition: on-failure
 
   query_node:
+    build:
+      context: .
+      dockerfile: dockerfiles/query_node.dockerfile
+    deploy:
+      replicas: 3
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+      restart_policy:
+        condition: on-failure
+      update_config:
+        parallelism: 1
+        delay: 10s
+      rollback_config:
+        parallelism: 1
+        delay: 10s
+    depends_on:
+      - redis
+      - postgresql
+      - core
+    volumes:
+      - .:/app
+    networks:
+      - postgres_network
+      - redis_network
+    entrypoint: ["python", "-u", "/app/validator/query_node/src/main.py"]
+    container_name: query_node
     environment:
       POSTGRES_USER: ${PROD_DB_USER}
       POSTGRES_PASSWORD: ${PROD_DB_PASSWORD}
@@ -20,12 +76,22 @@ services:
       POSTGRES_NAME: ${PROD_DB_NAME}
       ENV: prod
       NETUID: ${PROD_NETUID}
-    deploy:
-      replicas: 3
-      restart_policy:
-        condition: on-failure
 
   chain_node:
+    build:
+      context: .
+      dockerfile: dockerfiles/chain_node.dockerfile
+    depends_on:
+      - core
+      - postgresql
+      - redis
+    volumes:
+      - .:/app
+    networks:
+      - postgres_network
+      - redis_network
+    entrypoint: ["python", "-u", "/app/validator/chain_node/src/main.py"]
+    container_name: chain_node
     environment:
       POSTGRES_USER: ${PROD_DB_USER}
       POSTGRES_PASSWORD: ${PROD_DB_PASSWORD}
@@ -43,6 +109,20 @@ services:
         condition: on-failure
 
   control_node:
+    build:
+      context: .
+      dockerfile: dockerfiles/control_node.dockerfile
+    depends_on:
+      - redis
+      - postgresql
+      - core
+    volumes:
+      - .:/app
+    networks:
+      - postgres_network
+      - redis_network
+    entrypoint: ["python", "-u", "/app/validator/control_node/src/main.py"]
+    container_name: control_node
     environment:
       POSTGRES_USER: ${PROD_DB_USER}
       POSTGRES_PASSWORD: ${PROD_DB_PASSWORD}
@@ -54,17 +134,65 @@ services:
       restart_policy:
         condition: on-failure
 
+  redis:
+    image: redis/redis-stack:latest
+    networks:
+      - redis_network
+    ports:
+      - "6379:6379"
+    container_name: 0_redis
+    deploy:
+      restart_policy:
+        condition: on-failure
+
   postgresql:
+    image: postgres:latest
+    volumes:
+      - /path/to/production/postgres/data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d mydb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - postgres_network
+    ports:
+      - "5432:5432"
+    container_name: 0_postgresql
     environment:
       POSTGRES_USER: ${PROD_DB_USER}
       POSTGRES_PASSWORD: ${PROD_DB_PASSWORD}
       POSTGRES_DB: ${PROD_DB_NAME}
       POSTGRES_PORT: ${PROD_DB_PORT}
       POSTGRES_NAME: ${PROD_DB_NAME}
+
+  prometheus:
+    image: prom/prometheus:latest
     volumes:
-      - /path/to/production/postgres/data:/var/lib/postgresql/data
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    container_name: 0_prometheus
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:latest
+    depends_on:
+      - prometheus
+    container_name: 0_grafana
+    ports:
+      - "3000:3000"
 
   dbmate:
+    image: amacneil/dbmate
+    volumes:
+      - ./validator/db:/db
+    command: up
+    depends_on:
+      postgresql:
+        condition: service_healthy
+    networks:
+      - postgres_network
+    container_name: 0_dbmate
     environment:
       POSTGRES_USER: ${PROD_DB_USER}
       POSTGRES_PASSWORD: ${PROD_DB_PASSWORD}
@@ -72,9 +200,12 @@ services:
       POSTGRES_PORT: ${PROD_DB_PORT}
       POSTGRES_NAME: ${PROD_DB_NAME}
       ENV: prod
-    
 
-  redis:
-    deploy:
-      restart_policy:
-        condition: on
+networks:
+  postgres_network:
+    driver: bridge
+  redis_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
