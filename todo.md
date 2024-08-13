@@ -1,12 +1,21 @@
 tests
 
-- finish refactoring control center, and add tests
-- Make sure the control center correctly controls the flow over a long long period of time. Axons added recently? if so then particiapnts added recently; Any synthetic queries left? All this stuff should give a lot of good insight
-- Fix the signing service to be more secure
-- See if dendrites work or need completely rewriting
-- Try to run everything synthetic only, and be confident its working (alerts, grafana board, all that jazz)
-- Add organic support
-- Easy validator setup and running
+- finish the 'cycle'
+- - make sure handshake works
+- - etc etc, the whole cycle
+- - query node redone
+- - client node redone
+- - end to end tests with current orchestrator, then;
+------- wednesday end ----------
+
+
+- - refactor the orchestrator completely to work with new structure
+------ thursday end --------
+- - spend friday + weekend hooking up the validator UI to the data we have in the db's, including all the nice histrocal graphs etc
+- - make so you can access the subnet with tao & tao only
+- - speech features
+
+monday releases teased
 
 
 What to change when making a new inference subnet?

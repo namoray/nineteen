@@ -27,7 +27,7 @@ async def get_and_store_nodes(config: Config) -> list[Node]:
     return nodes
 
 
-async def peform_handshakes(nodes: list[Node], config: Config) -> None:
+async def perform_handshakes(nodes: list[Node], config: Config) -> None:
     tasks = []
     async_client = httpx.AsyncClient()
     for node in nodes:
