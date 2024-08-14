@@ -16,6 +16,10 @@ class NodeWKey(Node):
     fernet: Fernet
     symmetric_key_uuid: str
 
+    model_config = {
+        "arbitrary_types_allowed": True,
+    }
+
 class PeriodScore(BaseModel):
     hotkey: str
     task: Task

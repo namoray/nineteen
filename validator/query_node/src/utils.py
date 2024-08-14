@@ -4,8 +4,6 @@ import time
 from typing import Any, AsyncIterator, Dict, List, Optional, Union
 from pydantic import BaseModel, ValidationError
 from core.tasks import Task
-from core.bittensor_overrides.chain_data import AxonInfo
-from models import base_models, utility_models
 from validator.db.src.database import PSQLDB
 from validator.models import Contender
 from core import bittensor_overrides as bt

@@ -22,7 +22,7 @@ async def get_and_store_nodes(config: Config) -> list[Node]:
     nodes = await asyncio.to_thread(fetch_nodes.get_nodes_for_netuid, config.substrate_interface, config.netuid)
     async with await config.psql_db.connection() as connection:
         await migrate_nodes_to_history(connection)
-        await insert_nodes(connection, nodes, config.network)
+        await insert_nodes(connection, nodes, config.subtensor_network)
     logger.info(f"Stored {len(nodes)} nodes. Sleeping for {config.seconds_between_syncs} seconds.")
     return nodes
 

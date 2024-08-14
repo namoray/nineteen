@@ -10,7 +10,6 @@ from fastapi import HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from redis.asyncio import Redis
-from models import base_models, synapses, utility_models, request_models
 from starlette.responses import StreamingResponse
 from core import bittensor_overrides as bt
 from fastapi.routing import APIRouter

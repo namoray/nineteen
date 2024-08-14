@@ -14,12 +14,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-
+RUN pip install --upgrade pip
 
 COPY core /app/core
-COPY fiber /app/fiber 
 
-RUN pip install /app/fiber
+ARG GITHUB_PAT
 
+RUN pip uninstall -y fiber && \
+    pip install git+https://${GITHUB_PAT}@github.com/namoray/fiber.git
 
 ENV PYTHONPATH=/app:$PYTHONPATH

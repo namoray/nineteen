@@ -1,6 +1,6 @@
 from enum import Enum
-from models import utility_models
-from models.base_models import CapacityForTask
+from core.models import utility_models
+from core.models.base_models import CapacityForTask
 from pydantic import BaseModel
 from core.tasks import Task
 

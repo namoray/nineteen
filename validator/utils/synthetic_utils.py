@@ -3,7 +3,6 @@ from typing import Any
 
 from core.tasks import Task
 from core import tasks_config
-from models import base_models
 from validator.utils import (
     redis_utils as rutils,
     redis_constants as rcst,
@@ -12,7 +11,6 @@ from validator.utils import (
 )
 from core import dataclasses as dc
 from redis.asyncio import Redis
-from models import synapses
 from core import bittensor_overrides as bt
 import base64
 from io import BytesIO

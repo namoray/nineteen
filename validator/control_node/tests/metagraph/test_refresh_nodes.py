@@ -13,7 +13,7 @@ class TestRefreshNodes(unittest.IsolatedAsyncioTestCase):
             psql_db=PSQLDB(),
             run_once=True,
             test_env=True,
-            network="test",
+            subtensor_network="test",
             netuid=1,
             seconds_between_syncs=60,
             substrate_interface=AsyncMock(),

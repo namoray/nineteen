@@ -1,8 +1,17 @@
+import enum
 from typing import List, Optional, Any
 
 from pydantic import BaseModel
 
 from core.tasks import Task
+
+class ChatModels(str, enum.Enum):
+    """Model is used for the chat"""
+
+    mixtral = "mixtral-8x7b"
+    llama_3 = "llama-3"
+    llama_31_8b = "llama-3-1-8b"
+    llama_31_70b = "llama-3-1-70b"
 
 
 class QueryResult(BaseModel):

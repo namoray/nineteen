@@ -2,7 +2,6 @@ import asyncio
 import random
 import sys
 
-from models import base_models, utility_models
 from validator.utils import (
     synthetic_utils as sutils,
     synthetic_constants as scst,
