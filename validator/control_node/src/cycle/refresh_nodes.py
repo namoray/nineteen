@@ -7,7 +7,12 @@ import asyncio
 
 
 from fiber.chain_interactions.models import Node
-from validator.db.src.sql.nodes import migrate_nodes_to_history, insert_nodes, get_last_updated_time_for_nodes, get_nodes
+from validator.db.src.sql.nodes import (
+    migrate_nodes_to_history,
+    insert_nodes,
+    get_last_updated_time_for_nodes,
+    get_nodes,
+)
 from core.logging import get_logger
 from fiber.chain_interactions import fetch_nodes
 from validator.control_node.src.main import Config
@@ -23,25 +28,46 @@ async def _handshake(node: Node, async_client: httpx.AsyncClient, config: Config
     server_address = client.construct_server_address(
         ip=node.ip, port=node.port, protocol=node.protocol, ip_type=node.ip_type
     )
-    try:
+    if config.debug:
         return await handshake.perform_handshake(async_client, server_address, config.keypair)
-    except (httpx.HTTPStatusError, httpx.RequestError, httpx.ConnectError):
-        return None
+    else:
+        try:
+            return await handshake.perform_handshake(async_client, server_address, config.keypair)
+        except (httpx.HTTPStatusError, httpx.RequestError, httpx.ConnectError):
+            return None
 
 
 async def get_and_store_nodes(config: Config) -> list[Node]:
     async with await config.psql_db.connection() as connection:
-        last_updated_time = await get_last_updated_time_for_nodes(connection, config.netuid)
-        if last_updated_time is not None and datetime.now() - last_updated_time < timedelta(minutes=30):
-            logger.info(f"Last update for nodes table was at {last_updated_time}, which is less than 30 minutes ago - skipping refresh")
+        if await is_recent_update(connection, config.netuid):
             return await get_nodes(config.psql_db, config.netuid)
 
-    nodes = await asyncio.to_thread(fetch_nodes.get_nodes_for_netuid, config.substrate_interface, config.netuid)
+    nodes = await fetch_nodes_from_substrate(config)
+    await store_nodes(config, nodes)
+    
+    logger.info(f"Stored {len(nodes)} nodes. Sleeping for {config.seconds_between_syncs} seconds.")
+    return nodes
+
+async def is_recent_update(connection, netuid: int) -> bool:
+    last_updated_time = await get_last_updated_time_for_nodes(connection, netuid)
+    if last_updated_time and datetime.now() - last_updated_time < timedelta(minutes=30):
+        logger.info(
+            f"Last update for nodes table was at {last_updated_time}, which is less than 30 minutes ago - skipping refresh"
+        )
+        return True
+    return False
+
+async def fetch_nodes_from_substrate(config: Config) -> list[Node]:
+    return await asyncio.to_thread(
+        fetch_nodes.get_nodes_for_netuid,
+        config.substrate_interface,
+        config.netuid
+    )
+
+async def store_nodes(config: Config, nodes: list[Node]):
     async with await config.psql_db.connection() as connection:
         await migrate_nodes_to_history(connection)
         await insert_nodes(connection, nodes, config.subtensor_network)
-    logger.info(f"Stored {len(nodes)} nodes. Sleeping for {config.seconds_between_syncs} seconds.")
-    return nodes
 
 
 async def perform_handshakes(nodes: list[Node], config: Config) -> None:

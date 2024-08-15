@@ -32,6 +32,7 @@ class Config:
     subtensor_address: str
     netuid: int
     seconds_between_syncs: int
+    debug: bool = os.getenv("ENV", "prod").lower() == "dev" 
 
 
 def load_config() -> Config:
