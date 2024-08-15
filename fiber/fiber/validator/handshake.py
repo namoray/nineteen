@@ -70,4 +70,5 @@ async def send_symmetric_key_to_server(
     response = await httpx_client.post(
         f"{server_address}/{bcst.EXCHANGE_SYMMETRIC_KEY_ENDPOINT}", json=payload, timeout=timeout
     )
+    response.raise_for_status()
     return response.status_code == 200

@@ -1,3 +1,4 @@
+import datetime
 from validator.db.src.database import PSQLDB
 from fiber.chain_interactions.models import Node
 from core.logging import get_logger
@@ -94,6 +95,15 @@ async def migrate_nodes_to_history(connection: Connection) -> None:  # noqa: F82
 
     logger.debug("Truncating axon info table")
     await connection.execute(f"DELETE FROM {dcst.NODES_TABLE}")
+
+
+async def get_last_updated_time_for_nodes(connection: Connection, netuid: int) -> datetime.datetime:
+    query = f"""
+        SELECT MAX({dcst.CREATED_AT})
+        FROM {dcst.NODES_TABLE}
+        WHERE {dcst.NETUID} = $1
+    """
+    return await connection.fetchval(query, netuid)
 
 
 async def insert_symmetric_keys_for_nodes(

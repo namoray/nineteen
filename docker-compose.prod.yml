@@ -33,7 +33,7 @@ services:
       POSTGRES_PASSWORD: ${PROD_DB_PASSWORD}
       POSTGRES_DB: ${PROD_DB_NAME}
       POSTGRES_PORT: ${PROD_DB_PORT}
-      POSTGRES_NAME: ${PROD_DB_NAME}
+      POSTGRES_HOST: ${PROD_DB_NAME}
       ENV: prod
     deploy:
       restart_policy:
@@ -73,7 +73,7 @@ services:
       POSTGRES_PASSWORD: ${PROD_DB_PASSWORD}
       POSTGRES_DB: ${PROD_DB_NAME}
       POSTGRES_PORT: ${PROD_DB_PORT}
-      POSTGRES_NAME: ${PROD_DB_NAME}
+      POSTGRES_HOST: ${PROD_DB_NAME}
       ENV: prod
       NETUID: ${PROD_NETUID}
 
@@ -97,7 +97,7 @@ services:
       POSTGRES_PASSWORD: ${PROD_DB_PASSWORD}
       POSTGRES_DB: ${PROD_DB_NAME}
       POSTGRES_PORT: ${PROD_DB_PORT}
-      POSTGRES_NAME: ${PROD_DB_NAME}
+      POSTGRES_HOST: ${PROD_DB_NAME}
       RUN_ONCE: "false"
       DUMMY: "false"
       NETUID: ${PROD_NETUID}
@@ -128,7 +128,7 @@ services:
       POSTGRES_PASSWORD: ${PROD_DB_PASSWORD}
       POSTGRES_DB: ${PROD_DB_NAME}
       POSTGRES_PORT: ${PROD_DB_PORT}
-      POSTGRES_NAME: ${PROD_DB_NAME}
+      POSTGRES_HOST: ${PROD_DB_NAME}
       ENV: prod
     deploy:
       restart_policy:
@@ -164,7 +164,7 @@ services:
       POSTGRES_PASSWORD: ${PROD_DB_PASSWORD}
       POSTGRES_DB: ${PROD_DB_NAME}
       POSTGRES_PORT: ${PROD_DB_PORT}
-      POSTGRES_NAME: ${PROD_DB_NAME}
+      POSTGRES_HOST: ${PROD_DB_NAME}
 
   prometheus:
     image: prom/prometheus:latest
@@ -198,7 +198,7 @@ services:
       POSTGRES_PASSWORD: ${PROD_DB_PASSWORD}
       POSTGRES_DB: ${PROD_DB_NAME}
       POSTGRES_PORT: ${PROD_DB_PORT}
-      POSTGRES_NAME: ${PROD_DB_NAME}
+      POSTGRES_HOST: ${PROD_DB_NAME}
       ENV: prod
 
 networks:

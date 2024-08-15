@@ -9,6 +9,9 @@ sam_vit_l_0b3195.pth
 *.so
 *.gguf
 
+postgres_data/*
+postgres_data
+
 .bittensor
 fiber
 *.safetensors
