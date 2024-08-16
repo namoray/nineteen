@@ -5,7 +5,7 @@ from functools import lru_cache
 from colorama import Fore, Back, Style, init
 
 init(autoreset=True)
-
+ 
 
 class ColoredFormatter(logging.Formatter):
     COLORS = {
@@ -15,7 +15,7 @@ class ColoredFormatter(logging.Formatter):
         "ERROR": Fore.RED,
         "CRITICAL": Fore.RED + Back.WHITE,
     }
-
+ 
     def format(self, record):
         levelname = record.levelname
         if levelname in self.COLORS:

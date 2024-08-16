@@ -11,7 +11,6 @@ from validator.db.src.sql.nodes import (
     migrate_nodes_to_history,
     insert_nodes,
     get_last_updated_time_for_nodes,
-    get_nodes,
 )
 from core.logging import get_logger
 from fiber.chain_interactions import fetch_nodes
@@ -20,33 +19,56 @@ from validator.db.src.sql.nodes import insert_symmetric_keys_for_nodes
 from fiber.validator import handshake, client
 import httpx
 from datetime import datetime, timedelta
+from cryptography.fernet import Fernet
 
 logger = get_logger(__name__)
 
 
 async def _handshake(node: Node, async_client: httpx.AsyncClient, config: Config) -> tuple[str, str] | None:
     server_address = client.construct_server_address(
-        ip=node.ip, port=node.port, protocol=node.protocol, ip_type=node.ip_type
+        node=node,
+        replace_with_docker_localhost=config.debug,
     )
-    if config.debug:
+    try:
         return await handshake.perform_handshake(async_client, server_address, config.keypair)
-    else:
-        try:
-            return await handshake.perform_handshake(async_client, server_address, config.keypair)
-        except (httpx.HTTPStatusError, httpx.RequestError, httpx.ConnectError):
-            return None
+    except (httpx.HTTPStatusError, httpx.RequestError, httpx.ConnectError) as e:
+        logger.warning(f"Failed to connect to {server_address}: {e}")
+        if hasattr(e, "response"):
+            logger.debug(f"response content: {e.response.text}")
+        return None
 
 
 async def get_and_store_nodes(config: Config) -> list[Node]:
-    async with await config.psql_db.connection() as connection:
-        if await is_recent_update(connection, config.netuid):
-            return await get_nodes(config.psql_db, config.netuid)
+    # async with await config.psql_db.connection() as connection:
+    #     if await is_recent_update(connection, config.netuid):
+    #         return await get_nodes(config.psql_db, config.netuid)
 
-    nodes = await fetch_nodes_from_substrate(config)
+    # nodes = await fetch_nodes_from_substrate(config)
+
+    # TOOD: DISABLE AS THIS JUST FOR DEV
+    nodes = [
+        Node(
+            hotkey="5G9GefqqWDhmntCtqoLHnfLSBDGCnFfBHhzZf1aCvQQcpjY8",
+            coldkey="5EFnWXKkJufZYc74pWUSBC5ubCBZCSPCrSvZfEqsFAJwBdCF",
+            node_id=1,
+            incentive=30289,
+            netuid=176,
+            stake=0,
+            trust=1,
+            vtrust=0,
+            ip="0.0.0.1",
+            ip_type=4,
+            port=4001,
+            protocol=4,
+            network="test",
+            created_at=datetime.now(),
+        )
+    ]
     await store_nodes(config, nodes)
-    
-    logger.info(f"Stored {len(nodes)} nodes. Sleeping for {config.seconds_between_syncs} seconds.")
+
+    logger.info(f"Stored {len(nodes)} nodes.")
     return nodes
+
 
 async def is_recent_update(connection, netuid: int) -> bool:
     last_updated_time = await get_last_updated_time_for_nodes(connection, netuid)
@@ -57,12 +79,10 @@ async def is_recent_update(connection, netuid: int) -> bool:
         return True
     return False
 
+
 async def fetch_nodes_from_substrate(config: Config) -> list[Node]:
-    return await asyncio.to_thread(
-        fetch_nodes.get_nodes_for_netuid,
-        config.substrate_interface,
-        config.netuid
-    )
+    return await asyncio.to_thread(fetch_nodes.get_nodes_for_netuid, config.substrate_interface, config.netuid)
+
 
 async def store_nodes(config: Config, nodes: list[Node]):
     async with await config.psql_db.connection() as connection:
@@ -74,8 +94,8 @@ async def perform_handshakes(nodes: list[Node], config: Config) -> None:
     tasks = []
     async_client = httpx.AsyncClient()
     for node in nodes:
-        # TODO: Don't do it for nodes which already have a symmetric key?
-        tasks.append(_handshake(node, async_client, config))
+        if node.fernet is None or node.symmetric_key_uuid is None:
+            tasks.append(_handshake(node, async_client, config))
 
     key_infos: list[tuple[str, str]] = await asyncio.gather(*tasks)
     good_nodes = []
@@ -83,11 +103,19 @@ async def perform_handshakes(nodes: list[Node], config: Config) -> None:
     uuids = []
     for node, key_info in zip(nodes, key_infos):
         if node is not None and key_info is not None:
+            symmetric_key, symmetric_key_uid = key_info[0], key_info[1]
+            fernet = Fernet(symmetric_key)
+
+            node.fernet = fernet
+            node.symmetric_key_uuid = symmetric_key_uid
+            node.symmetric_key_uuid = symmetric_key_uid
+
             good_nodes.append(node)
-            keys.append(key_info[0])
-            uuids.append(key_info[1])
+            keys.append(symmetric_key)
+            uuids.append(symmetric_key_uid)
 
     async with await config.psql_db.connection() as connection:
         await insert_symmetric_keys_for_nodes(connection, nodes, keys, uuids)
 
+    return good_nodes
     logger.info(f"✅ Successfully performed handshakes with {len(nodes)} nodes!")

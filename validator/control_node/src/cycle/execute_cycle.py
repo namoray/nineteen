@@ -13,7 +13,7 @@ A cycle consists of
 from validator.control_node.src.main import Config
 from validator.control_node.src.cycle import (
     refresh_nodes,
-    # refresh_contenders,
+    refresh_contenders,
     # schedule_synthetic_queries,
     # calculate_and_schedule_weights,
 )
@@ -21,8 +21,8 @@ from validator.control_node.src.cycle import (
 
 async def single_cycle(config: Config) -> None:
     nodes = await refresh_nodes.get_and_store_nodes(config)
-    await refresh_nodes.perform_handshakes(nodes, config)
-    # await refresh_contenders.get_contenders_from_axons(config)
+    nodes = await refresh_nodes.perform_handshakes(nodes, config)
+    await refresh_contenders.get_contenders_from_nodes(config, nodes)
     # await schedule_synthetic_queries.schedule_synthetics_until_done(config)
 
     # Should be performed in parallel to the next cycle

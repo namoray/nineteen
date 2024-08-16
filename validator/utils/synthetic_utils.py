@@ -210,7 +210,7 @@ async def fetch_synthetic_data_for_task(redis_db: Redis, task: Task) -> dict[str
 
 def convert_synthetic_data_to_synapse(synthetic_data: dict[str, Any], task: Task) -> bt.Synapse:
     # dynamically get synapse from models.synapses using the task
-    synapse_name = tasks_config.TASK_TO_CONFIG[task].synapse
+    synapse_name = tasks_config.TASK_TO_CONFIG[task].endpoint
 
     synapse = getattr(synapses, synapse_name)
     logger.debug(f"Synapse name for task  {task} is {synapse_name}. synapse is: {synapse}.")

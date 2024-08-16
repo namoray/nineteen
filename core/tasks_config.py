@@ -1,6 +1,5 @@
 from enum import Enum
 from core.models import utility_models
-from core.models.base_models import CapacityForTask
 from pydantic import BaseModel
 from core.tasks import Task
 
@@ -37,11 +36,11 @@ class SyntheticGenerationConfig(BaseModel):
 
 class FullTaskConfig(BaseModel):
     task: Task
-    max_capacity: CapacityForTask
+    max_capacity: float
     scoring_config: TaskScoringConfig
     orchestrator_server_config: OrchestratorServerConfig
     synthetic_generation_config: SyntheticGenerationConfig
-    synapse: str
+    endpoint: str
     volume_to_requests_conversion: float
     is_stream: bool
     weight: float
@@ -50,7 +49,7 @@ class FullTaskConfig(BaseModel):
 TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
     Task.chat_mixtral: FullTaskConfig(
         task=Task.chat_mixtral,
-        max_capacity=CapacityForTask(volume=576_000),
+        max_capacity=576_000,
         scoring_config=TaskScoringConfig(
             task=Task.chat_mixtral, mean=1 / 80, variance=100, overhead=1.0, task_type=TaskType.TEXT
         ),
@@ -66,14 +65,14 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         synthetic_generation_config=SyntheticGenerationConfig(
             func="generate_chat_synthetic", kwargs={"model": utility_models.ChatModels.mixtral.value}
         ),
-        synapse="Chat",
+        endpoint="Chat",
         volume_to_requests_conversion=300,
         is_stream=True,
         weight=0.1,
     ),
     Task.chat_llama_3: FullTaskConfig(
         task=Task.chat_llama_3,
-        max_capacity=CapacityForTask(volume=576_000),
+        max_capacity=576_000,
         scoring_config=TaskScoringConfig(
             task=Task.chat_llama_3, mean=1 / 80, variance=100, overhead=1.0, task_type=TaskType.TEXT
         ),
@@ -89,14 +88,14 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         synthetic_generation_config=SyntheticGenerationConfig(
             func="generate_chat_synthetic", kwargs={"model": utility_models.ChatModels.llama_3.value}
         ),
-        synapse="Chat",
+        endpoint="Chat",
         volume_to_requests_conversion=300,
         is_stream=True,
         weight=0.1,
     ),
     # Task.proteus_text_to_image: FullTaskConfig(
     #     task=Task.proteus_text_to_image,
-    #     max_capacity=CapacityForTask(capacity=3_600),
+    #     max_capacity=float(capacity=3_600,
     #     scoring_config=TaskScoringConfig(
     #         task=Task.proteus_text_to_image, mean=0.32, variance=3, overhead=0.5, task_type=TaskType.IMAGE
     #     ),
@@ -109,13 +108,13 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
     #         func="generate_text_to_image_synthetic",
     #         kwargs={"engine": "proteus"},
     #     ),
-    #     synapse="TextToImage",
+    #     endpoint="TextToImage",
     #     volume_to_requests_conversion=10,
     #     is_stream=False,
     # ),
     # Task.playground_text_to_image: FullTaskConfig(
     #     task=Task.playground_text_to_image,
-    #     max_capacity=CapacityForTask(capacity=10_000),
+    #     max_capacity=float(capacity=10_000,
     #     scoring_config=TaskScoringConfig(
     #         task=Task.playground_text_to_image, mean=0.18, variance=3, overhead=0.5, task_type=TaskType.IMAGE
     #     ),
@@ -128,13 +127,13 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
     #         func="generate_text_to_image_synthetic",
     #         kwargs={"engine": "playground"},
     #     ),
-    #     synapse="TextToImage",
+    #     endpoint="TextToImage",
     #     volume_to_requests_conversion=50,
     #     is_stream=False,
     # ),
     # Task.dreamshaper_text_to_image: FullTaskConfig(
     #     task=Task.dreamshaper_text_to_image,
-    #     max_capacity=CapacityForTask(capacity=3_000),
+    #     max_capacity=float(capacity=3_000,
     #     scoring_config=TaskScoringConfig(
     #         task=Task.dreamshaper_text_to_image, mean=0.40, variance=3, overhead=0.5, task_type=TaskType.IMAGE
     #     ),
@@ -147,13 +146,13 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
     #         func="generate_text_to_image_synthetic",
     #         kwargs={"engine": "dreamshaper"},
     #     ),
-    #     synapse="TextToImage",
+    #     endpoint="TextToImage",
     #     volume_to_requests_conversion=10,
     #     is_stream=False,
     # ),
     # Task.proteus_image_to_image: FullTaskConfig(
     #     task=Task.proteus_image_to_image,
-    #     max_capacity=CapacityForTask(capacity=3_600),
+    #     max_capacity=float(capacity=3_600,
     #     scoring_config=TaskScoringConfig(
     #         task=Task.proteus_image_to_image, mean=0.35, variance=3, overhead=0.5, task_type=TaskType.IMAGE
     #     ),
@@ -166,13 +165,13 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
     #         func="generate_image_to_image_synthetic",
     #         kwargs={"engine": "proteus"},
     #     ),
-    #     synapse="ImageToImage",
+    #     endpoint="ImageToImage",
     #     volume_to_requests_conversion=10,
     #     is_stream=False,
     # ),
     # Task.playground_image_to_image: FullTaskConfig(
     #     task=Task.playground_image_to_image,
-    #     max_capacity=CapacityForTask(capacity=10_000),
+    #     max_capacity=float(capacity=10_000,
     #     scoring_config=TaskScoringConfig(
     #         task=Task.playground_image_to_image, mean=0.21, variance=5, overhead=0.5, task_type=TaskType.IMAGE
     #     ),
@@ -185,13 +184,13 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
     #         func="generate_image_to_image_synthetic",
     #         kwargs={"engine": "playground"},
     #     ),
-    #     synapse="ImageToImage",
+    #     endpoint="ImageToImage",
     #     volume_to_requests_conversion=50,
     #     is_stream=False,
     # ),
     # Task.dreamshaper_image_to_image: FullTaskConfig(
     #     task=Task.dreamshaper_image_to_image,
-    #     max_capacity=CapacityForTask(capacity=3_000),
+    #     max_capacity=float(capacity=3_000,
     #     scoring_config=TaskScoringConfig(
     #         task=Task.dreamshaper_image_to_image, mean=0.40, variance=3, overhead=0.5, task_type=TaskType.IMAGE
     #     ),
@@ -204,13 +203,13 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
     #         func="generate_image_to_image_synthetic",
     #         kwargs={"engine": "dreamshaper"},
     #     ),
-    #     synapse="ImageToImage",
+    #     endpoint="ImageToImage",
     #     volume_to_requests_conversion=10,
     #     is_stream=False,
     # ),
     # Task.jugger_inpainting: FullTaskConfig(
     #     task=Task.jugger_inpainting,
-    #     max_capacity=CapacityForTask(capacity=4_000),
+    #     max_capacity=float(capacity=4_000,
     #     scoring_config=TaskScoringConfig(
     #         task=Task.jugger_inpainting, mean=0.23, variance=2, overhead=1.2, task_type=TaskType.IMAGE
     #     ),
@@ -220,13 +219,13 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
     #         checking_function="check_image_result",
     #     ),
     #     synthetic_generation_config=SyntheticGenerationConfig(func="generate_inpaint_synthetic", kwargs={}),
-    #     synapse="Inpaint",
+    #     endpoint="Inpaint",
     #     volume_to_requests_conversion=20,
     #     is_stream=False,
     # ),
     # Task.avatar: FullTaskConfig(
     #     task=Task.avatar,
-    #     max_capacity=CapacityForTask(capacity=1_120),
+    #     max_capacity=float(capacity=1_120,
     #     scoring_config=TaskScoringConfig(task=Task.avatar, mean=1, variance=20, overhead=5.0, task_type=TaskType.IMAGE),
     #     orchestrator_server_config=OrchestratorServerConfig(
     #         checking_server_needed=ServerType.IMAGE,
@@ -237,7 +236,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
     #         func="generate_avatar_synthetic",
     #         kwargs={},
     #     ),
-    #     synapse="Avatar",
+    #     endpoint="Avatar",
     #     volume_to_requests_conversion=10,
     #     is_stream=False,
     # ),

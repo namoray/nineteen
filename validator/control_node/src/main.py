@@ -6,6 +6,8 @@ from dataclasses import dataclass
 
 # do the rest
 import os
+
+import httpx
 from core import constants as ccst
 from core.logging import get_logger
 
@@ -32,6 +34,7 @@ class Config:
     subtensor_address: str
     netuid: int
     seconds_between_syncs: int
+    httpx_client: httpx.AsyncClient = httpx.AsyncClient()
     debug: bool = os.getenv("ENV", "prod").lower() == "dev" 
 
 
