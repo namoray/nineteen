@@ -58,8 +58,8 @@ EXPIRED_AT = "expired_at"
 
 # Contenders table
 CONTENDER_ID = "contender_id"
-MINER_HOTKEY = "miner_hotkey"
-MINER_UID = "miner_uid"
+NODE_HOTKEY = "node_hotkey"
+NODE_ID = "node_id"
 TASK = "task"
 VALIDATOR_HOTKEY = "validator_hotkey"
 CAPACITY = "capacity"
@@ -78,7 +78,7 @@ UPDATED_AT = "updated_at"
 # Contenders history table
 
 # CONTENDER_ID = "contender_id"
-# MINER_HOTKEY = "miner_hotkey"
+# MINER_HOTKEY = "node_hotkey"
 # TASK = "task"
 # VALIDATOR_HOTKEY = "validator_hotkey"
 # CAPACITY = "capacity"
@@ -99,7 +99,7 @@ EXPIRED_AT = "expired_at"
 # Common column names
 COLUMN_ID = "id"
 COLUMN_CREATED_AT = "created_at"
-COLUMN_MINER_HOTKEY = "miner_hotkey"
+COLUMN_MINER_HOTKEY = "node_hotkey"
 
 # `tasks` table column names
 COLUMN_TASK_NAME = "task_name"

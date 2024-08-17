@@ -47,11 +47,11 @@ class FullTaskConfig(BaseModel):
 
 
 TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
-    Task.chat_mixtral: FullTaskConfig(
-        task=Task.chat_mixtral,
+    Task.chat_llama_3_1_8b: FullTaskConfig(
+        task=Task.chat_llama_3_1_8b,
         max_capacity=576_000,
         scoring_config=TaskScoringConfig(
-            task=Task.chat_mixtral, mean=1 / 80, variance=100, overhead=1.0, task_type=TaskType.TEXT
+            task=Task.chat_llama_3_1_8b, mean=1 / 80, variance=100, overhead=1.0, task_type=TaskType.TEXT
         ),
         orchestrator_server_config=OrchestratorServerConfig(
             checking_server_needed=ServerType.LLM,
@@ -70,11 +70,11 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         is_stream=True,
         weight=0.1,
     ),
-    Task.chat_llama_3: FullTaskConfig(
-        task=Task.chat_llama_3,
+    Task.chat_llama_3_1_70b: FullTaskConfig(
+        task=Task.chat_llama_3_1_70b,
         max_capacity=576_000,
         scoring_config=TaskScoringConfig(
-            task=Task.chat_llama_3, mean=1 / 80, variance=100, overhead=1.0, task_type=TaskType.TEXT
+            task=Task.chat_llama_3_1_70b, mean=1 / 80, variance=100, overhead=1.0, task_type=TaskType.TEXT
         ),
         orchestrator_server_config=OrchestratorServerConfig(
             checking_server_needed=ServerType.LLM,

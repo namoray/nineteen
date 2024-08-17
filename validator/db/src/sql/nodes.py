@@ -5,7 +5,7 @@ from core.logging import get_logger
 
 from asyncpg import Connection
 from validator.utils import database_constants as dcst
-
+from fiber import utils as futils
 
 logger = get_logger(__name__)
 
@@ -106,20 +106,15 @@ async def get_last_updated_time_for_nodes(connection: Connection, netuid: int) -
     return await connection.fetchval(query, netuid)
 
 
-async def insert_symmetric_keys_for_nodes(
-    connection: Connection, nodes: list[Node], symmetric_keys: list[str], symmetric_key_uuids: list[str]
-) -> None:
-    logger.debug(f"Inserting {len(nodes)} nodes into {dcst.NODES_TABLE}...")
+async def insert_symmetric_keys_for_nodes(connection: Connection, nodes: list[Node]) -> None:
+    logger.info(f"Inserting {len([node for node in nodes if node.fernet is not None])} nodes into {dcst.NODES_TABLE}...")
     await connection.executemany(
         f"""
         UPDATE {dcst.NODES_TABLE}
         SET {dcst.SYMMETRIC_KEY} = $1, {dcst.SYMMETRIC_KEY_UUID} = $2
         WHERE {dcst.HOTKEY} = $3 and {dcst.NETUID} = $4
         """,
-        [
-            (key, key_uuid, node.hotkey, node.netuid)
-            for key, key_uuid, node in zip(symmetric_keys, symmetric_key_uuids, nodes)
-        ],
+        [(futils.fernet_to_symmetric_key(node.fernet), node.symmetric_key_uuid, node.hotkey, node.netuid) for node in nodes if node.fernet is not None],
     )
 
 

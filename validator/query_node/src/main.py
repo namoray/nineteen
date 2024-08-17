@@ -51,7 +51,7 @@ async def process_job(
 
     axon = await sql.get_axon(
         psql_db,
-        contender.miner_hotkey,
+        contender.node_hotkey,
         netuid,
     )
 

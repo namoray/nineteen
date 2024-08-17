@@ -17,7 +17,7 @@ class ChatModels(str, enum.Enum):
 class QueryResult(BaseModel):
     formatted_response: Any
     axon_uid: Optional[int]
-    miner_hotkey: Optional[str]
+    node_hotkey: Optional[str]
     response_time: Optional[float]
     error_message: Optional[str]
     failed_axon_uids: List[int] = []

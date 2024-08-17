@@ -21,7 +21,7 @@ async def insert_reward_data(connection: Connection, data: RewardData) -> str:
         data.axon_uid,
         data.quality_score,
         data.validator_hotkey,
-        data.miner_hotkey,
+        data.node_hotkey,
         data.synthetic_query,
         data.speed_scoring_factor,
         data.response_time,
@@ -182,7 +182,7 @@ async def select_task_for_deletion(connection: Connection, task_name: str) -> tu
 
 
 async def select_recent_reward_data_for_a_task(
-    connection: Connection, task: str, date: str, miner_hotkey: str
+    connection: Connection, task: str, date: str, node_hotkey: str
 ) -> List[tuple]:
     return await connection.fetch(
         f"""
@@ -206,11 +206,11 @@ async def select_recent_reward_data_for_a_task(
         """,
         task,
         date,
-        miner_hotkey,
+        node_hotkey,
     )
 
 
-async def select_recent_reward_data(connection: Connection, date: str, miner_hotkey: str, limit: int) -> list[tuple]:
+async def select_recent_reward_data(connection: Connection, date: str, node_hotkey: str, limit: int) -> list[tuple]:
     return await connection.fetch(
         f"""
         SELECT
@@ -232,6 +232,6 @@ async def select_recent_reward_data(connection: Connection, date: str, miner_hot
         LIMIT $3
         """,
         date,
-        miner_hotkey,
+        node_hotkey,
         limit,
     )

@@ -122,7 +122,7 @@ async def process_and_store_score(
     task: Task,
     results: Dict[str, Any],
     synapse: Dict[str, Any],
-    miner_hotkey: str,
+    node_hotkey: str,
     task_result: Dict[str, Any],
     synthetic_query: str,
 ) -> None:
@@ -141,7 +141,7 @@ async def process_and_store_score(
             axon_uid=int(uid),
             quality_score=quality_score,
             validator_hotkey=config.validator_hotkey,
-            miner_hotkey=miner_hotkey,
+            node_hotkey=node_hotkey,
             synthetic_query=synthetic_query,
             response_time=results["response_time"] if quality_score != 0 else None,
             volume=volume,
@@ -179,7 +179,7 @@ async def score_results(config: Config):
             logger.warning(f"No data left to score for task {task_to_score}")
             continue
 
-        checking_data, miner_hotkey = data_and_hotkey
+        checking_data, node_hotkey = data_and_hotkey
         results, synthetic_query, synapse_dict_str = (
             checking_data["result"],
             checking_data["synthetic_query"],
@@ -201,7 +201,7 @@ async def score_results(config: Config):
             continue
 
         await process_and_store_score(
-            config, task_to_score, results, synapse, miner_hotkey, task_result, synthetic_query
+            config, task_to_score, results, synapse, node_hotkey, task_result, synthetic_query
         )
         consecutive_errors = 0
         await asyncio.sleep(5)

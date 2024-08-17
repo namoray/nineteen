@@ -24,20 +24,6 @@ from cryptography.fernet import Fernet
 logger = get_logger(__name__)
 
 
-async def _handshake(node: Node, async_client: httpx.AsyncClient, config: Config) -> tuple[str, str] | None:
-    server_address = client.construct_server_address(
-        node=node,
-        replace_with_docker_localhost=config.debug,
-    )
-    try:
-        return await handshake.perform_handshake(async_client, server_address, config.keypair)
-    except (httpx.HTTPStatusError, httpx.RequestError, httpx.ConnectError) as e:
-        logger.warning(f"Failed to connect to {server_address}: {e}")
-        if hasattr(e, "response"):
-            logger.debug(f"response content: {e.response.text}")
-        return None
-
-
 async def get_and_store_nodes(config: Config) -> list[Node]:
     # async with await config.psql_db.connection() as connection:
     #     if await is_recent_update(connection, config.netuid):
@@ -62,7 +48,23 @@ async def get_and_store_nodes(config: Config) -> list[Node]:
             protocol=4,
             network="test",
             created_at=datetime.now(),
-        )
+        ),
+        Node(
+            hotkey="5CSKMXBPkBTgB1q5skAUUARURgGC5KCCqounBp4Msd6pR4wb",
+            coldkey="5EFnWXKkJufZYc74pWUSBC5ubCBZCSPCrSvZfEqsFAJwBdCF",
+            node_id=0,
+            incentive=0,
+            netuid=176,
+            stake=9999,
+            trust=0,
+            vtrust=0.85,
+            ip="0.0.0.0",
+            ip_type=4,
+            port=0,
+            protocol=4,
+            network="test",
+            created_at=datetime.now(),
+        ),
     ]
     await store_nodes(config, nodes)
 
@@ -90,32 +92,41 @@ async def store_nodes(config: Config, nodes: list[Node]):
         await insert_nodes(connection, nodes, config.subtensor_network)
 
 
+async def _handshake(config: Config, node: Node, async_client: httpx.AsyncClient) -> tuple[str, str] | None:
+    node_copy = node.model_copy()
+    server_address = client.construct_server_address(
+        node=node,
+        replace_with_docker_localhost=config.replace_with_docker_localhost,
+        replace_with_localhost=config.replace_with_localhost,
+    )
+
+    try:
+        symmetric_key, symmetric_key_uid = await handshake.perform_handshake(
+            async_client, server_address, config.keypair
+        )
+    except (httpx.HTTPStatusError, httpx.RequestError, httpx.ConnectError) as e:
+        logger.warning(f"Failed to connect to {server_address}: {e}")
+        if hasattr(e, "response"):
+            logger.debug(f"response content: {e.response.text}")
+        return node_copy
+
+    fernet = Fernet(symmetric_key)
+    node_copy.fernet = fernet
+    node_copy.symmetric_key_uuid = symmetric_key_uid
+    return node_copy
+
+
 async def perform_handshakes(nodes: list[Node], config: Config) -> None:
     tasks = []
     async_client = httpx.AsyncClient()
     for node in nodes:
         if node.fernet is None or node.symmetric_key_uuid is None:
-            tasks.append(_handshake(node, async_client, config))
+            tasks.append(_handshake(config, node, async_client))
 
-    key_infos: list[tuple[str, str]] = await asyncio.gather(*tasks)
-    good_nodes = []
-    keys = []
-    uuids = []
-    for node, key_info in zip(nodes, key_infos):
-        if node is not None and key_info is not None:
-            symmetric_key, symmetric_key_uid = key_info[0], key_info[1]
-            fernet = Fernet(symmetric_key)
-
-            node.fernet = fernet
-            node.symmetric_key_uuid = symmetric_key_uid
-            node.symmetric_key_uuid = symmetric_key_uid
-
-            good_nodes.append(node)
-            keys.append(symmetric_key)
-            uuids.append(symmetric_key_uid)
+    nodes = await asyncio.gather(*tasks)
 
     async with await config.psql_db.connection() as connection:
-        await insert_symmetric_keys_for_nodes(connection, nodes, keys, uuids)
+        await insert_symmetric_keys_for_nodes(connection, nodes)
 
-    return good_nodes
     logger.info(f"✅ Successfully performed handshakes with {len(nodes)} nodes!")
+    return nodes

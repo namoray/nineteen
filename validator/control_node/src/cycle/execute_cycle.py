@@ -17,12 +17,21 @@ from validator.control_node.src.cycle import (
     # schedule_synthetic_queries,
     # calculate_and_schedule_weights,
 )
+from fiber.logging_utils import get_logger
+
+
+logger = get_logger(__name__)
 
 
 async def single_cycle(config: Config) -> None:
+    logger.info("Starting cycle...")
+    logger.info("First refreshing metagraph and storing the nodes")
     nodes = await refresh_nodes.get_and_store_nodes(config)
+    logger.info("Got nodes! Performing handshakes now...")
     nodes = await refresh_nodes.perform_handshakes(nodes, config)
-    await refresh_contenders.get_contenders_from_nodes(config, nodes)
+    logger.info("Got handshakes! Getting the contenders from the nodes...")
+    contenders = await refresh_contenders.get_and_store_contenders(config, nodes)
+    logger.info(f"Got all contenders! {len(contenders)} contenders will be queried...")
     # await schedule_synthetic_queries.schedule_synthetics_until_done(config)
 
     # Should be performed in parallel to the next cycle

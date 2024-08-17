@@ -18,7 +18,7 @@ PERIOD_SCORE_TIME_DECAYING_FACTOR = 0.5
 async def _get_reward_datas(psql_db: PSQLDB, contender: Contender) -> list[RewardData]:
     async with await psql_db.connection() as connection:
         reward_datas = await db_functions.fetch_recent_most_rewards_for_uid(
-            connection, contender.task, contender.miner_hotkey
+            connection, contender.task, contender.node_hotkey
         )
     return reward_datas
 
@@ -26,7 +26,7 @@ async def _get_reward_datas(psql_db: PSQLDB, contender: Contender) -> list[Rewar
 async def _get_period_scores(psql_db: PSQLDB, contender: Contender) -> list[PeriodScore]:
     async with await psql_db.connection() as connection:
         period_scores = await db_functions.fetch_hotkey_scores_for_task(
-            connection, contender.task, contender.miner_hotkey
+            connection, contender.task, contender.node_hotkey
         )
     return period_scores
 
@@ -87,7 +87,7 @@ async def calculate_effective_volumes_for_task(
         effective_volume = _calculate_hotkey_effective_volume_for_task(
             combined_quality_score, normalised_period_score, contender.capacity
         )
-        hotkey_to_effective_volumes[contender.miner_hotkey] = effective_volume
+        hotkey_to_effective_volumes[contender.node_hotkey] = effective_volume
     return hotkey_to_effective_volumes
 
 
@@ -126,7 +126,7 @@ async def calculate_scores_for_settings_weights(
 
     logger.debug("Completed calculation of scores for settings weights")
 
-    hotkey_to_uid = {contender.miner_hotkey: contender.miner_uid for contender in contenders}
+    hotkey_to_uid = {contender.node_hotkey: contender.node_id for contender in contenders}
     total_score = sum(total_hotkey_scores.values())
 
     node_ids, node_weights = [], []

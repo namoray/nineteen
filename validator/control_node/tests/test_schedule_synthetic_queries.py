@@ -33,12 +33,12 @@ class TestSyntheticSchedulerFunctional(unittest.IsolatedAsyncioTestCase):
         num_synthetics = 3
         delay = 1.0
         contender = Contender(
-            miner_hotkey="test_hotkey",
-            miner_uid=0,
+            node_hotkey="test_hotkey",
+            node_id=0,
             task=Task.chat_llama_3,
             synthetic_requests_still_to_make=num_synthetics,
             delay_between_synthetic_requests=delay,
-            raw_capacity=10000,
+            declared_capacity=10000,
             capacity=100,
             consumed_capacity=0,
             capacity_to_score=100,

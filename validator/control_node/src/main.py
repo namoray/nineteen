@@ -1,18 +1,15 @@
 # TODO: rename core_node (they shoud all be nodes)
 
 import asyncio
-from dataclasses import dataclass
 
 
 # do the rest
 import os
 
-import httpx
 from core import constants as ccst
 from core.logging import get_logger
 
-from substrateinterface import SubstrateInterface, Keypair
-
+from validator.control_node.src.control_config import Config
 from fiber.chain_interactions import interface
 from fiber.chain_interactions import chain_utils
 from validator.control_node.src.cycle import execute_cycle
@@ -22,20 +19,6 @@ from dotenv import load_dotenv
 
 logger = get_logger(__name__)
 load_dotenv()
-
-
-@dataclass
-class Config:
-    substrate_interface: SubstrateInterface
-    keypair: Keypair
-    psql_db: PSQLDB
-    test_env: bool
-    subtensor_network: str
-    subtensor_address: str
-    netuid: int
-    seconds_between_syncs: int
-    httpx_client: httpx.AsyncClient = httpx.AsyncClient()
-    debug: bool = os.getenv("ENV", "prod").lower() == "dev" 
 
 
 def load_config() -> Config:
@@ -63,6 +46,7 @@ def load_config() -> Config:
         subtensor_address=subtensor_address,
         netuid=netuid,
         seconds_between_syncs=int(os.getenv("SECONDS_BETWEEN_SYNCS", str(ccst.SCORING_PERIOD_TIME))),
+        replace_with_docker_localhost=True
     )
 
 

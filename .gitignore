@@ -12,6 +12,7 @@ sam_vit_l_0b3195.pth
 postgres_data/*
 postgres_data
 
+symmetric_keys.encrypted
 .bittensor
 fiber
 *.safetensors

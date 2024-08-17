@@ -12,6 +12,7 @@ from fiber.chain_interactions.models import Node
 
 task_data = defaultdict(lambda: defaultdict(list))
 
+
 class NodeWKey(Node):
     fernet: Fernet
     symmetric_key_uuid: str
@@ -19,6 +20,7 @@ class NodeWKey(Node):
     model_config = {
         "arbitrary_types_allowed": True,
     }
+
 
 class PeriodScore(BaseModel):
     hotkey: str
@@ -29,20 +31,14 @@ class PeriodScore(BaseModel):
 
 
 class Contender(BaseModel):
-    class Config:
-        arbitrary_types_allowed = True
-        # Deprecated?
-        # allow_mutation = True
-
-    miner_hotkey: str
-    miner_uid: int
-    task: Task
-    synthetic_requests_still_to_make: int = Field(..., description="Synthetic requests still to make")
-    delay_between_synthetic_requests: float = Field(..., description="Delay between synthetic requests")
-    raw_capacity: float = Field(0, description="Raw capacity straight from the miner")
+    node_hotkey: str
+    node_id: int
+    netuid: int
+    task: str
+    declared_capacity: float = Field(..., description="Raw capacity straight from the miner")
     capacity: float = Field(..., description="Declared volume for the UID")
+    capacity_to_score: float = Field(..., description="Volume to score")
     consumed_capacity: float = Field(0, description="Queried volume for the UID")
-    capacity_to_score: float = Field(0, description="Volume to score")
     total_requests_made: int = Field(0, description="Total requests made")
     requests_429: int = Field(0, description="HTTP 429 requests")
     requests_500: int = Field(0, description="HTTP 500 requests")
@@ -50,7 +46,7 @@ class Contender(BaseModel):
 
     @property
     def id(self) -> str:
-        contender_id = self.miner_hotkey + "-" + self.task.value
+        contender_id = self.node_hotkey + "-" + self.task
         return contender_id
 
     def calculate_period_score(self) -> float:
@@ -91,7 +87,7 @@ class RewardData(BaseModel):
     axon_uid: int
     quality_score: float
     validator_hotkey: str
-    miner_hotkey: str
+    node_hotkey: str
     synthetic_query: bool
     speed_scoring_factor: Optional[float] = None
     response_time: Optional[float] = None
@@ -105,7 +101,7 @@ class RewardData(BaseModel):
             "axon_uid": self.axon_uid,
             "quality_score": self.quality_score,
             "validator_hotkey": self.validator_hotkey,
-            "miner_hotkey": self.miner_hotkey,
+            "node_hotkey": self.node_hotkey,
             "synthetic_query": self.synthetic_query,
             "speed_scoring_factor": self.speed_scoring_factor,
             "response_time": self.response_time,

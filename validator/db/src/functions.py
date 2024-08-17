@@ -32,7 +32,7 @@ async def insert_task_results(
         "synapse": json.dumps(synapse.model_dump(mode="json")),
         "synthetic_query": synthetic_query,
     }
-    hotkey = result.miner_hotkey
+    hotkey = result.node_hotkey
     data = json.dumps(data_to_store)
     await sql.insert_task(connection, task, data, hotkey)
 
@@ -62,12 +62,12 @@ async def select_and_delete_task_result(psql_db: PSQLDB, task: Task) -> Optional
     async with await psql_db.connection() as connection:
         row = await sql.select_task_for_deletion(connection, task.value)
 
-        checking_data, miner_hotkey = row
+        checking_data, node_hotkey = row
         checking_data_loaded = json.loads(checking_data)
 
         # await sql.delete_specific_task(connection, task.value, checking_data)
 
-    return checking_data_loaded, miner_hotkey
+    return checking_data_loaded, node_hotkey
 
 
 # TODO: refactor
@@ -83,7 +83,7 @@ async def insert_reward_data(
             reward_data.axon_uid,
             reward_data.quality_score,
             reward_data.validator_hotkey,
-            reward_data.miner_hotkey,
+            reward_data.node_hotkey,
             reward_data.synthetic_query,
             reward_data.speed_scoring_factor,
             reward_data.response_time,
@@ -94,9 +94,9 @@ async def insert_reward_data(
     return reward_data.id
 
 
-async def clean_tables_of_hotkeys(connection: Connection, miner_hotkeys: List[str]) -> None:
+async def clean_tables_of_hotkeys(connection: Connection, node_hotkeys: List[str]) -> None:
     async with db_lock:
-        for hotkey in miner_hotkeys:
+        for hotkey in node_hotkeys:
             await connection.execute(sql.delete_task_by_hotkey(), (hotkey,))
             await connection.execute(sql.delete_reward_data_by_hotkey(), (hotkey,))
             await connection.execute(sql.delete_uid_data_by_hotkey(), (hotkey,))
@@ -122,13 +122,13 @@ async def delete_data_older_than_date(connection: Connection, minutes: int) -> N
 
 
 async def fetch_recent_most_rewards_for_uid(
-    connection: Connection, task: Task, miner_hotkey: str, quality_tasks_to_fetch: int = 50
+    connection: Connection, task: Task, node_hotkey: str, quality_tasks_to_fetch: int = 50
 ) -> List[RewardData]:
     date = datetime.now() - timedelta(hours=72)
-    priority_results = await sql.select_recent_reward_data_for_a_task(connection, task.value, date, miner_hotkey)
+    priority_results = await sql.select_recent_reward_data_for_a_task(connection, task.value, date, node_hotkey)
 
     y = len(priority_results)
-    fill_results = await sql.select_recent_reward_data(connection, date, miner_hotkey, quality_tasks_to_fetch - y)
+    fill_results = await sql.select_recent_reward_data(connection, date, node_hotkey, quality_tasks_to_fetch - y)
 
     reward_data_list = [
         RewardData(
@@ -137,7 +137,7 @@ async def fetch_recent_most_rewards_for_uid(
             axon_uid=row[2],
             quality_score=row[3],
             validator_hotkey=row[4],
-            miner_hotkey=row[5],
+            node_hotkey=row[5],
             synthetic_query=row[6],
             speed_scoring_factor=row[7],
             response_time=row[8],
@@ -153,8 +153,8 @@ async def fetch_recent_most_rewards_for_uid(
 async def fetch_hotkey_scores_for_task(
     connection: Connection,
     task: Task,
-    miner_hotkey: str,
+    node_hotkey: str,
 ) -> List[PeriodScore]:
-    period_scores = await sql.fetch_hotkey_scores_for_task(connection, task, miner_hotkey)
+    period_scores = await sql.fetch_hotkey_scores_for_task(connection, task, node_hotkey)
 
     return sorted(period_scores, key=lambda x: x.created_at, reverse=True)

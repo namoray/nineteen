@@ -4,6 +4,7 @@ from fastapi import Depends
 from fiber.miner.security.encryption import decrypt_general_payload
 from core.models import base_models
 from fastapi.routing import APIRouter
+from core.tasks_config import TASK_TO_CONFIG
 
 
 async def text_to_speech(
@@ -14,12 +15,8 @@ async def text_to_speech(
     return {"status": "Text-to-speech request received"}
 
 
-async def capacity(
-    decrypted_payload: base_models.TextToSpeechRequest = Depends(
-        partial(decrypt_general_payload, base_models.TextToSpeechRequest)
-    ),
-) -> base_models.CapacityResponse:
-    return {}
+async def capacity() -> dict[str, float]:
+    return {task: config.max_capacity for task, config in TASK_TO_CONFIG.items()}
 
 
 def factory_router() -> APIRouter:

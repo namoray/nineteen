@@ -15,15 +15,13 @@ async def insert_contenders(connection: Connection, contenders: list[Contender],
         f"""
         INSERT INTO {dcst.CONTENDERS_TABLE} (
             {dcst.CONTENDER_ID},
-            {dcst.MINER_HOTKEY},
-            {dcst.MINER_UID},
+            {dcst.NODE_HOTKEY},
+            {dcst.NODE_ID},
             {dcst.TASK},
             {dcst.VALIDATOR_HOTKEY},
             {dcst.CAPACITY},
             {dcst.CAPACITY_TO_SCORE},
             {dcst.CONSUMED_CAPACITY},
-            {dcst.DELAY_BETWEEN_SYNTHETIC_REQUESTS},
-            {dcst.SYNTHETIC_REQUESTS_STILL_TO_MAKE},
             {dcst.TOTAL_REQUESTS_MADE},
             {dcst.REQUESTS_429},
             {dcst.REQUESTS_500},
@@ -31,24 +29,22 @@ async def insert_contenders(connection: Connection, contenders: list[Contender],
             {dcst.CREATED_AT},
             {dcst.UPDATED_AT}
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW(), NOW())
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW())
         """,
         [
             (
                 contender.id,
-                contender.miner_hotkey,
-                contender.miner_uid,
-                contender.task.value,
+                contender.node_hotkey,
+                contender.node_id,
+                contender.task,
                 validator_hotkey,
                 contender.capacity,
                 contender.capacity_to_score,
                 contender.consumed_capacity,
-                contender.delay_between_synthetic_requests,
-                contender.synthetic_requests_still_to_make,
                 contender.total_requests_made,
                 contender.requests_429,
                 contender.requests_500,
-                contender.raw_capacity,
+                contender.declared_capacity,
             )
             for contender in contenders
         ],
@@ -60,15 +56,13 @@ async def migrate_contenders_to_contender_history(connection: Connection) -> Non
         f"""
         INSERT INTO {dcst.CONTENDERS_HISTORY_TABLE} (
             {dcst.CONTENDER_ID},
-            {dcst.MINER_HOTKEY},
-            {dcst.MINER_UID},
+            {dcst.NODE_HOTKEY},
+            {dcst.NODE_ID},
             {dcst.TASK},
             {dcst.VALIDATOR_HOTKEY},
             {dcst.CAPACITY},
             {dcst.CAPACITY_TO_SCORE},
             {dcst.CONSUMED_CAPACITY},
-            {dcst.DELAY_BETWEEN_SYNTHETIC_REQUESTS},
-            {dcst.SYNTHETIC_REQUESTS_STILL_TO_MAKE},
             {dcst.TOTAL_REQUESTS_MADE},
             {dcst.REQUESTS_429},
             {dcst.REQUESTS_500},
@@ -79,15 +73,13 @@ async def migrate_contenders_to_contender_history(connection: Connection) -> Non
         )
         SELECT
             {dcst.CONTENDER_ID},
-            {dcst.MINER_HOTKEY},
-            {dcst.MINER_UID},
+            {dcst.NODE_HOTKEY},
+            {dcst.NODE_ID},
             {dcst.TASK},
             {dcst.VALIDATOR_HOTKEY},
             {dcst.CAPACITY},
             {dcst.CAPACITY_TO_SCORE},
             {dcst.CONSUMED_CAPACITY},
-            {dcst.DELAY_BETWEEN_SYNTHETIC_REQUESTS},
-            {dcst.SYNTHETIC_REQUESTS_STILL_TO_MAKE},
             {dcst.TOTAL_REQUESTS_MADE},
             {dcst.REQUESTS_429},
             {dcst.REQUESTS_500},
@@ -106,7 +98,7 @@ async def get_contender_for_task(connection: Connection, task: Task) -> Contende
     row = await connection.fetchrow(
         f"""
         SELECT 
-            {dcst.CONTENDER_ID}, {dcst.MINER_HOTKEY}, {dcst.MINER_UID},{dcst.TASK},
+            {dcst.CONTENDER_ID}, {dcst.NODE_HOTKEY}, {dcst.NODE_ID},{dcst.TASK},
             {dcst.CAPACITY}, {dcst.CAPACITY_TO_SCORE}, {dcst.CONSUMED_CAPACITY}, 
             {dcst.DELAY_BETWEEN_SYNTHETIC_REQUESTS}, {dcst.SYNTHETIC_REQUESTS_STILL_TO_MAKE}, 
             {dcst.TOTAL_REQUESTS_MADE}, {dcst.REQUESTS_429}, {dcst.REQUESTS_500}, 
@@ -125,7 +117,7 @@ async def fetch_contender(connection: Connection, contender_id: str) -> Contende
     row = await connection.fetchrow(
         f"""
         SELECT 
-            {dcst.CONTENDER_ID}, {dcst.MINER_HOTKEY}, {dcst.MINER_UID},{dcst.TASK},
+            {dcst.CONTENDER_ID}, {dcst.NODE_HOTKEY}, {dcst.NODE_ID},{dcst.TASK},
             {dcst.CAPACITY}, {dcst.CAPACITY_TO_SCORE}, {dcst.CONSUMED_CAPACITY}, 
             {dcst.DELAY_BETWEEN_SYNTHETIC_REQUESTS}, {dcst.SYNTHETIC_REQUESTS_STILL_TO_MAKE}, 
             {dcst.TOTAL_REQUESTS_MADE}, {dcst.REQUESTS_429}, {dcst.REQUESTS_500}, 
@@ -144,7 +136,7 @@ async def fetch_contender(connection: Connection, contender_id: str) -> Contende
 async def fetch_all_contenders(connection: Connection, netuid: int | None = None) -> list[Contender]:
     base_query = f"""
         SELECT 
-            {dcst.CONTENDER_ID}, {dcst.MINER_HOTKEY}, {dcst.MINER_UID}, {dcst.TASK}, 
+            {dcst.CONTENDER_ID}, {dcst.NODE_HOTKEY}, {dcst.NODE_ID}, {dcst.TASK}, 
             {dcst.CAPACITY}, {dcst.CAPACITY_TO_SCORE}, {dcst.CONSUMED_CAPACITY}, 
             {dcst.DELAY_BETWEEN_SYNTHETIC_REQUESTS}, {dcst.SYNTHETIC_REQUESTS_STILL_TO_MAKE}, 
             {dcst.TOTAL_REQUESTS_MADE}, {dcst.REQUESTS_429}, {dcst.REQUESTS_500}, 
@@ -158,22 +150,22 @@ async def fetch_all_contenders(connection: Connection, netuid: int | None = None
     return [Contender(**row) for row in rows]
 
 
-async def fetch_hotkey_scores_for_task(connection: Connection, task: Task, miner_hotkey: str) -> list[PeriodScore]:
+async def fetch_hotkey_scores_for_task(connection: Connection, task: Task, node_hotkey: str) -> list[PeriodScore]:
     rows = await connection.fetch(
         f"""
         SELECT
-            {dcst.MINER_HOTKEY} as hotkey,
+            {dcst.NODE_HOTKEY} as hotkey,
             {dcst.TASK},
             {dcst.PERIOD_SCORE},
             {dcst.CONSUMED_CAPACITY},
             {dcst.CREATED_AT}
         FROM {dcst.CONTENDERS_HISTORY_TABLE}
         WHERE {dcst.TASK} = $1
-        AND {dcst.MINER_HOTKEY} = $2
+        AND {dcst.NODE_HOTKEY} = $2
         ORDER BY {dcst.CREATED_AT} DESC
         """,
         task.value,
-        miner_hotkey,
+        node_hotkey,
     )
     return [PeriodScore(**row) for row in rows]
 
