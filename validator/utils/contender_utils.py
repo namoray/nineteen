@@ -1,10 +1,11 @@
+from dataclasses import asdict, dataclass
 import json
 from core.tasks import Task
 from validator.db.src.sql.contenders import fetch_all_contenders, fetch_contender
 from validator.db.src.database import PSQLDB
 from validator.models import Contender
 from validator.utils import redis_constants as rcst
-from validator.utils import redis_utils as rutils
+from validator.utils import redis_utils as rutils, redis_dataclasses as rdc
 from redis.asyncio import Redis
 from core.logging import get_logger
 
@@ -12,8 +13,11 @@ from core.logging import get_logger
 logger = get_logger(__name__)
 
 
+
+
+
 def construct_synthetic_query_message(task: Task) -> str:
-    return json.dumps({"query_type": "synthetic", "query_payload": {}, "task": task.value})
+    return json.dumps(asdict(rdc.QueryQueueMessage(query_payload={}, query_type="synthetic", task=task.value)))
 
 
 # Consistently about 1ms

@@ -16,29 +16,6 @@ from validator.db.src import functions as db_functions
 logger = get_logger(__name__)
 
 
-class UIDQueue:
-    def __init__(self):
-        self.uid_map: OrderedDict[str, None] = OrderedDict()
-
-    def add_uid(self, uid: int) -> None:
-        if uid not in self.uid_map:
-            self.uid_map[uid] = None
-
-    def get_uid_and_move_to_back(self) -> Optional[int]:
-        if self.uid_map:
-            uid, _ = self.uid_map.popitem(last=False)
-            self.uid_map[uid] = None
-            return uid
-        return None
-
-    def move_to_end(self, uid: int) -> None:
-        if uid in self.uid_map:
-            self.uid_map.pop(uid)
-            self.uid_map[uid] = None
-
-    def remove_uid(self, uid: int) -> None:
-        if uid in self.uid_map:
-            self.uid_map.pop(uid)
 
 
 def get_formatted_response(

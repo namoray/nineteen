@@ -26,3 +26,5 @@ IS_B64ENCODED = "is_b64encoded"
 
 SIGNATURE = "signature"
 
+SYNTHETIC_QUERY = "synthetic_query"
+ORGANIC_QUERY = "organic_query"
