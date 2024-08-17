@@ -1,5 +1,6 @@
 import json
-from validator.db.src import sql
+from core.tasks import Task
+from validator.db.src.sql.contenders import fetch_all_contenders, fetch_contender
 from validator.db.src.database import PSQLDB
 from validator.models import Contender
 from validator.utils import redis_constants as rcst
@@ -11,19 +12,19 @@ from core.logging import get_logger
 logger = get_logger(__name__)
 
 
-def construct_synthetic_query_message(contender_id: str) -> str:
-    return json.dumps({"query_type": "synthetic", "query_payload": {"contender_id": contender_id}})
+def construct_synthetic_query_message(task: Task) -> str:
+    return json.dumps({"query_type": "synthetic", "query_payload": {}, "task": task.value})
 
 
 # Consistently about 1ms
 async def load_contender(psql_db: PSQLDB, contender_id: str) -> Contender | None:
     async with await psql_db.connection() as connection:
-        return await sql.fetch_contender(connection, contender_id)
+        return await fetch_contender(connection, contender_id)
 
 
 async def load_contenders(psql_db: PSQLDB) -> list[Contender]:
     async with await psql_db.connection() as connection:
-        return await sql.fetch_all_contenders(connection)
+        return await fetch_all_contenders(connection)
 
 
 # TODO: Might be able to get rid of it now
@@ -35,15 +36,9 @@ async def check_and_remove_contender_from_synthetics_if_finished(redis_db: Redis
     return False
 
 
-async def add_synthetic_query_to_queue(redis_db: Redis, contender_id: str) -> None:
-    message = construct_synthetic_query_message(contender_id)
-    await rutils.add_str_to_redis_list(redis_db, rcst.QUERY_QUEUE_KEY, message)
-
-
-async def get_requests_remaining_and_decrement(psql_db: PSQLDB, contender_id: str) -> int | None:
-    async with await psql_db.connection() as connection:
-        count = await sql.get_and_decrement_synthetic_request_count(connection, contender_id)
-        return count
+async def add_synthetic_query_to_queue(redis_db: Redis, task: Task, max_length: int) -> None:
+    message = construct_synthetic_query_message(task)
+    await rutils.add_str_to_redis_list(redis_db, rcst.QUERY_QUEUE_KEY, message, max_length)
 
 
 async def load_query_queue(redis_db: Redis) -> list[str]:

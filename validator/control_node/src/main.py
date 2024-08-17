@@ -6,6 +6,8 @@ import asyncio
 # do the rest
 import os
 
+from redis.asyncio import Redis
+
 from core import constants as ccst
 from core.logging import get_logger
 
@@ -41,12 +43,13 @@ def load_config() -> Config:
         substrate_interface=substrate_interface,
         keypair=keypair,
         psql_db=PSQLDB(),
+        redis_db=Redis(host="redis"),
         test_env=os.getenv("ENV", "test") == "test",
         subtensor_network=subtensor_network,
         subtensor_address=subtensor_address,
         netuid=netuid,
         seconds_between_syncs=int(os.getenv("SECONDS_BETWEEN_SYNCS", str(ccst.SCORING_PERIOD_TIME))),
-        replace_with_docker_localhost=True
+        replace_with_docker_localhost=True,
     )
 
 

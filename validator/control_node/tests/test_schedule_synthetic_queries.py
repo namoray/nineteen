@@ -38,7 +38,7 @@ class TestSyntheticSchedulerFunctional(unittest.IsolatedAsyncioTestCase):
             task=Task.chat_llama_3,
             synthetic_requests_still_to_make=num_synthetics,
             delay_between_synthetic_requests=delay,
-            declared_capacity=10000,
+            raw_capacity=10000,
             capacity=100,
             consumed_capacity=0,
             capacity_to_score=100,

@@ -17,34 +17,36 @@ async def insert_contenders(connection: Connection, contenders: list[Contender],
             {dcst.CONTENDER_ID},
             {dcst.NODE_HOTKEY},
             {dcst.NODE_ID},
+            {dcst.NETUID},
             {dcst.TASK},
             {dcst.VALIDATOR_HOTKEY},
             {dcst.CAPACITY},
+            {dcst.RAW_CAPACITY},
             {dcst.CAPACITY_TO_SCORE},
             {dcst.CONSUMED_CAPACITY},
             {dcst.TOTAL_REQUESTS_MADE},
             {dcst.REQUESTS_429},
             {dcst.REQUESTS_500},
-            {dcst.RAW_CAPACITY},
             {dcst.CREATED_AT},
             {dcst.UPDATED_AT}
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW())
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW())
         """,
         [
             (
                 contender.id,
                 contender.node_hotkey,
                 contender.node_id,
+                contender.netuid,
                 contender.task,
                 validator_hotkey,
                 contender.capacity,
+                contender.raw_capacity,
                 contender.capacity_to_score,
                 contender.consumed_capacity,
                 contender.total_requests_made,
                 contender.requests_429,
                 contender.requests_500,
-                contender.declared_capacity,
             )
             for contender in contenders
         ],
@@ -58,15 +60,16 @@ async def migrate_contenders_to_contender_history(connection: Connection) -> Non
             {dcst.CONTENDER_ID},
             {dcst.NODE_HOTKEY},
             {dcst.NODE_ID},
+            {dcst.NETUID},
             {dcst.TASK},
             {dcst.VALIDATOR_HOTKEY},
             {dcst.CAPACITY},
+            {dcst.RAW_CAPACITY},
             {dcst.CAPACITY_TO_SCORE},
             {dcst.CONSUMED_CAPACITY},
             {dcst.TOTAL_REQUESTS_MADE},
             {dcst.REQUESTS_429},
             {dcst.REQUESTS_500},
-            {dcst.RAW_CAPACITY},
             {dcst.PERIOD_SCORE},
             {dcst.CREATED_AT},
             {dcst.UPDATED_AT}
@@ -75,15 +78,16 @@ async def migrate_contenders_to_contender_history(connection: Connection) -> Non
             {dcst.CONTENDER_ID},
             {dcst.NODE_HOTKEY},
             {dcst.NODE_ID},
+            {dcst.NETUID},
             {dcst.TASK},
             {dcst.VALIDATOR_HOTKEY},
             {dcst.CAPACITY},
+            {dcst.RAW_CAPACITY},
             {dcst.CAPACITY_TO_SCORE},
             {dcst.CONSUMED_CAPACITY},
             {dcst.TOTAL_REQUESTS_MADE},
             {dcst.REQUESTS_429},
             {dcst.REQUESTS_500},
-            {dcst.RAW_CAPACITY},
             {dcst.PERIOD_SCORE},
             {dcst.CREATED_AT},
             {dcst.UPDATED_AT}
@@ -99,10 +103,9 @@ async def get_contender_for_task(connection: Connection, task: Task) -> Contende
         f"""
         SELECT 
             {dcst.CONTENDER_ID}, {dcst.NODE_HOTKEY}, {dcst.NODE_ID},{dcst.TASK},
-            {dcst.CAPACITY}, {dcst.CAPACITY_TO_SCORE}, {dcst.CONSUMED_CAPACITY}, 
-            {dcst.DELAY_BETWEEN_SYNTHETIC_REQUESTS}, {dcst.SYNTHETIC_REQUESTS_STILL_TO_MAKE}, 
+            {dcst.CAPACITY}, {dcst.CAPACITY_TO_SCORE}, {dcst.CONSUMED_CAPACITY},
             {dcst.TOTAL_REQUESTS_MADE}, {dcst.REQUESTS_429}, {dcst.REQUESTS_500}, 
-            {dcst.RAW_CAPACITY}, {dcst.PERIOD_SCORE}
+            {dcst.CAPACITY}, {dcst.PERIOD_SCORE}
         FROM {dcst.CONTENDERS_TABLE} 
         WHERE {dcst.TASK} = $1
         """,
@@ -118,10 +121,9 @@ async def fetch_contender(connection: Connection, contender_id: str) -> Contende
         f"""
         SELECT 
             {dcst.CONTENDER_ID}, {dcst.NODE_HOTKEY}, {dcst.NODE_ID},{dcst.TASK},
-            {dcst.CAPACITY}, {dcst.CAPACITY_TO_SCORE}, {dcst.CONSUMED_CAPACITY}, 
-            {dcst.DELAY_BETWEEN_SYNTHETIC_REQUESTS}, {dcst.SYNTHETIC_REQUESTS_STILL_TO_MAKE}, 
-            {dcst.TOTAL_REQUESTS_MADE}, {dcst.REQUESTS_429}, {dcst.REQUESTS_500}, 
-            {dcst.RAW_CAPACITY}, {dcst.PERIOD_SCORE}
+            {dcst.CAPACITY}, {dcst.RAW_CAPACITY}, {dcst.CAPACITY_TO_SCORE},
+             {dcst.CONSUMED_CAPACITY}, {dcst.TOTAL_REQUESTS_MADE}, {dcst.REQUESTS_429}, {dcst.REQUESTS_500}, 
+            {dcst.PERIOD_SCORE}
         FROM {dcst.CONTENDERS_TABLE} 
         WHERE {dcst.CONTENDER_ID} = $1
         """,
@@ -136,11 +138,10 @@ async def fetch_contender(connection: Connection, contender_id: str) -> Contende
 async def fetch_all_contenders(connection: Connection, netuid: int | None = None) -> list[Contender]:
     base_query = f"""
         SELECT 
-            {dcst.CONTENDER_ID}, {dcst.NODE_HOTKEY}, {dcst.NODE_ID}, {dcst.TASK}, 
-            {dcst.CAPACITY}, {dcst.CAPACITY_TO_SCORE}, {dcst.CONSUMED_CAPACITY}, 
-            {dcst.DELAY_BETWEEN_SYNTHETIC_REQUESTS}, {dcst.SYNTHETIC_REQUESTS_STILL_TO_MAKE}, 
+            {dcst.CONTENDER_ID}, {dcst.NODE_HOTKEY}, {dcst.NODE_ID}, {dcst.NETUID}, {dcst.TASK}, 
+            {dcst.RAW_CAPACITY}, {dcst.CAPACITY_TO_SCORE}, {dcst.CONSUMED_CAPACITY}, 
             {dcst.TOTAL_REQUESTS_MADE}, {dcst.REQUESTS_429}, {dcst.REQUESTS_500}, 
-            {dcst.RAW_CAPACITY}, {dcst.PERIOD_SCORE}
+            {dcst.CAPACITY}, {dcst.PERIOD_SCORE}
         FROM {dcst.CONTENDERS_TABLE}
         """
     if netuid is None:

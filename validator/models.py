@@ -35,7 +35,7 @@ class Contender(BaseModel):
     node_id: int
     netuid: int
     task: str
-    declared_capacity: float = Field(..., description="Raw capacity straight from the miner")
+    raw_capacity: float = Field(..., description="Raw capacity straight from the miner")
     capacity: float = Field(..., description="Declared volume for the UID")
     capacity_to_score: float = Field(..., description="Volume to score")
     consumed_capacity: float = Field(0, description="Queried volume for the UID")

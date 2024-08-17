@@ -14,7 +14,7 @@ from validator.control_node.src.main import Config
 from validator.control_node.src.cycle import (
     refresh_nodes,
     refresh_contenders,
-    # schedule_synthetic_queries,
+    schedule_synthetic_queries,
     # calculate_and_schedule_weights,
 )
 from fiber.logging_utils import get_logger
@@ -32,7 +32,8 @@ async def single_cycle(config: Config) -> None:
     logger.info("Got handshakes! Getting the contenders from the nodes...")
     contenders = await refresh_contenders.get_and_store_contenders(config, nodes)
     logger.info(f"Got all contenders! {len(contenders)} contenders will be queried...")
-    # await schedule_synthetic_queries.schedule_synthetics_until_done(config)
+    logger.info("Scheduling synthetics; this will take an hour ish...")
+    await schedule_synthetic_queries.schedule_synthetics_until_done(config)
 
     # Should be performed in parallel to the next cycle
     # await calculate_and_schedule_weights.get_and_set_weights(config)

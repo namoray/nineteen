@@ -13,7 +13,7 @@ from substrateinterface import SubstrateInterface, Keypair
 
 from validator.db.src.database import PSQLDB
 from dotenv import load_dotenv
-
+from redis.asyncio import Redis
 
 logger = get_logger(__name__)
 load_dotenv()
@@ -24,6 +24,7 @@ class Config:
     substrate_interface: SubstrateInterface
     keypair: Keypair
     psql_db: PSQLDB
+    redis_db: Redis
     test_env: bool
     subtensor_network: str
     subtensor_address: str

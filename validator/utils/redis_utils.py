@@ -75,8 +75,10 @@ async def removed_from_sorted_set(redis_db: Redis, name: str, data: str | dict[A
     await redis_db.zrem(name, data)
 
 
-async def add_str_to_redis_list(redis_db: Redis, queue: str, value_to_add: str) -> None:
+async def add_str_to_redis_list(redis_db: Redis, queue: str, value_to_add: str, max_len: int | None= None) -> None:
     await redis_db.rpush(queue, value_to_add)
+    if max_len is not None:
+        await redis_db.ltrim(queue, 0, max_len - 1)
 
 
 async def get_redis_list(redis_db: Redis, queue: str) -> List[str]:
