@@ -1,4 +1,4 @@
-from dataclasses import asdict, dataclass
+from dataclasses import asdict
 import json
 from core.tasks import Task
 from validator.db.src.sql.contenders import fetch_all_contenders, fetch_contender
@@ -8,16 +8,17 @@ from validator.utils import redis_constants as rcst
 from validator.utils import redis_utils as rutils, redis_dataclasses as rdc
 from redis.asyncio import Redis
 from core.logging import get_logger
-
+import uuid
 
 logger = get_logger(__name__)
 
 
-
-
-
 def construct_synthetic_query_message(task: Task) -> str:
-    return json.dumps(asdict(rdc.QueryQueueMessage(query_payload={}, query_type="synthetic", task=task.value)))
+    return json.dumps(
+        asdict(
+            rdc.QueryQueueMessage(query_payload={}, query_type="synthetic", task=task.value, job_id=uuid.uuid4().hex)
+        )
+    )
 
 
 # Consistently about 1ms

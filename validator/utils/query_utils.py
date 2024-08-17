@@ -74,17 +74,6 @@
 #     return body
 
 
-# async def consume_generator(redis_db: Redis, generator: AsyncGenerator, job_id: str, synthetic_query: bool) -> None:
-#     if synthetic_query:
-#         async for _ in generator:
-#             pass
-#     else:
-#         assert job_id
-#         # Change this to a nicer payload
-#         async for text in generator:
-#             await redis_db.rpush(rcst.QUERY_RESULTS_KEY + ":" + job_id, text)
-
-#         await redis_db.expire(rcst.QUERY_RESULTS_KEY + ":" + job_id, 10)
 
 
 # async def query_individual_axon(

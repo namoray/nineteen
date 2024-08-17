@@ -6,6 +6,7 @@ class QueryQueueMessage:
     query_type: str
     query_payload: dict
     task: str
+    job_id: str
     
 @dataclass
 class PublicKeypairInfo:
