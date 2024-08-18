@@ -35,7 +35,9 @@ async def process_task(config: Config, message: rdc.QueryQueueMessage):
         # Decide which contenders to query.
         async with await config.psql_db.connection() as connection:
             contenders_to_query = await get_contenders_for_task(connection, task)
-
+        
+        if contenders_to_query is None:
+            raise ValueError("No contenders to query! :(")
         # Query em
         for contender in contenders_to_query:
             node = await get_node(config.psql_db, contender.node_id, config.netuid)
@@ -68,7 +70,6 @@ async def listen_for_tasks(config: Config):
         done = {t for t in tasks if t.done()}
         tasks.difference_update(done)
         for t in done:
-            logger.info(f"Task {t} done.")
             await t
 
         while len(tasks) < MAX_CONCURRENT_TASKS:

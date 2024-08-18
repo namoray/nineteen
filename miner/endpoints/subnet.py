@@ -1,4 +1,5 @@
 from functools import partial
+import json
 from fastapi import Depends
 
 from fastapi.responses import StreamingResponse
@@ -15,7 +16,8 @@ async def chat_completions(
 ):
     async def iterator():
         for i in range(100):
-            yield f"data: {str(i)}\n\n"
+            data = json.dumps({"choices": [{"delta": {"content": i, "role": "assistant"}}]})
+            yield f"data: {data}\n\n"
     
     return StreamingResponse(iterator())
 

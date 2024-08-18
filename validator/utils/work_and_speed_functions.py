@@ -94,15 +94,13 @@ def calculate_speed_modifier(task: Task, result: Dict[str, Any], synapse: Dict[s
 
 def calculate_work(
     task: Task,
-    result: utility_models.QueryResult | dict[str, Any],
+    result: utility_models.QueryResult,
     steps: float | None = None,
 ) -> float:
     """Gets volume for the task that was executed"""
     config = tcfg.TASK_TO_CONFIG[task].scoring_config
 
-    raw_formatted_response = (
-        result.formatted_response if isinstance(result, utility_models.QueryResult) else result["formatted_response"]
-    )
+    raw_formatted_response = result.formatted_response
 
     if config.task_type == tcfg.TaskType.IMAGE:
         return _calculate_work_image(steps)
@@ -111,7 +109,7 @@ def calculate_work(
             json.loads(raw_formatted_response) if isinstance(raw_formatted_response, str) else raw_formatted_response
         )
         miner_chat_responses: List[utility_models.Message] = [utility_models.Message(**r) for r in formatted_response]
-        all_text = "".join([mcr.text for mcr in miner_chat_responses])
+        all_text = "".join([message.content for message in miner_chat_responses])
         number_of_characters = len(all_text)
 
         if number_of_characters == 0:

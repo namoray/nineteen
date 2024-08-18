@@ -10,47 +10,17 @@ import json
 import os
 import binascii
 from typing import Any, Dict
-from dataclasses import dataclass
 
 import httpx
-from redis.asyncio import Redis
 
 from core.logging import get_logger
 from core.tasks import Task
-from validator.db.src.database import PSQLDB
 from validator.models import RewardData
-from validator.utils import work_and_speed_functions, generic_utils as gutils
+from validator.utils import work_and_speed_functions
 from validator.db.src import functions as db_functions, sql
-from dotenv import load_dotenv
+from validator.control_node.src.control_config import Config
 
 logger = get_logger(__name__)
-
-load_dotenv()
-
-
-@dataclass(frozen=True)
-class Config:
-    psql_db: PSQLDB
-    redis_db: Redis
-    validator_hotkey: str
-    testnet: bool
-    max_results_to_score_for_task: int = int(os.getenv("MAX_RESULTS_TO_SCORE_FOR_TASK", 100))
-    minimum_tasks_to_start_scoring: int = int(os.getenv("MINIMUM_TASKS_TO_START_SCORING", 1))
-    minimum_tasks_to_start_scoring_testnet: int = int(os.getenv("MINIMUM_TASKS_TO_START_SCORING_TESTNET", 1))
-    external_server_url: str = os.getenv("EXTERNAL_SERVER_URL", "http://38.128.232.218:6920/")
-
-
-async def load_config() -> Config:
-    psql_db = PSQLDB()
-    await psql_db.connect()
-    redis_db = Redis(host=os.getenv("REDIS_HOST", "redis"))
-    public_key_info = await gutils.get_public_keypair_info(redis_db)
-    return Config(
-        psql_db=psql_db,
-        redis_db=redis_db,
-        validator_hotkey=public_key_info.ss58_address,
-        testnet=os.getenv("TESTNET", "false").lower() == "true",
-    )
 
 
 async def test_external_server_connection(config: Config) -> bool:
@@ -207,8 +177,7 @@ async def score_results(config: Config):
         await asyncio.sleep(5)
 
 
-async def main():
-    config = await load_config()
+async def main(config: Config):
     try:
         await wait_for_external_server(config)
         await score_results(config)

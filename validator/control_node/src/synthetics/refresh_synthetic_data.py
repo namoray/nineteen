@@ -5,6 +5,7 @@ import time
 from pydantic import BaseModel
 from core.tasks import Task
 from redis.asyncio import Redis
+from validator.control_node.src.control_config import Config
 from validator.utils import (
     synthetic_utils as sutils,
     redis_constants as rcst,
@@ -55,9 +56,8 @@ async def continuously_fetch_synthetic_data_for_tasks(redis_db: Redis) -> None:
         await update_tasks_synthetic_data(redis_db, slow_sync=True)
 
     
-async def main():
-    redis_db = Redis(host="redis", db=0)
-    await continuously_fetch_synthetic_data_for_tasks(redis_db)
+async def main(config: Config):
+    await continuously_fetch_synthetic_data_for_tasks(config.redis_db)
 
 
 if __name__ == "__main__":

@@ -7,7 +7,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY validator/control_node/src ./src
 COPY validator/control_node/pyproject.toml .
-
+COPY assets /app/validator/control_node/assets
 
 ENV PYTHONPATH="${PYTHONPATH}:/app/validator/control_node/src"
 

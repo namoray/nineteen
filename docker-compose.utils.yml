@@ -1,5 +1,3 @@
-version: '3'
-
 services:
   redis-commander:
     image: ghcr.io/joeferner/redis-commander:latest

@@ -34,8 +34,6 @@ class QueryResult(BaseModel):
     node_id: Optional[int]
     node_hotkey: Optional[str]
     response_time: Optional[float]
-    error_message: Optional[str]
-    failed_node_ids: List[int] = []
     task: Task
     status_code: Optional[int]
     success: bool

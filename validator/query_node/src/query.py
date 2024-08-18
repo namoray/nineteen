@@ -15,9 +15,9 @@ from core import tasks_config as tcfg
 from validator.utils import redis_constants as rcst
 
 from fiber.logging_utils import get_logger
-
-
 logger = get_logger(__name__)
+
+
 
 
 def _load_sse_jsons(chunk: str) -> list[dict[str, Any]] | dict[str, str]:
@@ -73,6 +73,17 @@ async def async_chain(first_chunk, async_gen):
     async for item in async_gen:
         yield item  # then yield from the original generator
 
+def construct_500_query_result(node: Node, task: Task) -> utility_models.QueryResult:
+    query_result = utility_models.QueryResult(
+            node_id=node.node_id,
+            task=task,
+            success=False,
+            node_hotkey=node.hotkey,
+            formatted_response=None,
+            status_code=500,
+            response_time=None,
+        )
+    return query_result
 
 async def consume_generator(
     config: Config,
@@ -95,65 +106,64 @@ async def consume_generator(
         first_chunk = await generator.__anext__()
     except (StopAsyncIteration, httpx.ConnectError, httpx.ReadError, httpx.HTTPError) as e:
         logger.error(f"Error when querying node: {node.node_id} for task: {task}. Error: {e}")
-        query_result = utility_models.QueryResult(
-            node_id=node.node_id,
-            task=task,
-            success=False,
-            node_hotkey=node.hotkey,
-            formatted_response=None,
-            status_code=500,
-            response_time=None,
-            error_message=None,
-        )
+        query_result = construct_500_query_result(node, task)
         await utils.adjust_contender_from_result(config, query_result, contender, synthetic_query, payload=payload)
         return
 
-    start_time, text_jsons, status_code, error_message = time.time(), [], 500, None
+    start_time, text_jsons, status_code, first_message = time.time(), [], 200, None, True
+    try:
+        async for text in async_chain(first_chunk, generator):
+            if isinstance(text, bytes):
+                text = text.decode()
+            if isinstance(text, str):
+                try:
+                    loaded_jsons = _load_sse_jsons(text)
+                    if isinstance(loaded_jsons, dict):
+                        status_code = loaded_jsons.get("status_code")
+                        break
 
-    async for text in async_chain(first_chunk, generator):
-        first_message = True
-        if isinstance(text, str):
-            try:
-                loaded_jsons = _load_sse_jsons(text)
-                if isinstance(loaded_jsons, dict):
-                    status_code = loaded_jsons.get("status_code")
-                    error_message = loaded_jsons.get("message")
+                except (IndexError, json.JSONDecodeError) as e:
+                    logger.warning(f"Error {e} when trying to load text: {text}")
                     break
 
-            except (IndexError, json.JSONDecodeError) as e:
-                logger.warning(f"Error {e} when trying to load text: {text}")
-                break
+                text_jsons.extend(loaded_jsons)
+                for text_json in loaded_jsons:
+                    if not isinstance(text_json, dict):
+                        first_message = True  # Janky, but so we mark it as a fail
+                        break
+                    try:
+                        _ = text_json["choices"][0]["delta"]["content"]
+                    except KeyError:
+                        first_message = True  # Janky, but so we mark it as a fail
+                        break 
+                        
+                    dumped_payload = json.dumps(text_json)
+                    first_message = False
+                    await _handle_event(
+                        config, event=f"data: {dumped_payload}\n\n", synthetic_query=synthetic_query, job_id=job_id
+                    )
 
-            text_jsons.extend(loaded_jsons)
-            for text_json in loaded_jsons:
-                content = text_json.get("text", "")
-                if content == "":
-                    continue
-                dumped_payload = _get_formatted_payload(content, first_message)
-                first_message = False
-                _handle_event(
-                    config, event=f"data: {dumped_payload}\n\n", synthetic_query=synthetic_query, job_id=job_id
-                )
+            if len(text_jsons) > 0:
+                last_payload = _get_formatted_payload("", False, add_finish_reason=True)
+                await _handle_event(config, event=f"data: {last_payload}\n\n", synthetic_query=synthetic_query, job_id=job_id)
+                await _handle_event(config, event="data: [DONE]\n\n", synthetic_query=synthetic_query, job_id=job_id)
+                logger.info(f"✅ Successfully queried node: {node.node_id} for task: {task}")
 
-        if len(text_jsons) > 0:
-            last_payload = _get_formatted_payload("", False, add_finish_reason=True)
-            _handle_event(config, event=f"data: {last_payload}\n\n", synthetic_query=synthetic_query, job_id=job_id)
-            _handle_event(config, event="data: [DONE]\n\n", synthetic_query=synthetic_query, job_id=job_id)
-            logger.info(f"✅ Successfully queried node: {node.node_id} for task: {task}")
-
-        response_time = time.time() - start_time
-        logger.debug(f"Got query result!. Success: {not first_message}. Response time: {response_time}")
-        query_result = utility_models.QueryResult(
-            formatted_response=text_jsons if len(text_jsons) > 0 else None,
-            node_id=node.node_id,
-            response_time=response_time,
-            task=task,
-            success=not first_message,
-            node_hotkey=node.hotkey,
-            status_code=status_code,
-            error_message=error_message,
-        )
-        logger.debug(f"Query result: {query_result}")
+            response_time = time.time() - start_time
+            logger.debug(f"Got query result!. Success: {not first_message}. Response time: {response_time}")
+            query_result = utility_models.QueryResult(
+                formatted_response=text_jsons if len(text_jsons) > 0 else None,
+                node_id=node.node_id,
+                response_time=response_time,
+                task=task,
+                success=not first_message,
+                node_hotkey=node.hotkey,
+                status_code=status_code,
+            )
+    except Exception as e:
+        logger.error(f"Unexpected exception when querying node: {node.node_id} for task: {task}. Payload: {payload}. Error: {e}")
+        query_result = construct_500_query_result(node, task)
+    finally:
         await utils.adjust_contender_from_result(config, query_result, contender, synthetic_query, payload=payload)
         await config.redis_db.expire(rcst.QUERY_RESULTS_KEY + ":" + job_id, 10)
 
@@ -165,10 +175,8 @@ async def query_node_stream(config: Config, contender: Contender, node: Node, pa
             replace_with_docker_localhost=config.replace_with_docker_localhost,
             replace_with_localhost=config.replace_with_localhost,
         )
-        logger.info(
+        logger.warning(
             f"making a query to node: {node.node_id} for task: {contender.task}."
-            f" address: {address}, endpoint: {tcfg.TASK_TO_CONFIG[Task(contender.task)].endpoint}"
-            f"Payload: {payload}"
         )
         return client.make_streamed_post(
             httpx_client=config.httpx_client,

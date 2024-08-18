@@ -1,17 +1,19 @@
-import asyncio
+from dotenv import load_dotenv
 import os
 
-from redis.asyncio import Redis
+# Must be done straight away, bit ugly
+load_dotenv(os.getenv("ENV_FILE", ".dev.env"))
 
-from core.logging import get_logger
+import asyncio 
+from redis.asyncio import Redis 
+
+from core.logging import get_logger 
 
 from validator.db.src.sql.nodes import get_vali_ss58_address
 from validator.query_node.src.query_config import Config
 from validator.query_node.src.process_queries import listen_for_tasks
 from validator.db.src.database import PSQLDB
-from dotenv import load_dotenv
 
-load_dotenv(os.getenv("ENV_FILE", ".dev.env"))
 logger = get_logger(__name__)
 
 

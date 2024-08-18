@@ -4,7 +4,7 @@ from validator.query_node.src.query_config import Config
 from validator.utils import work_and_speed_functions
 from core.logging import get_logger
 from validator.db.src import functions as db_functions
-from validator.db.src.sql.contenders import update_contender_capacities
+from validator.db.src.sql.contenders import update_contender_429_count, update_contender_500_count, update_contender_capacities
 
 logger = get_logger(__name__)
 
@@ -34,9 +34,9 @@ async def adjust_contender_from_result(
         logger.debug(f"Adjusted contender: {contender.id} for task: {query_result.task}")
 
     elif query_result.status_code == 429:
-        contender.requests_429 += 1
+        await update_contender_429_count(config, contender)
     else:
-        contender.requests_500 += 1
+        await update_contender_500_count(config, contender)
     return query_result
 
 

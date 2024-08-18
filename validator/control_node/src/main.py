@@ -1,11 +1,9 @@
-# TODO: rename core_node (they shoud all be nodes)
-
-import asyncio
-
-
-# do the rest
+from dotenv import load_dotenv
 import os
 
+# Must be done straight away, bit ugly
+load_dotenv(os.getenv("ENV_FILE", ".dev.env"))
+import asyncio
 from redis.asyncio import Redis
 
 from core import constants as ccst
@@ -17,11 +15,7 @@ from fiber.chain_interactions import chain_utils
 from validator.control_node.src.cycle import execute_cycle
 from validator.control_node.src.synthetics import refresh_synthetic_data
 from validator.db.src.database import PSQLDB
-from dotenv import load_dotenv
-
-
 logger = get_logger(__name__)
-load_dotenv()
 
 
 def load_config() -> Config:
@@ -35,6 +29,15 @@ def load_config() -> Config:
     else:
         netuid = int(netuid)
 
+    localhost = bool(os.getenv("LOCALHOST", "false").lower() == "true")
+    if localhost:
+        redis_host = "localhost"
+        os.environ["POSTGRES_HOST"] = "localhost"
+    else:
+        redis_host = os.getenv("REDIS_HOST", "redis")
+
+    replace_with_docker_localhost = bool(os.getenv("REPLACE_WITH_DOCKER_LOCALHOST", "false").lower() == "true")
+
     substrate_interface = interface.get_substrate_interface(
         subtensor_network=subtensor_network, subtensor_address=subtensor_address
     )
@@ -44,13 +47,14 @@ def load_config() -> Config:
         substrate_interface=substrate_interface,
         keypair=keypair,
         psql_db=PSQLDB(),
-        redis_db=Redis(host="redis"),
+        redis_db=Redis(host=redis_host),
         test_env=os.getenv("ENV", "test") == "test",
         subtensor_network=subtensor_network,
         subtensor_address=subtensor_address,
         netuid=netuid,
         seconds_between_syncs=int(os.getenv("SECONDS_BETWEEN_SYNCS", str(ccst.SCORING_PERIOD_TIME))),
-        replace_with_docker_localhost=True,
+        replace_with_docker_localhost=replace_with_docker_localhost,
+        replace_with_localhost=localhost,
     )
 
 
@@ -60,7 +64,7 @@ async def main() -> None:
 
     await asyncio.gather(
         # score_results.main(),  # Should be in its own thread
-        refresh_synthetic_data.main(),  # Should be in its own thread
+        refresh_synthetic_data.main(config),  # Should be in its own thread?
         execute_cycle.single_cycle(config),
     )
 

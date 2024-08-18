@@ -98,7 +98,6 @@ async def migrate_contenders_to_contender_history(connection: Connection) -> Non
 
     await connection.execute(f"DELETE FROM {dcst.CONTENDERS_TABLE}")
 
-
 async def get_contenders_for_task(connection: Connection, task: Task, top_x: int = 5) -> list[Contender]:
     rows = await connection.fetch(
         f"""
@@ -134,12 +133,35 @@ async def get_contenders_for_task(connection: Connection, task: Task, top_x: int
         task.value,
         top_x,
     )
-    if not rows:
-        return None
+
+    # If not enough rows are returned, run another query to get more contenders
+    if not rows or len(rows) < top_x:
+        additional_rows = await connection.fetch(
+            f"""
+            SELECT 
+                c.{dcst.CONTENDER_ID}, c.{dcst.NODE_HOTKEY}, c.{dcst.NODE_ID}, c.{dcst.TASK},
+                c.{dcst.RAW_CAPACITY}, c.{dcst.CAPACITY_TO_SCORE}, c.{dcst.CONSUMED_CAPACITY},
+                c.{dcst.TOTAL_REQUESTS_MADE}, c.{dcst.REQUESTS_429}, c.{dcst.REQUESTS_500}, 
+                c.{dcst.CAPACITY}, c.{dcst.PERIOD_SCORE}, c.{dcst.NETUID}
+            FROM {dcst.CONTENDERS_TABLE} c
+            JOIN {dcst.NODES_TABLE} n ON c.{dcst.NODE_ID} = n.{dcst.NODE_ID} AND c.{dcst.NETUID} = n.{dcst.NETUID}
+            WHERE c.{dcst.TASK} = $1 
+            AND c.{dcst.CAPACITY} > 0 
+            AND n.{dcst.SYMMETRIC_KEY_UUID} IS NOT NULL
+            ORDER BY c.{dcst.CONSUMED_CAPACITY}::float / c.{dcst.CAPACITY}::float ASC
+            LIMIT $2
+            OFFSET $3
+            """,
+            task.value,
+            top_x - len(rows) if rows else top_x,
+            len(rows) if rows else 0,
+        )
+        rows = rows + additional_rows if rows else additional_rows
+
     return [Contender(**row) for row in rows]
 
-async def update_contender_capacities(config: Config, contender: Contender, capacitity_consumed) -> None:
-    async with config.psql_db.connection() as connection:
+async def update_contender_capacities(config: Config, contender: Contender, capacitity_consumed: float) -> None:
+    async with await config.psql_db.connection() as connection:
         await connection.execute(
             f"""
             UPDATE {dcst.CONTENDERS_TABLE}
@@ -148,6 +170,28 @@ async def update_contender_capacities(config: Config, contender: Contender, capa
             WHERE {dcst.CONTENDER_ID} = $2
             """,
             capacitity_consumed,
+            contender.id,
+        )
+
+async def update_contender_429_count(config: Config, contender: Contender) -> None:
+    async with await  config.psql_db.connection() as connection:
+        await connection.execute(
+            f"""
+            UPDATE {dcst.CONTENDERS_TABLE}
+            SET {dcst.REQUESTS_429} = {dcst.REQUESTS_429} + 1
+            WHERE {dcst.CONTENDER_ID} = $1
+            """,
+            contender.id,
+        )
+
+async def update_contender_500_count(config: Config, contender: Contender) -> None:
+    async with await  config.psql_db.connection() as connection:
+        await connection.execute(
+            f"""
+            UPDATE {dcst.CONTENDERS_TABLE}
+            SET {dcst.REQUESTS_500} = {dcst.REQUESTS_500} + 1
+            WHERE {dcst.CONTENDER_ID} = $1
+            """,
             contender.id,
         )
 
