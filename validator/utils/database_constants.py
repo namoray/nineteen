@@ -35,6 +35,7 @@ PROTOCOL = "protocol"
 NETWORK = "network"
 SYMMETRIC_KEY = "symmetric_key"
 SYMMETRIC_KEY_UUID = "symmetric_key_uuid"
+OUR_VALIDATOR = "our_validator"
 CREATED_AT = "created_at"
 
 
@@ -56,6 +57,7 @@ CREATED_AT = "created_at"
 # SYMMETRIC_KEY = "symmetric_key"
 # SYMMETRIC_KEY_UUID = "symmetric_key_uuid"
 # CREATED_AT = "created_at"
+# OUR_VALIDATOR = "our_validator"
 EXPIRED_AT = "expired_at"
 
 # Contenders table

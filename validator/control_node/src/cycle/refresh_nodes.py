@@ -15,7 +15,7 @@ from validator.db.src.sql.nodes import (
 from core.logging import get_logger
 from fiber.chain_interactions import fetch_nodes
 from validator.control_node.src.main import Config
-from validator.db.src.sql.nodes import insert_symmetric_keys_for_nodes
+from validator.db.src.sql.nodes import insert_symmetric_keys_for_nodes, update_our_vali_node_in_db
 from fiber.validator import handshake, client
 import httpx
 from datetime import datetime, timedelta
@@ -67,6 +67,7 @@ async def get_and_store_nodes(config: Config) -> list[Node]:
         ),
     ]
     await store_nodes(config, nodes)
+    await update_our_validator_node(config)
 
     logger.info(f"Stored {len(nodes)} nodes.")
     return nodes
@@ -91,6 +92,9 @@ async def store_nodes(config: Config, nodes: list[Node]):
         await migrate_nodes_to_history(connection)
         await insert_nodes(connection, nodes, config.subtensor_network)
 
+async def update_our_validator_node(config: Config):
+    async with await config.psql_db.connection() as connection:
+        await update_our_vali_node_in_db(connection, config.keypair.ss58_address, config.netuid)
 
 async def _handshake(config: Config, node: Node, async_client: httpx.AsyncClient) -> tuple[str, str] | None:
     node_copy = node.model_copy()

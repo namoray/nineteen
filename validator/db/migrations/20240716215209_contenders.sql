@@ -40,6 +40,6 @@ CREATE TABLE IF NOT EXISTS contenders_history (
 );
 
 -- migrate:down
-
 DROP TABLE IF EXISTS contenders;
+
 DROP TABLE IF EXISTS contenders_history;

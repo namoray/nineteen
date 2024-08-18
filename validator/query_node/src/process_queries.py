@@ -56,6 +56,7 @@ async def process_task(config: Config, message: rdc.QueryQueueMessage):
 async def listen_for_tasks(config: Config):
     ongoing_tasks = set()
 
+    logger.info("Listening for tasks...")
     async def process_and_remove(message: rdc.QueryQueueMessage):
         try:
             await process_task(config, message)

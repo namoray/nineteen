@@ -107,14 +107,20 @@ async def get_last_updated_time_for_nodes(connection: Connection, netuid: int) -
 
 
 async def insert_symmetric_keys_for_nodes(connection: Connection, nodes: list[Node]) -> None:
-    logger.info(f"Inserting {len([node for node in nodes if node.fernet is not None])} nodes into {dcst.NODES_TABLE}...")
+    logger.info(
+        f"Inserting {len([node for node in nodes if node.fernet is not None])} nodes into {dcst.NODES_TABLE}..."
+    )
     await connection.executemany(
         f"""
         UPDATE {dcst.NODES_TABLE}
         SET {dcst.SYMMETRIC_KEY} = $1, {dcst.SYMMETRIC_KEY_UUID} = $2
         WHERE {dcst.HOTKEY} = $3 and {dcst.NETUID} = $4
         """,
-        [(futils.fernet_to_symmetric_key(node.fernet), node.symmetric_key_uuid, node.hotkey, node.netuid) for node in nodes if node.fernet is not None],
+        [
+            (futils.fernet_to_symmetric_key(node.fernet), node.symmetric_key_uuid, node.hotkey, node.netuid)
+            for node in nodes
+            if node.fernet is not None
+        ],
     )
 
 
@@ -182,3 +188,12 @@ async def get_node(psql_db: PSQLDB, hotkey: str, netuid: int) -> Node:
         raise ValueError(f"No node found for hotkey {hotkey} and netuid {netuid}")
 
     return Node(**node)
+
+
+async def update_our_vali_node_in_db(connection: Connection, ss58_address: str, netuid: int) -> None:
+    query = f"""
+        UPDATE {dcst.NODES_TABLE}
+        SET {dcst.OUR_VALIDATOR} = true
+        WHERE {dcst.HOTKEY} = $1 AND {dcst.NETUID} = $2
+    """
+    await connection.execute(query, ss58_address, netuid)

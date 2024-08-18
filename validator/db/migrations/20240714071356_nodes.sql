@@ -15,6 +15,7 @@ CREATE TABLE nodes (
     network TEXT NOT NULL,
     symmetric_key TEXT,
     symmetric_key_uuid TEXT,
+    our_validator BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC'),
     PRIMARY KEY (hotkey, netuid)
 );

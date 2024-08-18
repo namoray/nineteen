@@ -63,6 +63,8 @@ services:
     networks:
       - postgres_network
       - redis_network
+    env_file:
+      - .dev.env
     entrypoint: ["python", "-u", "/app/validator/query_node/src/main.py"]
     container_name: dev_query_node
 
