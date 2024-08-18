@@ -15,6 +15,7 @@ from validator.control_node.src.control_config import Config
 from fiber.chain_interactions import interface
 from fiber.chain_interactions import chain_utils
 from validator.control_node.src.cycle import execute_cycle
+from validator.control_node.src.synthetics import refresh_synthetic_data
 from validator.db.src.database import PSQLDB
 from dotenv import load_dotenv
 
@@ -58,8 +59,8 @@ async def main() -> None:
     await config.psql_db.connect()
 
     await asyncio.gather(
-        # refresh_synthetic_data.main(),  # Should be in its own thread
         # score_results.main(),  # Should be in its own thread
+        refresh_synthetic_data.main(),  # Should be in its own thread
         execute_cycle.single_cycle(config),
     )
 

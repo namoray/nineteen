@@ -3,7 +3,7 @@ from core.tasks import Task
 from validator.query_node.src.query_config import Config
 from validator.models import Contender
 from fiber.validator import client
-from fiber.validator.client import Node
+from fiber.chain_interactions.models import Node
 from core import tasks_config as tcfg
 from validator.utils import redis_constants as rcst
 

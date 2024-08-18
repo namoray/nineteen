@@ -35,6 +35,36 @@ services:
     env_file:
       - .dev.env
     container_name: dev_control_node
+  
+  query_node:
+    build:
+      context: .
+      dockerfile: dockerfiles/query_node.dockerfile
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+      restart_policy:
+        condition: on-failure
+      update_config:
+        parallelism: 1
+        delay: 10s
+      rollback_config:
+        parallelism: 1
+        delay: 10s
+    depends_on:
+      - redis
+      - postgresql
+      - core
+    volumes:
+      - .:/app
+    networks:
+      - postgres_network
+      - redis_network
+    entrypoint: ["python", "-u", "/app/validator/query_node/src/main.py"]
+    container_name: dev_query_node
 
   postgresql:
     image: postgres:latest

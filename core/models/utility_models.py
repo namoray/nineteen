@@ -2,8 +2,24 @@ import enum
 from typing import List, Optional, Any
 
 from pydantic import BaseModel
-
 from core.tasks import Task
+
+
+class Role(str, enum.Enum):
+    """Message is sent by which role?"""
+
+    user = "user"
+    assistant = "assistant"
+    system = "system"
+
+
+class Message(BaseModel):
+    role: Role = Role.user
+    content: str = "Remind me that I have forgot to set the messages"
+
+    class Config:
+        extra = "allow"
+
 
 class ChatModels(str, enum.Enum):
     """Model is used for the chat"""

@@ -74,6 +74,3 @@ async def listen_for_tasks(config: Config):
         else:
             await asyncio.sleep(0.1)
 
-
-if __name__ == "__main__":
-    asyncio.run(listen_for_tasks(Config()))

@@ -1,6 +1,5 @@
 import asyncio
 from dataclasses import dataclass
-import datetime
 import time
 from typing import Dict, List
 import heapq
@@ -114,14 +113,11 @@ async def schedule_synthetics_until_done(config: Config):
 
         if latest_remaining_requests > 0:
             await _schedule_synthetic_query(config.redis_db, schedule.task, max_len=100)
-            logger.debug(
-                f"latest_remaining_requests: {latest_remaining_requests}, next schedule time: {datetime.datetime.fromtimestamp(schedule.next_schedule_time)}"
-            )
+
             remaining_requests = latest_remaining_requests - 1
             await _update_redis_remaining_requests(config.redis_db, schedule.task, remaining_requests)
             schedule.next_schedule_time = current_time + schedule.interval
             schedule.remaining_requests = remaining_requests
-            logger.debug(f"Scheduled synthetic query for task {schedule.task}. Remaining: {remaining_requests}")
 
         if remaining_requests > 0:
             heapq.heappush(task_schedules, schedule)

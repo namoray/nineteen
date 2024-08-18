@@ -9,9 +9,8 @@ from validator.utils import (
     query_utils as qutils,
     synthetic_constants as scst,
 )
-from core import dataclasses as dc
 from redis.asyncio import Redis
-from core import bittensor_overrides as bt
+
 import base64
 from io import BytesIO
 
@@ -40,7 +39,7 @@ def get_randomly_edited_face_picture_for_avatar() -> str:
     return _alter_my_boy_postie(my_boy_postie)
 
 
-def _get_random_text_prompt() -> dc.TextPrompt:
+def _get_random_text_prompt() -> str:
     nouns = ["king", "man", "woman", "joker", "queen", "child", "doctor", "teacher", "soldier", "merchant"]  # fmt: off
     locations = [
         "forest",
@@ -98,7 +97,7 @@ def _get_random_text_prompt() -> dc.TextPrompt:
     time = random.choice(times)
 
     text = f"{noun} in a {location}, looking {look}, {action} {time}"
-    return dc.TextPrompt(text=text, weight=1.0)
+    return text
 
 
 async def _get_random_picsum_image(x_dim: int, y_dim: int) -> str:
@@ -198,20 +197,7 @@ async def fetch_synthetic_data_for_task(redis_db: Redis, task: Task) -> dict[str
     elif task_type == tasks_config.TaskType.TEXT:
         synthetic_data[scst.SEED] = random.randint(1, 1_000_000_000)
         synthetic_data[scst.TEMPERATURE] = round(random.uniform(0, 1), 2)
-    elif task_type == tasks_config.TaskType.CLIP:
-        synth_model = base_models.ClipEmbeddingsIncoming(**synthetic_data)
-        synth_model_altered = qutils.alter_clip_body(synth_model)
-        synthetic_data = synth_model_altered.model_dump()
     else:
         raise ValueError(f"Unknown task type: {task_type}")
 
-    return convert_synthetic_data_to_synapse(synthetic_data, task)
-
-
-def convert_synthetic_data_to_synapse(synthetic_data: dict[str, Any], task: Task) -> bt.Synapse:
-    # dynamically get synapse from models.synapses using the task
-    synapse_name = tasks_config.TASK_TO_CONFIG[task].endpoint
-
-    synapse = getattr(synapses, synapse_name)
-    logger.debug(f"Synapse name for task  {task} is {synapse_name}. synapse is: {synapse}.")
-    return synapse(**synthetic_data)
+    return synthetic_data

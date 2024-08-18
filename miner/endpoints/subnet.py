@@ -2,14 +2,14 @@ from functools import partial
 from fastapi import Depends
 
 from fiber.miner.security.encryption import decrypt_general_payload
-from core.models import base_models
+from core.models import request_models
 from fastapi.routing import APIRouter
 from core.tasks_config import TASK_TO_CONFIG
 
 
 async def text_to_speech(
-    decrypted_payload: base_models.TextToSpeechRequest = Depends(
-        partial(decrypt_general_payload, base_models.TextToSpeechRequest)
+    decrypted_payload: request_models.TextToSpeechRequest = Depends(
+        partial(decrypt_general_payload, request_models.TextToSpeechRequest)
     ),
 ):
     return {"status": "Text-to-speech request received"}

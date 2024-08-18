@@ -54,7 +54,7 @@ async def continuously_fetch_synthetic_data_for_tasks(redis_db: Redis) -> None:
     while True:
         await update_tasks_synthetic_data(redis_db, slow_sync=True)
 
-
+    
 async def main():
     redis_db = Redis(host="redis", db=0)
     await continuously_fetch_synthetic_data_for_tasks(redis_db)
