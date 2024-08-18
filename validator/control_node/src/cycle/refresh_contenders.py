@@ -34,7 +34,7 @@ def _get_validator_stake_proportion(nodes: list[Node], hotkey_ss58_address: str)
 
 def _get_capacity_to_score(capacity: float) -> float:
     """TODO: Finish"""
-    return capacity * 100
+    return capacity * 1
 
 async def _store_and_migrate_old_contenders(config: Config, contenders: List[Contender]):
     logger.info("Calculating period scores & refreshing contenders")

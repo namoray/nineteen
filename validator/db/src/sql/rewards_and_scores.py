@@ -5,7 +5,7 @@ from asyncpg import Connection
 ##### Insert
 
 
-async def insert_reward_data(connection: Connection, data: RewardData) -> str:
+async def sql_insert_reward_data(connection: Connection, data: RewardData) -> str:
     return await connection.fetchval(
         f"""
         INSERT INTO {dcst.TABLE_REWARD_DATA} (

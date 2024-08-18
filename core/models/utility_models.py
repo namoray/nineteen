@@ -24,19 +24,18 @@ class Message(BaseModel):
 class ChatModels(str, enum.Enum):
     """Model is used for the chat"""
 
-    mixtral = "mixtral-8x7b"
-    llama_3 = "llama-3"
+
     llama_31_8b = "llama-3-1-8b"
     llama_31_70b = "llama-3-1-70b"
 
 
 class QueryResult(BaseModel):
     formatted_response: Any
-    axon_uid: Optional[int]
+    node_id: Optional[int]
     node_hotkey: Optional[str]
     response_time: Optional[float]
     error_message: Optional[str]
-    failed_axon_uids: List[int] = []
+    failed_node_ids: List[int] = []
     task: Task
     status_code: Optional[int]
     success: bool

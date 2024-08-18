@@ -64,7 +64,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
             checking_function="check_text_result",
         ),
         synthetic_generation_config=SyntheticGenerationConfig(
-            func="generate_chat_synthetic", kwargs={"model": utility_models.ChatModels.mixtral.value}
+            func="generate_chat_synthetic", kwargs={"model": utility_models.ChatModels.llama_31_8b.value}
         ),
         endpoint="/chat/completions",
         volume_to_requests_conversion=300,
@@ -88,7 +88,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
             checking_function="check_text_result",
         ),
         synthetic_generation_config=SyntheticGenerationConfig(
-            func="generate_chat_synthetic", kwargs={"model": utility_models.ChatModels.llama_3.value}
+            func="generate_chat_synthetic", kwargs={"model": utility_models.ChatModels.llama_31_70b.value}
         ),
         endpoint="/chat/completions",
         volume_to_requests_conversion=300,

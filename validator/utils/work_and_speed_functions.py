@@ -2,11 +2,11 @@
 
 import json
 import math
-from typing import Dict, Any, List, Union
+from typing import Dict, Any, List
 
+from core.models import utility_models
 from core.tasks import Task
 from core import tasks_config as tcfg
-from core import bittensor_overrides as bt
 
 MAX_SPEED_BONUS = 1.4  # Adjust this value as needed
 BELOW_MEAN_EXPONENT = 0.5
@@ -93,7 +93,9 @@ def calculate_speed_modifier(task: Task, result: Dict[str, Any], synapse: Dict[s
 
 
 def calculate_work(
-    task: Task, result: Union[utility_models.QueryResult, Dict[str, Any]], synapse: Union[Dict[str, Any], bt.Synapse]
+    task: Task,
+    result: utility_models.QueryResult | dict[str, Any],
+    steps: float | None = None,
 ) -> float:
     """Gets volume for the task that was executed"""
     config = tcfg.TASK_TO_CONFIG[task].scoring_config
@@ -103,15 +105,12 @@ def calculate_work(
     )
 
     if config.task_type == tcfg.TaskType.IMAGE:
-        steps = synapse.get("steps", 1) if isinstance(synapse, dict) else synapse.steps
         return _calculate_work_image(steps)
     elif config.task_type == tcfg.TaskType.TEXT:
         formatted_response = (
             json.loads(raw_formatted_response) if isinstance(raw_formatted_response, str) else raw_formatted_response
         )
-        miner_chat_responses: List[utility_models.MinerChatResponse] = [
-            utility_models.MinerChatResponse(**r) for r in formatted_response
-        ]
+        miner_chat_responses: List[utility_models.Message] = [utility_models.Message(**r) for r in formatted_response]
         all_text = "".join([mcr.text for mcr in miner_chat_responses])
         number_of_characters = len(all_text)
 
@@ -119,14 +118,5 @@ def calculate_work(
             return 1
 
         return _calculate_work_text(number_of_characters)
-    elif config.task_type == tcfg.TaskType.CLIP:
-        clip_result = (
-            base_models.ClipEmbeddingsOutgoing(**json.loads(raw_formatted_response))
-            if isinstance(raw_formatted_response, str)
-            else base_models.ClipEmbeddingsOutgoing(**raw_formatted_response)
-            if isinstance(raw_formatted_response, dict)
-            else raw_formatted_response
-        )
-        return _calculate_work_clip(len(clip_result.clip_embeddings))
     else:
         raise ValueError(f"Task {task} not found for work bonus calculation")

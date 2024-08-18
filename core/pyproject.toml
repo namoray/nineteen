@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "core"
+version = "1.0.0"
+description = "Core service for the validator"
+dynamic = ["dependencies"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["core*"]

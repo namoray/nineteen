@@ -11,9 +11,8 @@ from validator.query_node.src.process_queries import listen_for_tasks
 from validator.db.src.database import PSQLDB
 from dotenv import load_dotenv
 
-
+load_dotenv(os.getenv("ENV_FILE", ".dev.env"))
 logger = get_logger(__name__)
-load_dotenv()
 
 
 async def load_config() -> Config:
@@ -23,6 +22,15 @@ async def load_config() -> Config:
     else:
         netuid = int(netuid)
 
+    localhost = bool(os.getenv("LOCALHOST", "false").lower() == "true")
+    if localhost:
+        redis_host = "localhost"
+        os.environ["POSTGRES_HOST"] = "localhost"
+    else:
+        redis_host = os.getenv("REDIS_HOST", "redis")
+
+    replace_with_docker_localhost = bool(os.getenv("REPLACE_WITH_DOCKER_LOCALHOST", "false").lower() == "true")
+
     psql_db = PSQLDB()
     await psql_db.connect()
 
@@ -31,12 +39,19 @@ async def load_config() -> Config:
         ss58_address = await get_vali_ss58_address(psql_db, netuid)
         await asyncio.sleep(0.1)
 
-    return Config(redis_db=Redis(host="redis"), psql_db=psql_db, netuid=netuid, ss58_address=ss58_address)
+    return Config(
+        redis_db=Redis(host=redis_host),
+        psql_db=psql_db,
+        netuid=netuid,
+        ss58_address=ss58_address,
+        replace_with_docker_localhost=replace_with_docker_localhost,
+        replace_with_localhost=localhost,
+    )
 
 
 async def main() -> None:
     config = await load_config()
-
+    logger.debug(f"config: {config}")
     await asyncio.gather(
         listen_for_tasks(config),
     )

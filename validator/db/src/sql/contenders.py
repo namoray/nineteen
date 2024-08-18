@@ -3,6 +3,7 @@ from core.logging import get_logger
 
 from asyncpg import Connection
 from validator.models import Contender, PeriodScore
+from validator.query_node.src.query_config import Config
 from validator.utils import database_constants as dcst
 
 logger = get_logger(__name__)
@@ -137,6 +138,18 @@ async def get_contenders_for_task(connection: Connection, task: Task, top_x: int
         return None
     return [Contender(**row) for row in rows]
 
+async def update_contender_capacities(config: Config, contender: Contender, capacitity_consumed) -> None:
+    async with config.psql_db.connection() as connection:
+        await connection.execute(
+            f"""
+            UPDATE {dcst.CONTENDERS_TABLE}
+            SET {dcst.CONSUMED_CAPACITY} = {dcst.CONSUMED_CAPACITY} + $1, 
+                {dcst.TOTAL_REQUESTS_MADE} = {dcst.TOTAL_REQUESTS_MADE} + 1
+            WHERE {dcst.CONTENDER_ID} = $2
+            """,
+            capacitity_consumed,
+            contender.id,
+        )
 
 async def fetch_contender(connection: Connection, contender_id: str) -> Contender | None:
     row = await connection.fetchrow(

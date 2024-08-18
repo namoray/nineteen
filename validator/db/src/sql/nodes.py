@@ -222,4 +222,4 @@ async def get_vali_ss58_address(psql_db: PSQLDB, netuid: int) -> str | None:
         logger.error(f"No validator node found for netuid {netuid}")
         return None
 
-    return str
+    return node[dcst.HOTKEY]

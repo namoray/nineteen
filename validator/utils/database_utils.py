@@ -8,6 +8,7 @@ def get_connection_string_from_env() -> str:
     username = os.getenv("POSTGRES_USER")
     password = os.getenv("POSTGRES_PASSWORD")
     host = os.getenv("POSTGRES_HOST")
+    logger.warning(f"username: {username}, password: {password}, host: {host}")
     port = os.getenv("POSTGRES_PORT")
     database = os.getenv("POSTGRES_DB")
 
