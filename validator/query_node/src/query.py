@@ -110,7 +110,7 @@ async def consume_generator(
         await utils.adjust_contender_from_result(config, query_result, contender, synthetic_query, payload=payload)
         return
 
-    start_time, text_jsons, status_code, first_message = time.time(), [], 200, None, True
+    start_time, text_jsons, status_code, first_message = time.time(), [], 200,  True
     try:
         async for text in async_chain(first_chunk, generator):
             if isinstance(text, bytes):

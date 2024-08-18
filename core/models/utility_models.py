@@ -1,5 +1,5 @@
 import enum
-from typing import List, Optional, Any
+from typing import Optional, Any
 
 from pydantic import BaseModel
 from core.tasks import Task
