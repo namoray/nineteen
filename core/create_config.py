@@ -14,7 +14,7 @@ def optional_http_address_processing_func(input: Optional[str]) -> str:
         return None
     return http_address_processing_func(input)
  
- 
+
 def http_address_processing_func(input: str) -> str:
     if "http://" not in input and "https://" not in input:
         input = "http://" + input
@@ -22,13 +22,13 @@ def http_address_processing_func(input: str) -> str:
         input = input + "/"
     return input
 
- 
+
 def bool_processing_func(input: str) -> bool:
     if input.lower() in ["true", "t", "1", "y", "yes"]:
         return True
     else:
         return False
- 
+
 
 def int_processing_func(input: str) -> Optional[int]:
     try:

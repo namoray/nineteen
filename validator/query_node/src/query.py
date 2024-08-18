@@ -24,16 +24,13 @@ async def consume_generator(redis_db: Redis, generator: AsyncGenerator, job_id: 
 
 
 async def query_node_stream(config: Config, contender: Contender, node: Node, payload: dict):
-    return await client.make_streamed_post(
+    return  client.make_streamed_post(
         httpx_client=config.httpx_client,
         server_address=client.construct_server_address(node),
-        validator_ss58_address=config.validator_ss58_address,
+        validator_ss58_address=config.ss58_address,
         fernet=node.fernet,
-        key_uuid=node.symmetric_key_uuid,
+        symmetric_key_uuid=node.symmetric_key_uuid,
         payload=payload,
         endpoint=tcfg.TASK_TO_CONFIG[Task(contender.task)].endpoint,
         timeout=tcfg.TASK_TO_CONFIG[Task(contender.task)].timeout,
     )
-
-
-async def get_contenders_to_query(config: Config, task: Task) -> list[Contender]: ...

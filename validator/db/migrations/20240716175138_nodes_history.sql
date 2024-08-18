@@ -9,6 +9,7 @@ CREATE TABLE nodes_history (
     stake FLOAT NOT NULL,
     trust FLOAT NOT NULL,
     vtrust FLOAT NOT NULL,
+    last_updated FLOAT,
     ip TEXT NOT NULL,
     ip_type INTEGER NOT NULL,
     port INTEGER NOT NULL,

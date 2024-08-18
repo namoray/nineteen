@@ -5,7 +5,7 @@ from functools import lru_cache
 from colorama import Fore, Back, Style, init
 
 init(autoreset=True)
- 
+  
 
 class ColoredFormatter(logging.Formatter):
     COLORS = {

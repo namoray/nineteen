@@ -42,6 +42,7 @@ async def get_and_store_nodes(config: Config) -> list[Node]:
             stake=0,
             trust=1,
             vtrust=0,
+            last_updated=2404204,
             ip="0.0.0.1",
             ip_type=4,
             port=4001,
@@ -58,6 +59,7 @@ async def get_and_store_nodes(config: Config) -> list[Node]:
             stake=9999,
             trust=0,
             vtrust=0.85,
+            last_updated=2404204,
             ip="0.0.0.0",
             ip_type=4,
             port=0,
@@ -109,7 +111,7 @@ async def _handshake(config: Config, node: Node, async_client: httpx.AsyncClient
             async_client, server_address, config.keypair
         )
     except (httpx.HTTPStatusError, httpx.RequestError, httpx.ConnectError) as e:
-        logger.warning(f"Failed to connect to {server_address}: {e}")
+        # logger.warning(f"Failed to connect to {server_address}: {e}")
         if hasattr(e, "response"):
             logger.debug(f"response content: {e.response.text}")
         return node_copy

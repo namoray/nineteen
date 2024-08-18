@@ -98,22 +98,44 @@ async def migrate_contenders_to_contender_history(connection: Connection) -> Non
     await connection.execute(f"DELETE FROM {dcst.CONTENDERS_TABLE}")
 
 
-async def get_contender_for_task(connection: Connection, task: Task) -> Contender | None:
-    row = await connection.fetchrow(
+async def get_contenders_for_task(connection: Connection, task: Task, top_x: int = 5) -> list[Contender]:
+    rows = await connection.fetch(
         f"""
-        SELECT 
-            {dcst.CONTENDER_ID}, {dcst.NODE_HOTKEY}, {dcst.NODE_ID},{dcst.TASK},
-            {dcst.CAPACITY}, {dcst.CAPACITY_TO_SCORE}, {dcst.CONSUMED_CAPACITY},
-            {dcst.TOTAL_REQUESTS_MADE}, {dcst.REQUESTS_429}, {dcst.REQUESTS_500}, 
-            {dcst.CAPACITY}, {dcst.PERIOD_SCORE}
-        FROM {dcst.CONTENDERS_TABLE} 
-        WHERE {dcst.TASK} = $1
+        WITH ranked_contenders AS (
+            SELECT 
+                c.{dcst.CONTENDER_ID}, c.{dcst.NODE_HOTKEY}, c.{dcst.NODE_ID}, c.{dcst.TASK},
+                c.{dcst.RAW_CAPACITY}, c.{dcst.CAPACITY_TO_SCORE}, c.{dcst.CONSUMED_CAPACITY},
+                c.{dcst.TOTAL_REQUESTS_MADE}, c.{dcst.REQUESTS_429}, c.{dcst.REQUESTS_500}, 
+                c.{dcst.CAPACITY}, c.{dcst.PERIOD_SCORE}, c.{dcst.NETUID},
+                CASE 
+                    WHEN c.{dcst.CAPACITY} = 0 THEN 0
+                    ELSE 1.0 - (c.{dcst.CONSUMED_CAPACITY}::float / c.{dcst.CAPACITY}::float)
+                END AS capacity_unqueried_percentage,
+                ROW_NUMBER() OVER (
+                    ORDER BY 
+                        CASE 
+                            WHEN c.{dcst.CAPACITY} = 0 THEN 1
+                            ELSE c.{dcst.CONSUMED_CAPACITY}::float / c.{dcst.CAPACITY}::float
+                        END ASC
+                ) AS rank
+            FROM {dcst.CONTENDERS_TABLE} c
+            JOIN {dcst.NODES_TABLE} n ON c.{dcst.NODE_ID} = n.{dcst.NODE_ID} AND c.{dcst.NETUID} = n.{dcst.NETUID}
+            WHERE c.{dcst.TASK} = $1 
+            AND c.{dcst.CAPACITY} > 0 
+            AND n.{dcst.SYMMETRIC_KEY_UUID} IS NOT NULL
+        )
+        SELECT *
+        FROM ranked_contenders
+        WHERE rank <= $2
+          AND random() < capacity_unqueried_percentage
+        ORDER BY rank
         """,
         task.value,
+        top_x,
     )
-    if not row:
+    if not rows:
         return None
-    return Contender(**row)
+    return [Contender(**row) for row in rows]
 
 
 async def fetch_contender(connection: Connection, contender_id: str) -> Contender | None:

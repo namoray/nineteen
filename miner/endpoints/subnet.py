@@ -1,18 +1,23 @@
 from functools import partial
 from fastapi import Depends
 
+from fastapi.responses import StreamingResponse
 from fiber.miner.security.encryption import decrypt_general_payload
 from core.models import request_models
 from fastapi.routing import APIRouter
 from core.tasks_config import TASK_TO_CONFIG
 
-
-async def text_to_speech(
-    decrypted_payload: request_models.TextToSpeechRequest = Depends(
-        partial(decrypt_general_payload, request_models.TextToSpeechRequest)
+ 
+async def chat_completions(
+    decrypted_payload: request_models.ChatRequest = Depends(
+        partial(decrypt_general_payload, request_models.ChatRequest)
     ),
 ):
-    return {"status": "Text-to-speech request received"}
+    async def iterator():
+        for i in range(100):
+            yield f"data: {str(i)}\n\n"
+    
+    return StreamingResponse(iterator())
 
 
 async def capacity() -> dict[str, float]:
@@ -21,6 +26,6 @@ async def capacity() -> dict[str, float]:
 
 def factory_router() -> APIRouter:
     router = APIRouter()
-    router.add_api_route("/text-to-speech", text_to_speech, tags=["Subnet"], methods=["POST"])
+    router.add_api_route("/chat/completions", chat_completions, tags=["Subnet"], methods=["POST"])
     router.add_api_route("/capacity", capacity, tags=["Subnet"], methods=["GET"])
     return router

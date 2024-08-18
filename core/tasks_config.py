@@ -66,7 +66,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         synthetic_generation_config=SyntheticGenerationConfig(
             func="generate_chat_synthetic", kwargs={"model": utility_models.ChatModels.mixtral.value}
         ),
-        endpoint="Chat",
+        endpoint="/chat/completions",
         volume_to_requests_conversion=300,
         is_stream=True,
         weight=0.1,
@@ -90,7 +90,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         synthetic_generation_config=SyntheticGenerationConfig(
             func="generate_chat_synthetic", kwargs={"model": utility_models.ChatModels.llama_3.value}
         ),
-        endpoint="Chat",
+        endpoint="/chat/completions",
         volume_to_requests_conversion=300,
         is_stream=True,
         weight=0.1,

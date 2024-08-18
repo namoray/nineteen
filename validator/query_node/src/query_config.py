@@ -21,7 +21,6 @@ load_dotenv()
 class Config:
     psql_db: PSQLDB
     redis_db: Redis
-    validator_ss58_address: str
+    ss58_address: str
     netuid: int
-
     httpx_client: httpx.AsyncClient = httpx.AsyncClient()

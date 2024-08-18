@@ -6,7 +6,7 @@ from core.logging import get_logger
 from asyncpg import Connection
 from validator.utils import database_constants as dcst
 from fiber import utils as futils
-
+from cryptography.fernet import Fernet
 logger = get_logger(__name__)
 
 
@@ -23,6 +23,7 @@ async def insert_nodes(connection: Connection, nodes: list[Node], network: str) 
             {dcst.STAKE},
             {dcst.TRUST},
             {dcst.VTRUST},
+            {dcst.LAST_UPDATED},
             {dcst.IP},
             {dcst.IP_TYPE},
             {dcst.PORT},
@@ -30,7 +31,7 @@ async def insert_nodes(connection: Connection, nodes: list[Node], network: str) 
             {dcst.NETWORK},
             {dcst.SYMMETRIC_KEY}
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
         """,
         [
             (
@@ -42,6 +43,7 @@ async def insert_nodes(connection: Connection, nodes: list[Node], network: str) 
                 node.stake,
                 node.trust,
                 node.vtrust,
+                node.last_updated,
                 node.ip,
                 node.ip_type,
                 node.port,
@@ -67,6 +69,7 @@ async def migrate_nodes_to_history(connection: Connection) -> None:  # noqa: F82
             {dcst.STAKE},
             {dcst.TRUST},
             {dcst.VTRUST},
+            {dcst.LAST_UPDATED},
             {dcst.IP},
             {dcst.IP_TYPE},
             {dcst.PORT},
@@ -83,6 +86,7 @@ async def migrate_nodes_to_history(connection: Connection) -> None:  # noqa: F82
             {dcst.STAKE},
             {dcst.TRUST},
             {dcst.VTRUST},
+            {dcst.LAST_UPDATED},
             {dcst.IP},
             {dcst.IP_TYPE},
             {dcst.PORT},
@@ -135,6 +139,7 @@ async def get_nodes(psql_db: PSQLDB, netuid: int) -> list[Node]:
             {dcst.STAKE},
             {dcst.TRUST},
             {dcst.VTRUST},
+            {dcst.LAST_UPDATED},
             {dcst.IP},
             {dcst.IP_TYPE},
             {dcst.PORT},
@@ -163,7 +168,7 @@ async def get_node_stakes(psql_db: PSQLDB, netuid: int) -> dict[str, float]:
     return hotkey_to_stake
 
 
-async def get_node(psql_db: PSQLDB, hotkey: str, netuid: int) -> Node:
+async def get_node(psql_db: PSQLDB, node_id: str, netuid: int) -> Node:
     query = f"""
         SELECT 
             {dcst.HOTKEY},
@@ -174,19 +179,23 @@ async def get_node(psql_db: PSQLDB, hotkey: str, netuid: int) -> Node:
             {dcst.STAKE},
             {dcst.TRUST},
             {dcst.VTRUST},
+            {dcst.LAST_UPDATED},
             {dcst.IP},
             {dcst.IP_TYPE},
             {dcst.PORT},
-            {dcst.PROTOCOL}
+            {dcst.PROTOCOL},
+            {dcst.SYMMETRIC_KEY},
+            {dcst.SYMMETRIC_KEY_UUID}
         FROM {dcst.NODES_TABLE}
-        WHERE {dcst.HOTKEY} = $1 AND {dcst.NETUID} = $2
+        WHERE {dcst.NODE_ID} = $1 AND {dcst.NETUID} = $2
     """
 
-    node = await psql_db.fetchone(query, hotkey, netuid)
+    node = await psql_db.fetchone(query, node_id, netuid)
 
     if node is None:
-        raise ValueError(f"No node found for hotkey {hotkey} and netuid {netuid}")
+        raise ValueError(f"No node found for hotkey {node_id} and netuid {netuid}")
 
+    node["fernet"] = Fernet(node[dcst.SYMMETRIC_KEY])
     return Node(**node)
 
 
@@ -197,3 +206,20 @@ async def update_our_vali_node_in_db(connection: Connection, ss58_address: str, 
         WHERE {dcst.HOTKEY} = $1 AND {dcst.NETUID} = $2
     """
     await connection.execute(query, ss58_address, netuid)
+
+
+async def get_vali_ss58_address(psql_db: PSQLDB, netuid: int) -> str | None:
+    query = f"""
+        SELECT 
+            {dcst.HOTKEY}
+        FROM {dcst.NODES_TABLE}
+        WHERE {dcst.OUR_VALIDATOR} = true AND {dcst.NETUID} = $1
+    """
+
+    node = await psql_db.fetchone(query, netuid)
+
+    if node is None:
+        logger.error(f"No validator node found for netuid {netuid}")
+        return None
+
+    return str

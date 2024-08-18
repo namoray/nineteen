@@ -1,5 +1,5 @@
 from dataclasses import asdict
-from typing import Any, Dict, List
+from typing import Any
 from redis.asyncio import Redis
 import json
 from enum import Enum
@@ -10,7 +10,7 @@ from validator.utils import redis_dataclasses as rdc, redis_constants as rcst
 logger = get_logger(__name__)
 
 
-def _remove_enums(map: Dict[Any, Any]) -> Dict[Any, Any]:
+def _remove_enums(map: dict[Any, Any]) -> dict[Any, Any]:
     # TODO: Does this need to be deep copy?
     map_copy = copy.copy(map)
     # Convert Task to Task.value, etc
@@ -27,7 +27,7 @@ async def delete_key_from_redis(redis_db: Redis, key: str) -> None:
     await redis_db.delete(key)
 
 
-async def json_load_from_redis(redis_db: Redis, key: str, default: Any) -> Dict[Any, Any]:
+async def json_load_from_redis(redis_db: Redis, key: str, default: Any) -> dict[Any, Any]:
     raw_json = await redis_db.get(key)
     if raw_json is None:
         json_obj = default
@@ -38,7 +38,7 @@ async def json_load_from_redis(redis_db: Redis, key: str, default: Any) -> Dict[
 
 
 async def save_json_to_redis(
-    redis_db: Redis, key: str, json_to_save: Dict[Any, Any], remove_enums: bool = True
+    redis_db: Redis, key: str, json_to_save: dict[Any, Any], remove_enums: bool = True
 ) -> None:
     if remove_enums:
         json_to_save = _remove_enums(json_to_save)
@@ -50,7 +50,7 @@ async def add_to_set_redis(redis_db: Redis, name: str, value: str) -> None:
     await redis_db.sadd(name, value)
 
 
-async def add_json_to_redis_list(redis_db: Redis, queue: str, json_to_add: Dict[Any, Any]) -> None:
+async def add_json_to_redis_list(redis_db: Redis, queue: str, json_to_add: dict[Any, Any]) -> None:
     json_to_add = _remove_enums(json_to_add)
     json_string = json.dumps(json_to_add)
 
@@ -81,11 +81,11 @@ async def add_str_to_redis_list(redis_db: Redis, queue: str, value_to_add: str, 
         await redis_db.ltrim(queue, 0, max_len - 1)
 
 
-async def get_redis_list(redis_db: Redis, queue: str) -> List[str]:
+async def get_redis_list(redis_db: Redis, queue: str) -> list[str]:
     return await redis_db.lrange(queue, 0, -1)
 
 
-async def get_sorted_set(redis_db: Redis, name: str) -> List[str]:
+async def get_sorted_set(redis_db: Redis, name: str) -> list[str]:
     return await redis_db.zrevrange(name, 0, -1)
 
 
@@ -109,7 +109,7 @@ async def get_first_from_sorted_set(redis_db: Redis, key: str) -> tuple[dict[str
         return None
 
 
-async def remove_from_sorted_set(redis_db: Redis, key: str, data: Dict[str, Any]) -> None:
+async def remove_from_sorted_set(redis_db: Redis, key: str, data: dict[str, Any]) -> None:
     """
     Remove an item from a Redis sorted set.
 
