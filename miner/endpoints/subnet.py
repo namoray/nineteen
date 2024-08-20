@@ -10,7 +10,10 @@ from core.models import request_models
 from fastapi.routing import APIRouter
 from core.models.utility_models import ImageHashes
 from core.tasks_config import TASK_TO_CONFIG
+from fiber.logging_utils import get_logger
 
+
+logger = get_logger(__name__)
 
 async def chat_completions(
     decrypted_payload: request_models.ChatRequest = Depends(
@@ -24,25 +27,26 @@ async def chat_completions(
 
     return StreamingResponse(iterator())
 
-
 async def text_to_image(
     decrypted_payload: request_models.TextToImageRequest = Depends(
         partial(decrypt_general_payload, request_models.TextToImageRequest)
     ),
 ) -> request_models.TextToImageResponse:
-    # Generate a 1024x1024 image with random pixels
+
+
     image_data = bytearray()
     for _ in range(1024 * 1024 * 3):  # 3 bytes per pixel (RGB)
         image_data.append(random.randint(0, 255))
 
     # Encode the image data as a base64 string
     image_b64 = base64.b64encode(image_data).decode("utf-8")
-    return request_models.TextToImageResponse(
+    response = request_models.TextToImageResponse(
         image_b64=image_b64,
         is_nsfw=False,
         clip_embeddings=[],
         image_hashes=ImageHashes(average_hash="", perceptual_hash="", difference_hash="", color_hash=""),
     )
+    return response
 
 
 async def capacity() -> dict[str, float]:

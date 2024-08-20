@@ -48,7 +48,8 @@ def _extract_response(response: Response, response_model: BaseModel) -> BaseMode
             formatted_response, "is_nsfw"
         ):
             if hasattr(formatted_response, "image_b64"):
-                assert formatted_response.image_b64 != ""
+                if not formatted_response.image_b64:
+                    return None
 
         return formatted_response
     except ValidationError as e:
@@ -90,10 +91,10 @@ async def query_nonstream(
         return
 
     response_time = time.time() - time_before_query
+    
 
     formatted_response = get_formatted_response(response, response_model)
     if formatted_response is not None:
-        logger.info(f"✅ Successfully queried node: {node_id} for task: {contender.task}")
         query_result = utility_models.QueryResult(
             formatted_response=formatted_response,
             node_id=node_id,
@@ -103,7 +104,7 @@ async def query_nonstream(
             status_code=response.status_code,
             success=True,
         )
-        logger.debug(f"✅ Successfully queried node: {node_id} for task: {contender.task}")
+        logger.info(f"✅ Successfully queried node: {node_id} for task: {contender.task} - Response time: {response_time}")
     else:
         query_result = utility_models.QueryResult(
             formatted_response=None,
