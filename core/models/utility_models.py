@@ -21,12 +21,6 @@ class Message(BaseModel):
         extra = "allow"
 
 
-class ChatModels(str, enum.Enum):
-    """Model is used for the chat"""
-
-
-    llama_31_8b = "llama-3-1-8b"
-    llama_31_70b = "llama-3-1-70b"
 
 
 class QueryResult(BaseModel):

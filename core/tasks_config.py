@@ -64,7 +64,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
             checking_function="check_text_result",
         ),
         synthetic_generation_config=SyntheticGenerationConfig(
-            func="generate_chat_synthetic", kwargs={"model": utility_models.ChatModels.llama_31_8b.value}
+            func="generate_chat_synthetic", kwargs={"model": Task.chat_llama_3_1_8b.value}
         ),
         endpoint="/chat/completions",
         volume_to_requests_conversion=300,
@@ -88,7 +88,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
             checking_function="check_text_result",
         ),
         synthetic_generation_config=SyntheticGenerationConfig(
-            func="generate_chat_synthetic", kwargs={"model": utility_models.ChatModels.llama_31_70b.value}
+            func="generate_chat_synthetic", kwargs={"model": Task.chat_llama_3_1_70b.value}
         ),
         endpoint="/chat/completions",
         volume_to_requests_conversion=300,
@@ -96,25 +96,29 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         weight=0.1,
         timeout=2,
     ),
-    # Task.proteus_text_to_image: FullTaskConfig(
-    #     task=Task.proteus_text_to_image,
-    #     max_capacity=float(capacity=3_600,
-    #     scoring_config=TaskScoringConfig(
-    #         task=Task.proteus_text_to_image, mean=0.32, variance=3, overhead=0.5, task_type=TaskType.IMAGE
-    #     ),
-    #     orchestrator_server_config=OrchestratorServerConfig(
-    #         checking_server_needed=ServerType.IMAGE,
-    #         checking_load_model_config={},
-    #         checking_function="check_image_result",
-    #     ),
-    #     synthetic_generation_config=SyntheticGenerationConfig(
-    #         func="generate_text_to_image_synthetic",
-    #         kwargs={"engine": "proteus"},
-    #     ),
-    #     endpoint="TextToImage",
-    #     volume_to_requests_conversion=10,
-    #     is_stream=False,
-    # ),
+    Task.proteus_text_to_image: FullTaskConfig(
+        task=Task.proteus_text_to_image,
+        max_capacity=float(
+            capacity=3_600,
+            scoring_config=TaskScoringConfig(
+                task=Task.proteus_text_to_image, mean=0.32, variance=3, overhead=0.5, task_type=TaskType.IMAGE
+            ),
+            orchestrator_server_config=OrchestratorServerConfig(
+                checking_server_needed=ServerType.IMAGE,
+                checking_load_model_config={},
+                checking_function="check_image_result",
+            ),
+            synthetic_generation_config=SyntheticGenerationConfig(
+                func="generate_text_to_image_synthetic",
+                kwargs={"engine": "proteus"},
+            ),
+            endpoint="TextToImage",
+            volume_to_requests_conversion=10,
+            is_stream=False,
+            weight=0.1,
+            timeout=5,
+        ),
+    ),
     # Task.playground_text_to_image: FullTaskConfig(
     #     task=Task.playground_text_to_image,
     #     max_capacity=float(capacity=10_000,

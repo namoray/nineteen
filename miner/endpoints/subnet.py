@@ -21,6 +21,13 @@ async def chat_completions(
     
     return StreamingResponse(iterator())
 
+async def text_to_image(
+            decrypted_payload: request_models.ChatRequest = Depends(
+        partial(decrypt_general_payload, request_models.ChatRequest)
+    ),
+    
+):
+    
 
 async def capacity() -> dict[str, float]:
     return {task: config.max_capacity for task, config in TASK_TO_CONFIG.items()}
