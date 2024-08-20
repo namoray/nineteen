@@ -1,70 +1,10 @@
 version: "3"
 
 tasks:
-  refresh_contenders:
+  control_node_dev:
     cmds:
-      - docker-compose run -e ENV=test -e NETUID=19 {{.CLI_ARGS}} control_node python validator/core/manage_contenders/refresh_contenders.py
-  schedule_contenders:
-    cmds:
-      - docker-compose run -e ENV=test -e NETUID=19  {{.CLI_ARGS}} --entrypoint python control_node validator/core/manage_contenders/scheduling_contenders.py
-  generate_synthetic_data:
-    cmds:
-      - docker-compose exec -e ENV=test {{.CLI_ARGS}} control_node python validator/core/store_synthetic_data/generate_synthetic_data.py
-  run_query_node:
-    cmds:
-      - docker-compose exec -e ENV=test -e NETUID=176  {{.CLI_ARGS}} control_node python validator/query_node/main.py
-  metagraph_sync:
-    cmds:
-      - >
-        docker-compose exec -e ENV=test -e RUN_ONCE=false {{.CLI_ARGS}} chain_node
-        python validator/chain_node/sync_metagraph.py
-  metagraph_sync_once:
-    cmds:
-      - docker-compose exec -e ENV=test  -e RUN_ONCE=true chain_node python validator/chain_node/sync_metagraph.py
-  score_results:
-    cmds:
-      - docker-compose exec -e ENV=test  {{.CLI_ARGS}} chain_node python validator/core/get_rewards/main.py
-  client_node:
-    cmds:
-      - docker-compose run {{.CLI_ARGS}} --entrypoint client_node python validator/client_node/main.py
-  calculate_weights:
-    cmds:
-      - docker-compose run {{.CLI_ARGS}} --entrypoint python control_node  validator/core/calculate_weights/main.py
-
-  test_chain_node_refresh_nodes:
-    cmds:
-      - docker-compose -f docker-compose.yml -f docker-compose.testing.yml run --rm dbmate up
-      - docker-compose -f docker-compose.yml -f docker-compose.testing.yml run --rm -e NEST_ASYNCIO=0 --entrypoint python chain_node /app/validator/chain_node/tests/test_refresh_nodes.py
-
-  test_control_node_schedule_synthetic_queries:
-    cmds:
-      - docker-compose -f docker-compose.yml -f docker-compose.testing.yml run --rm dbmate up
-      - docker-compose -f docker-compose.yml -f docker-compose.testing.yml run --rm  --entrypoint python control_node /app/validator/control_node/tests/test_schedule_synthetic_queries.py
-  test_control_node_refresh_synthetic_data:
-    cmds:
-      - docker-compose -f docker-compose.yml -f docker-compose.testing.yml run --rm dbmate up
-      - docker-compose -f docker-compose.yml -f docker-compose.testing.yml run --rm  --entrypoint python control_node /app/validator/control_node/tests/synthetic_data/test_refresh_synthetic_data.py
-  test_control_node_score_results:
-    cmds:
-      - docker-compose -f docker-compose.yml -f docker-compose.testing.yml run --rm dbmate up
-      - docker-compose -f docker-compose.yml -f docker-compose.testing.yml run --rm  --entrypoint python control_node /app/validator/control_node/tests/score_results/test_score_results.py
-  test_control_node_calculate_weights:
-    cmds:
-      - docker-compose -f docker-compose.yml -f docker-compose.testing.yml run --rm dbmate up
-      - docker-compose -f docker-compose.yml -f docker-compose.testing.yml run --rm  --entrypoint python control_node /app/validator/control_node/tests/weights/test_calculate_weights.py
-
-  test_keypair:
-    cmds:
-      - docker-compose exec -e ENV=test chain_node  python validator/chain_node/keypair.py
-  test_set_weights:
-    cmds:
-      - docker-compose exec -e ENV=test -e SUBTENSOR_NETWORK=test chain_node  python validator/chain_node/set_weights.py
-  dbmate-up:
-    cmds:
-      - docker-compose run --rm dbmate up
-  dbmate-down:
-    cmds:
-      - docker-compose run --rm dbmate down
-  dbmate-drop:
-    cmds:
-      - docker-compose run --rm dbmate drop
+      - ENV_FILE=.dev.env python -m validator.control_node.src.main
+  
+  query_node_dev:
+    cmds: 
+      - ENV_FILE=.dev.env python -m validator.query_node.src.main
