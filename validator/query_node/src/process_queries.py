@@ -62,6 +62,7 @@ async def _handle_nonstream_query(
             node=node,
             payload=message.query_payload,
             response_model=TextToImageResponse,
+            synthetic_query=message.query_type == "synthetic",
         )
 
     return success
@@ -84,9 +85,10 @@ async def process_task(config: Config, message: rdc.QueryQueueMessage):
         raise ValueError("No contenders to query! :(")
 
     if stream:
+        return
         return await _handle_stream_query(config, message, contenders_to_query)
     else:
-        return await _handle_nonstream_query(config, message, contenders_to_query)
+        return await _handle_nonstream_query(config=config, message=message, contenders_to_query=contenders_to_query)
 
 
 async def listen_for_tasks(config: Config):

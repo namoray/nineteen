@@ -26,8 +26,8 @@ async def chat_completions(
 
 
 async def text_to_image(
-    decrypted_payload: request_models.ChatRequest = Depends(
-        partial(decrypt_general_payload, request_models.ChatRequest)
+    decrypted_payload: request_models.TextToImageRequest = Depends(
+        partial(decrypt_general_payload, request_models.TextToImageRequest)
     ),
 ) -> request_models.TextToImageResponse:
     # Generate a 1024x1024 image with random pixels
@@ -51,6 +51,7 @@ async def capacity() -> dict[str, float]:
 
 def factory_router() -> APIRouter:
     router = APIRouter()
-    router.add_api_route("/chat/completions", chat_completions, tags=["Subnet"], methods=["POST"])
     router.add_api_route("/capacity", capacity, tags=["Subnet"], methods=["GET"])
+    router.add_api_route("/chat/completions", chat_completions, tags=["Subnet"], methods=["POST"])
+    router.add_api_route("/text-to-image", text_to_image, tags=["Subnet"], methods=["POST"])
     return router

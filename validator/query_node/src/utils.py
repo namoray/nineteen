@@ -27,8 +27,8 @@ async def adjust_contender_from_result(
     """
 
     if query_result.status_code == 200 and query_result.success:
-        # TODO: FIX the steps bit
-        capacity_consumed = work_and_speed_functions.calculate_work(query_result.task, query_result, steps=None)
+
+        capacity_consumed = work_and_speed_functions.calculate_work(query_result.task, query_result, steps=payload.get("steps"))
 
         await update_contender_capacities(config, contender, capacity_consumed)
 

@@ -85,7 +85,7 @@ async def generate_text_to_image_synthetic(
         height = 1024
         width = 1024
         cfg_scale = 4.0
-        steps = 30
+        steps = 10
     else:
         raise ValueError(f"Engine {model} not supported")
 
