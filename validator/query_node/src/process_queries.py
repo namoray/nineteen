@@ -59,9 +59,6 @@ async def _handle_nonstream_query(
             config=config, contender=contender, payload=message.query_payload, node=node
         )
 
-
-            success = True
-
     return success
 
 
@@ -82,9 +79,9 @@ async def process_task(config: Config, message: rdc.QueryQueueMessage):
         raise ValueError("No contenders to query! :(")
 
     if stream:
-        return _handle_stream_query(config, message, contenders_to_query)
+        return await _handle_stream_query(config, message, contenders_to_query)
     else:
-        return _handle_nonstream_query(config, message, contenders_to_query)
+        return await _handle_nonstream_query(config, message, contenders_to_query)
 
 
 async def listen_for_tasks(config: Config):

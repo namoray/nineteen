@@ -15,7 +15,6 @@ import datasets
 import diskcache
 from functools import lru_cache
 from core.logging import get_logger
-
 logger = get_logger(__name__)
 
 
@@ -74,44 +73,35 @@ async def generate_chat_synthetic(model: str) -> request_models.ChatRequest:
     )
 
 
-# async def generate_text_to_image_synthetic(
-#     engine: str,
-# ) -> request_models.TextToImageIncoming:
-#     positive_text = await _get_markov_sentence(max_words=20)
-#     text_prompts = [dc.TextPrompt(text=positive_text, weight=1.0)]
-#     seed = random.randint(1, scst.MAX_SEED)
+async def generate_text_to_image_synthetic(
+    model: str,
+) -> request_models.TextToImageRequest:
+    prompt = await _get_markov_sentence(max_words=20)
+    negative_prompt = await _get_markov_sentence(max_words=20)
+    seed = random.randint(1, scst.MAX_SEED)
 
-#     if engine == utility_models.EngineEnum.PLAYGROUND.value:
-#         height = 1024
-#         width = 1024
-#         cfg_scale = 4.0
-#         steps = 30
-#     elif engine == utility_models.EngineEnum.PROTEUS.value:
-#         height = 1280
-#         width = 1280
-#         cfg_scale = 2.0
-#         steps = 8
-#     elif engine == utility_models.EngineEnum.DREAMSHAPER.value:
-#         height = 1024
-#         width = 1024
-#         cfg_scale = 3.5
-#         steps = 8
-#     else:
-#         raise ValueError(f"Engine {engine} not supported")
+    if model == Task.proteus_text_to_image.value:
+        height = 1024
+        width = 1024
+        cfg_scale = 4.0
+        steps = 30
+    else:
+        raise ValueError(f"Engine {model} not supported")
 
-#     return base_models.TextToImageIncoming(
-#         text_prompts=text_prompts,
-#         seed=seed,
-#         engine=engine,
-#         height=height,
-#         width=width,
-#         cfg_scale=cfg_scale,
-#         steps=steps,
-#     )
+    return request_models.TextToImageRequest(
+        prompt=prompt,
+        negative_prompt=negative_prompt,
+        seed=seed,
+        height=height,
+        width=width,
+        cfg_scale=cfg_scale,
+        steps=steps,
+        model=model,
+    )
 
 
 # async def generate_image_to_image_synthetic(
-#     engine: str,
+#     model: str,
 # ) -> base_models.ImageToImageIncoming:
 #     cache = image_cache_factory()
 
@@ -119,26 +109,26 @@ async def generate_chat_synthetic(model: str) -> request_models.ChatRequest:
 #     text_prompts = [dc.TextPrompt(text=positive_text, weight=1.0)]
 #     seed = random.randint(1, scst.MAX_SEED)
 
-#     if engine == utility_models.EngineEnum.PLAYGROUND.value:
+#     if model == Task.PLAYGROUND.value:
 #         height = 1024
 #         width = 1024
 #         cfg_scale = 4.0
 #         steps = 30
 #         image_strength = 0.5
-#     elif engine == utility_models.EngineEnum.PROTEUS.value:
+#     elif model == Task.PROTEUS.value:
 #         height = 1280
 #         width = 1280
 #         cfg_scale = 2.0
 #         steps = 8
 #         image_strength = 0.5
-#     elif engine == utility_models.EngineEnum.DREAMSHAPER.value:
+#     elif model == Task.DREAMSHAPER.value:
 #         height = 1024
 #         width = 1024
 #         cfg_scale = 3.5
 #         steps = 8
 #         image_strength = 0.5
 #     else:
-#         raise ValueError(f"Engine {engine} not supported")
+#         raise ValueError(f"Engine {model} not supported")
 
 #     init_image = await sutils.get_random_image_b64(cache)
 
@@ -147,7 +137,7 @@ async def generate_chat_synthetic(model: str) -> request_models.ChatRequest:
 #         image_strength=image_strength,
 #         text_prompts=text_prompts,
 #         seed=seed,
-#         engine=engine,
+#         model=model,
 #         height=height,
 #         width=width,
 #         cfg_scale=cfg_scale,

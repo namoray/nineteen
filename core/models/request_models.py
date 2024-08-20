@@ -36,4 +36,7 @@ class TextToImageRequest(BaseModel):
     cfg_scale: float = Field(3, title="CFG Scale", description="CFG Scale for text generation.")
     width: int = Field(1024, title="Width", description="Width for text generation.")
     height: int = Field(1024, title="Height", description="Height for text generation.")
-    model: Task = Field(default=Task.proteus_text_to_image, title="Model")
+    model: str = Field(default=Task.proteus_text_to_image.value, title="Model")
+
+class TextToImageResponse(BaseModel):
+    image_b64: str
