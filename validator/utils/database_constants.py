@@ -113,7 +113,7 @@ COLUMN_CHECKING_DATA = "checking_data"
 
 # `reward_data` table column names
 COLUMN_TASK = "task"
-COLUMN_AXON_UID = "axon_uid"
+COLUMN_NODE_ID = "node_id"
 COLUMN_QUALITY_SCORE = "quality_score"
 COLUMN_VALIDATOR_HOTKEY = "validator_hotkey"
 COLUMN_SYNTHETIC_QUERY = "synthetic_query"

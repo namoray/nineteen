@@ -1,6 +1,7 @@
 from dotenv import load_dotenv
 import os
 
+
 # Must be done straight away, bit ugly
 load_dotenv(os.getenv("ENV_FILE", ".dev.env"))
 import asyncio
@@ -12,8 +13,10 @@ from core.logging import get_logger
 from validator.control_node.src.control_config import Config
 from fiber.chain_interactions import interface
 from fiber.chain_interactions import chain_utils
-from validator.control_node.src.cycle import execute_cycle
-from validator.control_node.src.synthetics import refresh_synthetic_data
+from validator.control_node.src.score_results import score_results  #noqa
+from validator.control_node.src.synthetics import refresh_synthetic_data  #noqa
+from validator.control_node.src.cycle import execute_cycle  #noqa
+
 from validator.db.src.database import PSQLDB
 
 logger = get_logger(__name__)
@@ -22,6 +25,10 @@ logger = get_logger(__name__)
 def load_config() -> Config:
     subtensor_network = os.getenv("SUBTENSOR_NETWORK", "finney")
     subtensor_address = os.getenv("SUBTENSOR_ADDRESS")
+    gpu_server_address: str | None = os.getenv("GPU_SERVER_ADDRESS")
+    if gpu_server_address is None:
+        raise ValueError("GPU_SERVER_ADDRESS must be set")
+    
     wallet_name = os.getenv("WALLET_NAME", "default")
     hotkey_name = os.getenv("HOTKEY_NAME", "default")
     netuid = os.getenv("NETUID")
@@ -64,7 +71,7 @@ async def main() -> None:
     await config.psql_db.connect()
 
     await asyncio.gather(
-        # score_results.main(),  # Should be in its own thread
+        score_results.main(config),  # Should be in its own thread
         refresh_synthetic_data.main(config),  # Should be in its own thread?
         execute_cycle.single_cycle(config),
     )

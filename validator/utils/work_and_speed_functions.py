@@ -58,28 +58,23 @@ def _calculate_work_clip(number_of_images: int) -> float:
     return number_of_images
 
 
-def calculate_speed_modifier(task: Task, result: Dict[str, Any], synapse: Dict[str, Any]) -> float:
+def calculate_speed_modifier(task: Task, result: Dict[str, Any], payload: dict) -> float:
     config = tcfg.TASK_TO_CONFIG[task].scoring_config
 
     response_time = result.get("response_time")
-    raw_formatted_response = result.get("formatted_response")
 
-    if response_time is None or raw_formatted_response is None:
+    if response_time is None:
         return 0
     normalised_response_time = max(response_time - config.overhead, 0)
 
     if config.task_type == tcfg.TaskType.IMAGE:
-        steps = synapse.get("steps", 1)
+        steps = payload.get("steps")
         time_per_step = normalised_response_time / steps
         return _calculate_speed_modifier(time_per_step, config)
     elif config.task_type == tcfg.TaskType.TEXT:
-        formatted_response = (
-            json.loads(raw_formatted_response) if isinstance(raw_formatted_response, str) else raw_formatted_response
-        )
-        miner_chat_responses: List[utility_models.MinerChatResponse] = [
-            utility_models.MinerChatResponse(**r) for r in formatted_response
-        ]
-        all_text = "".join([mcr.text for mcr in miner_chat_responses])
+        formatted_response = result.get("formatted_response", {})
+        miner_chat_responses: List[utility_models.Message] = [utility_models.Message(**r) for r in formatted_response]
+        all_text = "".join([mcr.content for mcr in miner_chat_responses])
         number_of_characters = len(all_text)
 
         if number_of_characters == 0:
@@ -94,13 +89,13 @@ def calculate_speed_modifier(task: Task, result: Dict[str, Any], synapse: Dict[s
 
 def calculate_work(
     task: Task,
-    result: utility_models.QueryResult,
+    result: dict,
     steps: float | None = None,
 ) -> float:
     """Gets volume for the task that was executed"""
     config = tcfg.TASK_TO_CONFIG[task].scoring_config
 
-    raw_formatted_response = result.formatted_response
+    raw_formatted_response = result.get("formatted_response", {})
 
     if config.task_type == tcfg.TaskType.IMAGE:
         return _calculate_work_image(steps)

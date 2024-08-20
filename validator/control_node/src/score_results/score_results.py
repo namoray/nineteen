@@ -17,8 +17,10 @@ from core.logging import get_logger
 from core.tasks import Task
 from validator.models import RewardData
 from validator.utils import work_and_speed_functions
-from validator.db.src import functions as db_functions, sql
+from validator.db.src import functions as db_functions
+from validator.db.src.sql.rewards_and_scores import select_tasks_and_number_of_results, sql_insert_reward_data
 from validator.control_node.src.control_config import Config
+from core import constants as ccst
 
 logger = get_logger(__name__)
 
@@ -51,11 +53,14 @@ async def wait_for_external_server(config: Config):
 
 
 async def send_result_for_scoring(
-    config: Config, data: Dict[str, Any], consecutive_errors: int
+    config: Config, checking_data: Dict[str, Any], node_hotkey: str, consecutive_errors: int
 ) -> tuple[Dict[str, Any] | None, int]:
+    # TODO: Remove after debug
+    rand_score = 1 if random.random() < 0.8 else 0 if random.random() < 0.9 else random.random()
+    return {"node_scores": {checking_data["query_result"]["node_id"]: rand_score}}, 0
     async with httpx.AsyncClient(timeout=180) as client:
         try:
-            response = await client.post(config.external_server_url + "check-result", json=data)
+            response = await client.post(config.external_server_url + "check-result", json=checking_data)
             response.raise_for_status()
             task_id = response.json().get("task_id")
 
@@ -80,7 +85,7 @@ async def send_result_for_scoring(
                         return None, consecutive_errors + 1
                     break
 
-            return task_response_json.get("result", {}), 0
+            return task_response_json.get("query_result", {}), 0
 
         except httpx.HTTPError as http_err:
             logger.error(f"When scoring, HTTP error occurred: {http_err}")
@@ -91,35 +96,35 @@ async def process_and_store_score(
     config: Config,
     task: Task,
     results: Dict[str, Any],
-    synapse: Dict[str, Any],
+    payload: Dict[str, Any],
     node_hotkey: str,
     task_result: Dict[str, Any],
     synthetic_query: str,
 ) -> None:
-    axon_scores = task_result.get("axon_scores", {})
-    if axon_scores is None:
+    node_scores = task_result.get("node_scores", {})
+    if node_scores is None:
         logger.error(f"Axon scores is none; found in the response json: {task_result}")
         return
 
-    volume = work_and_speed_functions.calculate_work(task=task, result=results, synapse=synapse)
-    speed_scoring_factor = work_and_speed_functions.calculate_speed_modifier(task=task, result=results, synapse=synapse)
+    volume = work_and_speed_functions.calculate_work(task=task, result=results, steps=payload.get("steps"))
+    speed_scoring_factor = work_and_speed_functions.calculate_speed_modifier(task=task, result=results, payload=payload)
 
-    for uid, quality_score in axon_scores.items():
+    for node_id, quality_score in node_scores.items():
         reward_data = RewardData(
             id=binascii.hexlify(os.urandom(16)).decode("utf-8"),
             task=task.value,
-            axon_uid=int(uid),
+            node_id=int(node_id),
             quality_score=quality_score,
-            validator_hotkey=config.validator_hotkey,
+            validator_hotkey=config.keypair.ss58_address,
             node_hotkey=node_hotkey,
             synthetic_query=synthetic_query,
-            response_time=results["response_time"] if quality_score != 0 else None,
+            response_time=results["response_time"],
             volume=volume,
             speed_scoring_factor=speed_scoring_factor,
         )
 
         async with await config.psql_db.connection() as connection:
-            await sql.insert_reward_data(connection, reward_data)
+            await sql_insert_reward_data(connection, reward_data)
 
         logger.info(f"Successfully scored and stored data for task: {task}")
 
@@ -129,12 +134,10 @@ async def score_results(config: Config):
 
     while True:
         async with await config.psql_db.connection() as connection:
-            tasks_and_results = await sql.select_tasks_and_number_of_results(connection)
+            tasks_and_results = await select_tasks_and_number_of_results(connection)
 
         total_tasks_stored = sum(tasks_and_results.values())
-        min_tasks_to_start_scoring = (
-            config.minimum_tasks_to_start_scoring_testnet if config.testnet else config.minimum_tasks_to_start_scoring
-        )
+        min_tasks_to_start_scoring = 100 if config.netuid == ccst.PROD_NETUID else 1
 
         if total_tasks_stored < min_tasks_to_start_scoring:
             await asyncio.sleep(5)
@@ -149,37 +152,48 @@ async def score_results(config: Config):
             logger.warning(f"No data left to score for task {task_to_score}")
             continue
 
-        checking_data, node_hotkey = data_and_hotkey
-        results, synthetic_query, synapse_dict_str = (
-            checking_data["result"],
-            checking_data["synthetic_query"],
-            checking_data["synapse"],
+        raw_checking_data, node_hotkey = data_and_hotkey
+        results, synthetic_query, payload_dict_str = (
+            raw_checking_data["query_result"],
+            raw_checking_data["synthetic_query"],
+            raw_checking_data["payload"],
         )
-        synapse = json.loads(synapse_dict_str)
+        payload = json.loads(payload_dict_str)
 
-        data = {
-            "synapse": synapse,
+        checking_data = {
+            "payload": payload,
             "synthetic_query": synthetic_query,
-            "result": results,
+            "query_result": results,
             "task": task_to_score.value,
         }
 
-        task_result, consecutive_errors = await send_result_for_scoring(config, data, consecutive_errors)
+        task_result, consecutive_errors = await send_result_for_scoring(
+            config, checking_data, node_hotkey, consecutive_errors
+        )
         if task_result is None:
             sleep_time = min(60 * (2 ** (consecutive_errors - 1)), 300)  # Max sleep time of 5 minutes
             await asyncio.sleep(sleep_time)
             continue
 
+        logger.debug("payload: {}".format(payload))
+
         await process_and_store_score(
-            config, task_to_score, results, synapse, node_hotkey, task_result, synthetic_query
+            config=config,
+            task=task_to_score,
+            results=results,
+            payload=payload,
+            node_hotkey=node_hotkey,
+            task_result=task_result,
+            synthetic_query=synthetic_query,
         )
+
         consecutive_errors = 0
         await asyncio.sleep(5)
 
 
 async def main(config: Config):
     try:
-        await wait_for_external_server(config)
+        # await wait_for_external_server(config)
         await score_results(config)
     finally:
         await config.psql_db.close()

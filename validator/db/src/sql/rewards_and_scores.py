@@ -10,7 +10,7 @@ async def sql_insert_reward_data(connection: Connection, data: RewardData) -> st
     return await connection.fetchval(
         f"""
         INSERT INTO {dcst.TABLE_REWARD_DATA} (
-            {dcst.COLUMN_ID}, {dcst.COLUMN_TASK}, {dcst.COLUMN_AXON_UID}, 
+            {dcst.COLUMN_ID}, {dcst.COLUMN_TASK}, {dcst.COLUMN_NODE_ID}, 
             {dcst.COLUMN_QUALITY_SCORE}, {dcst.COLUMN_VALIDATOR_HOTKEY}, 
             {dcst.COLUMN_MINER_HOTKEY}, {dcst.COLUMN_SYNTHETIC_QUERY}, 
             {dcst.COLUMN_SPEED_SCORING_FACTOR}, {dcst.COLUMN_RESPONSE_TIME}, {dcst.COLUMN_VOLUME}
@@ -19,7 +19,7 @@ async def sql_insert_reward_data(connection: Connection, data: RewardData) -> st
         """,
         data.id,
         data.task,
-        data.axon_uid,
+        data.node_id,
         data.quality_score,
         data.validator_hotkey,
         data.node_hotkey,
@@ -34,7 +34,7 @@ async def insert_uid_record(connection: Connection, data: List[tuple]) -> None:
     await connection.executemany(
         f"""
         INSERT INTO {dcst.TABLE_UID_RECORDS} (
-            {dcst.COLUMN_AXON_UID}, {dcst.COLUMN_MINER_HOTKEY}, {dcst.COLUMN_VALIDATOR_HOTKEY}, {dcst.COLUMN_TASK}, 
+            {dcst.COLUMN_NODE_ID}, {dcst.COLUMN_MINER_HOTKEY}, {dcst.COLUMN_VALIDATOR_HOTKEY}, {dcst.COLUMN_TASK}, 
             {dcst.COLUMN_DECLARED_VOLUME}, {dcst.COLUMN_CONSUMED_VOLUME}, {dcst.COLUMN_TOTAL_REQUESTS_MADE}, 
             {dcst.COLUMN_REQUESTS_429}, {dcst.COLUMN_REQUESTS_500}, {dcst.COLUMN_PERIOD_SCORE}
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
@@ -190,7 +190,7 @@ async def select_recent_reward_data_for_a_task(
         SELECT
             {dcst.COLUMN_ID},
             {dcst.COLUMN_TASK},
-            {dcst.COLUMN_AXON_UID},
+            {dcst.COLUMN_NODE_ID},
             {dcst.COLUMN_QUALITY_SCORE},
             {dcst.COLUMN_VALIDATOR_HOTKEY},
             {dcst.COLUMN_MINER_HOTKEY},
@@ -217,7 +217,7 @@ async def select_recent_reward_data(connection: Connection, date: str, node_hotk
         SELECT
             {dcst.COLUMN_ID},
             {dcst.COLUMN_TASK},
-            {dcst.COLUMN_AXON_UID},
+            {dcst.COLUMN_NODE_ID},
             {dcst.COLUMN_QUALITY_SCORE},
             {dcst.COLUMN_VALIDATOR_HOTKEY},
             {dcst.COLUMN_MINER_HOTKEY},

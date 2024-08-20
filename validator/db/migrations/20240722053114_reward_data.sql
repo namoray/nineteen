@@ -2,7 +2,7 @@
 CREATE TABLE IF NOT EXISTS reward_data (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     task TEXT NOT NULL,
-    axon_uid INTEGER NOT NULL,
+    node_id INTEGER NOT NULL,
     quality_score FLOAT NOT NULL,
     validator_hotkey TEXT NOT NULL,
     node_hotkey TEXT NOT NULL,

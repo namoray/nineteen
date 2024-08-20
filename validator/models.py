@@ -84,7 +84,7 @@ class Contender(BaseModel):
 class RewardData(BaseModel):
     id: str
     task: str
-    axon_uid: int
+    node_id: int
     quality_score: float
     validator_hotkey: str
     node_hotkey: str
@@ -98,7 +98,7 @@ class RewardData(BaseModel):
         return {
             "id": self.id,
             "task": self.task,
-            "axon_uid": self.axon_uid,
+            "node_id": self.node_id,
             "quality_score": self.quality_score,
             "validator_hotkey": self.validator_hotkey,
             "node_hotkey": self.node_hotkey,

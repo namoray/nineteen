@@ -15,7 +15,6 @@ from validator.db.src.sql.rewards_and_scores import (
     insert_task,
     select_count_rows_of_task_stored_for_scoring,
     select_task_for_deletion,
-    sql_insert_reward_data,
     delete_reward_data_by_hotkey,
     delete_task_by_hotkey,
     delete_uid_data_by_hotkey,
@@ -95,28 +94,7 @@ async def select_and_delete_task_result(psql_db: PSQLDB, task: Task) -> Optional
     return checking_data_loaded, node_hotkey
 
 
-# TODO: refactor
-async def insert_reward_data(
-    connection: Connection,
-    reward_data: RewardData,
-) -> str:
-    await sql_insert_reward_data(
-        connection,
-        (
-            reward_data.id,
-            reward_data.task,
-            reward_data.axon_uid,
-            reward_data.quality_score,
-            reward_data.validator_hotkey,
-            reward_data.node_hotkey,
-            reward_data.synthetic_query,
-            reward_data.speed_scoring_factor,
-            reward_data.response_time,
-            reward_data.volume,
-        ),
-    )
 
-    return reward_data.id
 
 
 async def clean_tables_of_hotkeys(connection: Connection, node_hotkeys: List[str]) -> None:
@@ -159,7 +137,7 @@ async def fetch_recent_most_rewards_for_uid(
         RewardData(
             id=str(row[0]),
             task=row[1],
-            axon_uid=row[2],
+            node_id=row[2],
             quality_score=row[3],
             validator_hotkey=row[4],
             node_hotkey=row[5],

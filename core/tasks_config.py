@@ -97,7 +97,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
     ),
     Task.proteus_text_to_image: FullTaskConfig(
         task=Task.proteus_text_to_image,
-        max_capacity=30_600,
+        max_capacity=3_600,
         scoring_config=TaskScoringConfig(
             task=Task.proteus_text_to_image, mean=0.32, variance=3, overhead=0.5, task_type=TaskType.IMAGE
         ),
