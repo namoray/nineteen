@@ -200,7 +200,7 @@ class TestWeightsCalculationFunctional(unittest.IsolatedAsyncioTestCase):
 
         self.assertIn("hotkey1", result)
         self.assertIn("hotkey2", result)
-        
+
         # Expected effective volumes:
         # hotkey1: 0.8 * 0.7 * 200 = 112
         # hotkey2: 0.9 * 0.6 * 300 = 162
@@ -212,7 +212,6 @@ class TestWeightsCalculationFunctional(unittest.IsolatedAsyncioTestCase):
         mock_quality_score.assert_any_call(self.psql_db, contenders[1])
         mock_normalised_score.assert_any_call(self.psql_db, contenders[0])
         mock_normalised_score.assert_any_call(self.psql_db, contenders[1])
-
 
 
 if __name__ == "__main__":

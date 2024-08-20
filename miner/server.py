@@ -18,6 +18,7 @@ async def log_requests(request: Request, call_next):
         logger.error(f"Response error content: {response}")
     return response
 
+
 @app.exception_handler(Exception)
 async def exception_handler(request: Request, exc: Exception):
     logger.error(f"An error occurred: {exc}", exc_info=True)

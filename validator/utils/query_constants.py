@@ -1,9 +1,12 @@
 from dataclasses import dataclass
 
+
 @dataclass
 class Timeouts:
     connect_timeout: int
     response_timeout: int
+
+
 # Dodgy
 # OPERATION_TIMEOUTS: dict[str, Timeouts] = {
 #     "Capacity": Timeouts(connect_timeout=60, response_timeout=20),

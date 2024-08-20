@@ -5,6 +5,8 @@ import time
 """
 TODO: RETHINK?
 """
+
+
 def should_update_local(local_commit, remote_commit):
     return local_commit != remote_commit
 

@@ -21,8 +21,6 @@ class Message(BaseModel):
         extra = "allow"
 
 
-
-
 class QueryResult(BaseModel):
     formatted_response: Any
     node_id: Optional[int]
@@ -31,3 +29,10 @@ class QueryResult(BaseModel):
     task: Task
     status_code: Optional[int]
     success: bool
+
+
+class ImageHashes(BaseModel):
+    average_hash: str = ""
+    perceptual_hash: str = ""
+    difference_hash: str = ""
+    color_hash: str = ""

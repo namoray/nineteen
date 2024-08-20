@@ -94,9 +94,11 @@ async def store_nodes(config: Config, nodes: list[Node]):
         await migrate_nodes_to_history(connection)
         await insert_nodes(connection, nodes, config.subtensor_network)
 
+
 async def update_our_validator_node(config: Config):
     async with await config.psql_db.connection() as connection:
         await update_our_vali_node_in_db(connection, config.keypair.ss58_address, config.netuid)
+
 
 async def _handshake(config: Config, node: Node, async_client: httpx.AsyncClient) -> tuple[str, str] | None:
     node_copy = node.model_copy()

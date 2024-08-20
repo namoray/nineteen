@@ -2,6 +2,7 @@ from validator.models import RewardData
 from validator.utils import database_constants as dcst
 from typing import List
 from asyncpg import Connection
+
 ##### Insert
 
 

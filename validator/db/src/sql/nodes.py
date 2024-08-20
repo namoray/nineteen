@@ -7,6 +7,7 @@ from asyncpg import Connection
 from validator.utils import database_constants as dcst
 from fiber import utils as futils
 from cryptography.fernet import Fernet
+
 logger = get_logger(__name__)
 
 

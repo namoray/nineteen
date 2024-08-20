@@ -15,9 +15,8 @@ from core import tasks_config as tcfg
 from validator.utils import redis_constants as rcst
 
 from fiber.logging_utils import get_logger
+
 logger = get_logger(__name__)
-
-
 
 
 def _load_sse_jsons(chunk: str) -> list[dict[str, Any]] | dict[str, str]:
@@ -73,17 +72,19 @@ async def async_chain(first_chunk, async_gen):
     async for item in async_gen:
         yield item  # then yield from the original generator
 
+
 def construct_500_query_result(node: Node, task: Task) -> utility_models.QueryResult:
     query_result = utility_models.QueryResult(
-            node_id=node.node_id,
-            task=task,
-            success=False,
-            node_hotkey=node.hotkey,
-            formatted_response=None,
-            status_code=500,
-            response_time=None,
-        )
+        node_id=node.node_id,
+        task=task,
+        success=False,
+        node_hotkey=node.hotkey,
+        formatted_response=None,
+        status_code=500,
+        response_time=None,
+    )
     return query_result
+
 
 async def consume_generator(
     config: Config,
@@ -99,7 +100,7 @@ async def consume_generator(
     task = contender.task
 
     logger.debug(
-        f"Querying axon {node.node_id} for a stream, and task: {task}. Debug: {bool(debug)}. Synthetic: {synthetic_query}."
+        f"Querying node {node.node_id} for a stream, and task: {task}. Debug: {bool(debug)}. Synthetic: {synthetic_query}."
     )
 
     try:
@@ -110,7 +111,7 @@ async def consume_generator(
         await utils.adjust_contender_from_result(config, query_result, contender, synthetic_query, payload=payload)
         return
 
-    start_time, text_jsons, status_code, first_message = time.time(), [], 200,  True
+    start_time, text_jsons, status_code, first_message = time.time(), [], 200, True
     try:
         async for text in async_chain(first_chunk, generator):
             if isinstance(text, bytes):
@@ -135,8 +136,8 @@ async def consume_generator(
                         _ = text_json["choices"][0]["delta"]["content"]
                     except KeyError:
                         first_message = True  # Janky, but so we mark it as a fail
-                        break 
-                        
+                        break
+
                     dumped_payload = json.dumps(text_json)
                     first_message = False
                     await _handle_event(
@@ -145,7 +146,9 @@ async def consume_generator(
 
             if len(text_jsons) > 0:
                 last_payload = _get_formatted_payload("", False, add_finish_reason=True)
-                await _handle_event(config, event=f"data: {last_payload}\n\n", synthetic_query=synthetic_query, job_id=job_id)
+                await _handle_event(
+                    config, event=f"data: {last_payload}\n\n", synthetic_query=synthetic_query, job_id=job_id
+                )
                 await _handle_event(config, event="data: [DONE]\n\n", synthetic_query=synthetic_query, job_id=job_id)
                 logger.info(f"✅ Successfully queried node: {node.node_id} for task: {task}")
 
@@ -161,7 +164,9 @@ async def consume_generator(
                 status_code=status_code,
             )
     except Exception as e:
-        logger.error(f"Unexpected exception when querying node: {node.node_id} for task: {task}. Payload: {payload}. Error: {e}")
+        logger.error(
+            f"Unexpected exception when querying node: {node.node_id} for task: {task}. Payload: {payload}. Error: {e}"
+        )
         query_result = construct_500_query_result(node, task)
     finally:
         await utils.adjust_contender_from_result(config, query_result, contender, synthetic_query, payload=payload)
@@ -175,9 +180,7 @@ async def query_node_stream(config: Config, contender: Contender, node: Node, pa
             replace_with_docker_localhost=config.replace_with_docker_localhost,
             replace_with_localhost=config.replace_with_localhost,
         )
-        logger.warning(
-            f"making a query to node: {node.node_id} for task: {contender.task}."
-        )
+        logger.warning(f"making a query to node: {node.node_id} for task: {contender.task}.")
         return client.make_streamed_post(
             httpx_client=config.httpx_client,
             server_address=address,

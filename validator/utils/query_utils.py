@@ -74,8 +74,6 @@
 #     return body
 
 
-
-
 # async def query_individual_axon(
 #     dendrite: bt.dendrite,
 #     axon: AxonInfo,

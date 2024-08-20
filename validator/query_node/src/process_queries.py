@@ -1,6 +1,7 @@
 import asyncio
 import json
 from redis.asyncio import Redis
+from core.models.request_models import TextToImageResponse
 from validator.models import Contender
 from validator.query_node.src.query_config import Config
 from core.tasks import Task
@@ -8,7 +9,7 @@ from core import tasks_config as tcfg
 from validator.utils import contender_utils as putils
 from core.logging import get_logger
 from validator.utils import redis_constants as rcst, redis_dataclasses as rdc
-from validator.query_node.src import query
+from validator.query_node.src.query import stream, nonstream
 from validator.db.src.sql.contenders import get_contenders_for_task
 from validator.db.src.sql.nodes import get_node
 
@@ -28,11 +29,11 @@ async def _handle_stream_query(
     success = False
     for contender in contenders_to_query:
         node = await get_node(config.psql_db, contender.node_id, config.netuid)
-        generator = await query.query_node_stream(
+        generator = await stream.query_node_stream(
             config=config, contender=contender, payload=message.query_payload, node=node
         )
 
-        await query.consume_generator(
+        await stream.consume_generator(
             config=config,
             generator=generator,
             job_id=message.job_id,
@@ -55,8 +56,12 @@ async def _handle_nonstream_query(
     success = False
     for contender in contenders_to_query:
         node = await get_node(config.psql_db, contender.node_id, config.netuid)
-        generator = await query.query_node_stream(
-            config=config, contender=contender, payload=message.query_payload, node=node
+        await nonstream.query_nonstream(
+            config=config,
+            contender=contender,
+            node=node,
+            payload=message.query_payload,
+            response_model=TextToImageResponse,
         )
 
     return success

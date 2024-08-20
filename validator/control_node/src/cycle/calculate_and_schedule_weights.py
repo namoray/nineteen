@@ -14,7 +14,6 @@ from substrateinterface import SubstrateInterface, Keypair
 logger = get_logger(__name__)
 
 
-
 async def _get_weights_to_set(config: Config):
     async with await config.psql_db.connection() as connection:
         contenders = await fetch_all_contenders(connection, None)

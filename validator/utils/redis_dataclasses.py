@@ -1,13 +1,15 @@
 import base64
 from dataclasses import dataclass
 
+
 @dataclass
 class QueryQueueMessage:
     query_type: str
     query_payload: dict
     task: str
     job_id: str
-    
+
+
 @dataclass
 class PublicKeypairInfo:
     ss58_address: str

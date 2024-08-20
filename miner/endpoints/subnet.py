@@ -8,6 +8,7 @@ from fastapi.responses import StreamingResponse
 from fiber.miner.security.encryption import decrypt_general_payload
 from core.models import request_models
 from fastapi.routing import APIRouter
+from core.models.utility_models import ImageHashes
 from core.tasks_config import TASK_TO_CONFIG
 
 
@@ -35,8 +36,13 @@ async def text_to_image(
         image_data.append(random.randint(0, 255))
 
     # Encode the image data as a base64 string
-    image_b64 = base64.b64encode(image_data).decode('utf-8')
-    return request_models.TextToImageResponse(image_b64=image_b64)
+    image_b64 = base64.b64encode(image_data).decode("utf-8")
+    return request_models.TextToImageResponse(
+        image_b64=image_b64,
+        is_nsfw=False,
+        clip_embeddings=[],
+        image_hashes=ImageHashes(average_hash="", perceptual_hash="", difference_hash="", color_hash=""),
+    )
 
 
 async def capacity() -> dict[str, float]:

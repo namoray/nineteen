@@ -31,6 +31,6 @@ class Config:
     netuid: int
     seconds_between_syncs: int
     httpx_client: httpx.AsyncClient = httpx.AsyncClient()
-    debug: bool = os.getenv("ENV", "prod").lower() == "dev" 
+    debug: bool = os.getenv("ENV", "prod").lower() == "dev"
     replace_with_localhost: bool = False
     replace_with_docker_localhost: bool = False

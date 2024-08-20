@@ -15,6 +15,7 @@ from fiber.chain_interactions import chain_utils
 from validator.control_node.src.cycle import execute_cycle
 from validator.control_node.src.synthetics import refresh_synthetic_data
 from validator.db.src.database import PSQLDB
+
 logger = get_logger(__name__)
 
 

@@ -4,10 +4,10 @@ import os
 # Must be done straight away, bit ugly
 load_dotenv(os.getenv("ENV_FILE", ".dev.env"))
 
-import asyncio 
-from redis.asyncio import Redis 
+import asyncio
+from redis.asyncio import Redis
 
-from core.logging import get_logger 
+from core.logging import get_logger
 
 from validator.db.src.sql.nodes import get_vali_ss58_address
 from validator.query_node.src.query_config import Config

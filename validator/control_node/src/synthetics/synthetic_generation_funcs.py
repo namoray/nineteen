@@ -15,6 +15,7 @@ import datasets
 import diskcache
 from functools import lru_cache
 from core.logging import get_logger
+
 logger = get_logger(__name__)
 
 
@@ -207,4 +208,3 @@ async def generate_synthetic_data(task: Task) -> None:
     kwargs = task_config.synthetic_generation_config.kwargs
 
     return await func(**kwargs)
-

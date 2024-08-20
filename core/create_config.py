@@ -8,12 +8,12 @@ def device_processing_func(input: str):
         input = "cuda:" + input
     return input
 
- 
+
 def optional_http_address_processing_func(input: Optional[str]) -> str:
     if input is None:
         return None
     return http_address_processing_func(input)
- 
+
 
 def http_address_processing_func(input: str) -> str:
     if "http://" not in input and "https://" not in input:

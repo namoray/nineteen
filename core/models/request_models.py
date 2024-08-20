@@ -13,6 +13,7 @@ from core.tasks import Task
 class CapacityResponse(BaseModel):
     capacities: dict[str, float]
 
+
 class TextToSpeechRequest(BaseModel):
     params: dict[str, Any]
 
@@ -28,9 +29,12 @@ class ChatRequest(BaseModel):
     class Config:
         use_enum_values = True
 
+
 class TextToImageRequest(BaseModel):
     prompt: str = Field(...)
-    negative_prompt: str | None = Field(None, title="Negative Prompt", description="Negative Prompt for text generation.")
+    negative_prompt: str | None = Field(
+        None, title="Negative Prompt", description="Negative Prompt for text generation."
+    )
     seed: int = Field(0, title="Seed", description="Seed for text generation.")
     steps: int = Field(10, title="Steps", description="Steps for text generation.")
     cfg_scale: float = Field(3, title="CFG Scale", description="CFG Scale for text generation.")
@@ -38,5 +42,9 @@ class TextToImageRequest(BaseModel):
     height: int = Field(1024, title="Height", description="Height for text generation.")
     model: str = Field(default=Task.proteus_text_to_image.value, title="Model")
 
+
 class TextToImageResponse(BaseModel):
     image_b64: str
+    is_nsfw: bool
+    clip_embeddings: list[float]
+    image_hashes: utility_models.ImageHashes

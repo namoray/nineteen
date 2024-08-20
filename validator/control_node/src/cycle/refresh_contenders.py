@@ -22,7 +22,6 @@ logger = get_logger(__name__)
 
 
 def _get_validator_stake_proportion(nodes: list[Node], hotkey_ss58_address: str) -> float:
-
     valid_nodes = [node for node in nodes if node is not None and node.stake is not None]
     sum_stake = sum(node.stake for node in valid_nodes)
     target_node = next((node for node in valid_nodes if node.hotkey == hotkey_ss58_address), None)
@@ -32,9 +31,11 @@ def _get_validator_stake_proportion(nodes: list[Node], hotkey_ss58_address: str)
     logger.error(f"Unable to find validator {hotkey_ss58_address} in nodes.")
     raise ValueError(f"Unable to find validator {hotkey_ss58_address} in nodes.")
 
+
 def _get_capacity_to_score(capacity: float) -> float:
     """TODO: Finish"""
     return capacity * 1
+
 
 async def _store_and_migrate_old_contenders(config: Config, contenders: List[Contender]):
     logger.info("Calculating period scores & refreshing contenders")
@@ -114,6 +115,7 @@ async def _get_contenders_from_nodes(config: Config, nodes: list[Node]) -> List[
 
     logger.info(f"Got {len(contenders)} contenders to score")
     return contenders
+
 
 async def get_and_store_contenders(config: Config, nodes: list[Node]) -> None:
     logger.info(f"Got {len(nodes)} nodes")

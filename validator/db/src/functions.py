@@ -23,7 +23,7 @@ from validator.db.src.sql.rewards_and_scores import (
     delete_reward_data_older_than,
     delete_uid_data_older_than,
     select_recent_reward_data_for_a_task,
-    select_recent_reward_data
+    select_recent_reward_data,
 )
 from asyncpg import Connection
 
@@ -67,12 +67,20 @@ async def potentially_store_result_in_db(
             connection, task.value
         )
         if number_of_these_tasks_already_stored <= target_number_of_tasks_to_store:
-            await insert_task_results(connection=connection, task=task.value, result=result, payload=payload,synthetic_query=synthetic_query)
+            await insert_task_results(
+                connection=connection, task=task.value, result=result, payload=payload, synthetic_query=synthetic_query
+            )
         else:
             actual_percentage = number_of_these_tasks_already_stored / MAX_TASKS_IN_DB_STORE
             probability_to_score_again = (target_percentage / actual_percentage - target_percentage) ** 4
             if random.random() < probability_to_score_again:
-                await insert_task_results(connection=connection, task=task.value, result=result, payload=payload, synthetic_query=synthetic_query)
+                await insert_task_results(
+                    connection=connection,
+                    task=task.value,
+                    result=result,
+                    payload=payload,
+                    synthetic_query=synthetic_query,
+                )
 
 
 async def select_and_delete_task_result(psql_db: PSQLDB, task: Task) -> Optional[Union[List[Dict[str, Any]], str]]:

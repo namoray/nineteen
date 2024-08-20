@@ -98,6 +98,7 @@ async def migrate_contenders_to_contender_history(connection: Connection) -> Non
 
     await connection.execute(f"DELETE FROM {dcst.CONTENDERS_TABLE}")
 
+
 async def get_contenders_for_task(connection: Connection, task: Task, top_x: int = 5) -> list[Contender]:
     rows = await connection.fetch(
         f"""
@@ -160,6 +161,7 @@ async def get_contenders_for_task(connection: Connection, task: Task, top_x: int
 
     return [Contender(**row) for row in rows]
 
+
 async def update_contender_capacities(config: Config, contender: Contender, capacitity_consumed: float) -> None:
     async with await config.psql_db.connection() as connection:
         await connection.execute(
@@ -173,8 +175,9 @@ async def update_contender_capacities(config: Config, contender: Contender, capa
             contender.id,
         )
 
+
 async def update_contender_429_count(config: Config, contender: Contender) -> None:
-    async with await  config.psql_db.connection() as connection:
+    async with await config.psql_db.connection() as connection:
         await connection.execute(
             f"""
             UPDATE {dcst.CONTENDERS_TABLE}
@@ -184,8 +187,9 @@ async def update_contender_429_count(config: Config, contender: Contender) -> No
             contender.id,
         )
 
+
 async def update_contender_500_count(config: Config, contender: Contender) -> None:
-    async with await  config.psql_db.connection() as connection:
+    async with await config.psql_db.connection() as connection:
         await connection.execute(
             f"""
             UPDATE {dcst.CONTENDERS_TABLE}
@@ -194,6 +198,7 @@ async def update_contender_500_count(config: Config, contender: Contender) -> No
             """,
             contender.id,
         )
+
 
 async def fetch_contender(connection: Connection, contender_id: str) -> Contender | None:
     row = await connection.fetchrow(
