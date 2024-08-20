@@ -10,7 +10,7 @@ dynamic = ["dependencies"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["client_node*"]
+include = ["entry_node*"]
 
 [tool.setuptools.dynamic]
 dependencies = { file = ["requirements.txt"] }

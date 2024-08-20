@@ -1,7 +1,7 @@
 # TODO: Do we need connection pools with redis?
 from fastapi import FastAPI
 import uvicorn
-from validator.client_node.src.text.main import router as text_router
+from validator.entry_node.src.text.main import router as text_router
 
 
 app = FastAPI(debug=False)

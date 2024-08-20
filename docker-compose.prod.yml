@@ -11,10 +11,10 @@ services:
       - redis_network
     container_name: core
 
-  client_node:
+  entry_node:
     build:
       context: .
-      dockerfile: dockerfiles/client_node.dockerfile
+      dockerfile: dockerfiles/entry_node.dockerfile
     depends_on:
       - redis
       - postgresql
@@ -24,10 +24,10 @@ services:
     networks:
       - postgres_network
       - redis_network
-    entrypoint: ["python", "-u", "/app/validator/client_node/src/main.py"]
+    entrypoint: ["python", "-u", "/app/validator/entry_node/src/main.py"]
     ports:
       - "8000:8000"
-    container_name: client_node
+    container_name: entry_node
     environment:
       POSTGRES_USER: ${PROD_DB_USER}
       POSTGRES_PASSWORD: ${PROD_DB_PASSWORD}
