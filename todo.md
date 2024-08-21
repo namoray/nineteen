@@ -2,7 +2,7 @@ tests
 
 - - scoring works, might need to change current orchestrator code a lot for this - but try to minimise ✅
 - - query node non streaming (e.g. proteus text to image) ✅
-- - plug into real servers for miner  
+- - plug into real servers for miner  (text: ✅, image: )
 - - client node redone
 - - end to end tests with real orchestrator, then
 
