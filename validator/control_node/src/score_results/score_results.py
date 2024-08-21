@@ -13,6 +13,8 @@ from typing import Any, Dict
 
 import httpx
 
+from core import tasks_config as tcfg
+
 from core.logging import get_logger
 from core.tasks import Task
 from validator.models import RewardData
@@ -106,6 +108,9 @@ async def process_and_store_score(
         logger.error(f"Axon scores is none; found in the response json: {task_result}")
         return
 
+    if task not in tcfg.TASK_TO_CONFIG:
+        logger.error(f"Task {task} not found")
+        return
     volume = work_and_speed_functions.calculate_work(task=task, result=results, steps=payload.get("steps"))
     speed_scoring_factor = work_and_speed_functions.calculate_speed_modifier(task=task, result=results, payload=payload)
 
@@ -130,8 +135,6 @@ async def process_and_store_score(
 
 
 async def score_results(config: Config):
-    consecutive_errors = 0
-
     while True:
         async with await config.psql_db.connection() as connection:
             tasks_and_results = await select_tasks_and_number_of_results(connection)
@@ -147,9 +150,15 @@ async def score_results(config: Config):
             random.choices(list(tasks_and_results.keys()), weights=list(tasks_and_results.values()), k=1)[0]
         )
 
-        data_and_hotkey = await db_functions.select_and_delete_task_result(config.psql_db, task_to_score)
+        await score_task(config, task_to_score, max_tasks_to_score=200)
+
+
+async def score_task(config: Config, task: Task, max_tasks_to_score: int):
+    consecutive_errors = 0
+    for _ in range(max_tasks_to_score):
+        data_and_hotkey = await db_functions.select_and_delete_task_result(config.psql_db, task)
         if data_and_hotkey is None:
-            logger.warning(f"No data left to score for task {task_to_score}")
+            logger.warning(f"No data left to score for task {task}")
             continue
 
         raw_checking_data, node_hotkey = data_and_hotkey
@@ -164,7 +173,7 @@ async def score_results(config: Config):
             "payload": payload,
             "synthetic_query": synthetic_query,
             "query_result": results,
-            "task": task_to_score.value,
+            "task": task.value,
         }
 
         task_result, consecutive_errors = await send_result_for_scoring(
@@ -173,13 +182,12 @@ async def score_results(config: Config):
         if task_result is None:
             sleep_time = min(60 * (2 ** (consecutive_errors - 1)), 300)  # Max sleep time of 5 minutes
             await asyncio.sleep(sleep_time)
-            continue
 
         logger.debug("payload: {}".format(payload))
 
         await process_and_store_score(
             config=config,
-            task=task_to_score,
+            task=task,
             results=results,
             payload=payload,
             node_hotkey=node_hotkey,
@@ -188,7 +196,6 @@ async def score_results(config: Config):
         )
 
         consecutive_errors = 0
-        await asyncio.sleep(5)
 
 
 async def main(config: Config):

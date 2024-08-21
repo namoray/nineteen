@@ -100,7 +100,7 @@ async def consume_generator(
     task = contender.task
 
     logger.debug(
-        f"Querying node {node.node_id} for a stream, and task: {task}. Debug: {bool(debug)}. Synthetic: {synthetic_query}."
+        f"Querying node {node.node_id} for task: {task}. Debug: {bool(debug)}. Synthetic: {synthetic_query}."
     )
 
     try:
@@ -144,25 +144,24 @@ async def consume_generator(
                         config, event=f"data: {dumped_payload}\n\n", synthetic_query=synthetic_query, job_id=job_id
                     )
 
-            if len(text_jsons) > 0:
-                last_payload = _get_formatted_payload("", False, add_finish_reason=True)
-                await _handle_event(
-                    config, event=f"data: {last_payload}\n\n", synthetic_query=synthetic_query, job_id=job_id
-                )
-                await _handle_event(config, event="data: [DONE]\n\n", synthetic_query=synthetic_query, job_id=job_id)
-                logger.info(f"✅ Successfully queried node: {node.node_id} for task: {task}")
-
-            response_time = time.time() - start_time
-            logger.debug(f"Got query result!. Success: {not first_message}. Response time: {response_time}")
-            query_result = utility_models.QueryResult(
-                formatted_response=text_jsons if len(text_jsons) > 0 else None,
-                node_id=node.node_id,
-                response_time=response_time,
-                task=task,
-                success=not first_message,
-                node_hotkey=node.hotkey,
-                status_code=status_code,
+        if len(text_jsons) > 0:
+            last_payload = _get_formatted_payload("", False, add_finish_reason=True)
+            await _handle_event(
+                config, event=f"data: {last_payload}\n\n", synthetic_query=synthetic_query, job_id=job_id
             )
+            await _handle_event(config, event="data: [DONE]\n\n", synthetic_query=synthetic_query, job_id=job_id)
+            logger.info(f"✅ Successfully queried node: {node.node_id} for task: {task}. Success: {not first_message}.")
+
+        response_time = time.time() - start_time
+        query_result = utility_models.QueryResult(
+            formatted_response=text_jsons if len(text_jsons) > 0 else None,
+            node_id=node.node_id,
+            response_time=response_time,
+            task=task,
+            success=not first_message,
+            node_hotkey=node.hotkey,
+            status_code=status_code,
+        )
     except Exception as e:
         logger.error(
             f"Unexpected exception when querying node: {node.node_id} for task: {task}. Payload: {payload}. Error: {e}"
@@ -180,7 +179,6 @@ async def query_node_stream(config: Config, contender: Contender, node: Node, pa
             replace_with_docker_localhost=config.replace_with_docker_localhost,
             replace_with_localhost=config.replace_with_localhost,
         )
-        logger.warning(f"making a query to node: {node.node_id} for task: {contender.task}.")
         return client.make_streamed_post(
             httpx_client=config.httpx_client,
             server_address=address,

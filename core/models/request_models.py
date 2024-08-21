@@ -25,6 +25,8 @@ class ChatRequest(BaseModel):
     seed: int = Field(default=..., title="Seed", description="Seed for text generation.")
     model: Task = Field(default=Task.chat_llama_3_1_8b, title="Model")
     top_p: float = Field(default=1.0, title="Top P", description="Top P for text generation.")
+    stream: bool = True
+    logprobs: bool = True
 
     class Config:
         use_enum_values = True

@@ -23,6 +23,7 @@ from validator.db.src.sql.rewards_and_scores import (
     delete_uid_data_older_than,
     select_recent_reward_data_for_a_task,
     select_recent_reward_data,
+    delete_specific_task
 )
 from asyncpg import Connection
 
@@ -89,7 +90,7 @@ async def select_and_delete_task_result(psql_db: PSQLDB, task: Task) -> Optional
         checking_data, node_hotkey = row
         checking_data_loaded = json.loads(checking_data)
 
-        # await sql.delete_specific_task(connection, task.value, checking_data)
+        await delete_specific_task(connection, task.value, checking_data)
 
     return checking_data_loaded, node_hotkey
 
@@ -152,12 +153,3 @@ async def fetch_recent_most_rewards_for_uid(
 
     return reward_data_list
 
-
-async def fetch_hotkey_scores_for_task(
-    connection: Connection,
-    task: Task,
-    node_hotkey: str,
-) -> List[PeriodScore]:
-    period_scores = await fetch_hotkey_scores_for_task(connection, task, node_hotkey)
-
-    return sorted(period_scores, key=lambda x: x.created_at, reverse=True)

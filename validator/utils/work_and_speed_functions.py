@@ -59,6 +59,7 @@ def _calculate_work_clip(number_of_images: int) -> float:
 
 
 def calculate_speed_modifier(task: Task, result: Dict[str, Any], payload: dict) -> float:
+
     config = tcfg.TASK_TO_CONFIG[task].scoring_config
 
     response_time = result.get("response_time")

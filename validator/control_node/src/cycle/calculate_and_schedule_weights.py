@@ -5,7 +5,7 @@ Calculates and schedules weights every SCORING_PERIOD
 import asyncio
 
 from validator.db.src.sql.contenders import fetch_all_contenders
-from validator.control_node.src.weights import calculations
+from validator.control_node.src.cycle.calculate_weights import calculations
 from fiber.chain_interactions import weights
 from core.logging import get_logger
 from core import constants as ccst

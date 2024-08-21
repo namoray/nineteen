@@ -85,9 +85,9 @@ async def process_task(config: Config, message: rdc.QueryQueueMessage):
         raise ValueError("No contenders to query! :(")
 
     if stream:
-        return
         return await _handle_stream_query(config, message, contenders_to_query)
     else:
+        return
         return await _handle_nonstream_query(config=config, message=message, contenders_to_query=contenders_to_query)
 
 

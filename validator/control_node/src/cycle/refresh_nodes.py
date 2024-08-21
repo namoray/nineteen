@@ -126,10 +126,9 @@ async def _handshake(config: Config, node: Node, async_client: httpx.AsyncClient
 
 async def perform_handshakes(nodes: list[Node], config: Config) -> None:
     tasks = []
-    async_client = httpx.AsyncClient()
     for node in nodes:
         if node.fernet is None or node.symmetric_key_uuid is None:
-            tasks.append(_handshake(config, node, async_client))
+            tasks.append(_handshake(config, node, config.httpx_client))
 
     nodes = await asyncio.gather(*tasks)
 

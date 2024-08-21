@@ -4,6 +4,7 @@ import json
 import time
 from pydantic import BaseModel
 from core.tasks import Task
+from core import tasks_config as tcfg
 from redis.asyncio import Redis
 from validator.control_node.src.control_config import Config
 from validator.utils import (
@@ -39,7 +40,7 @@ async def update_tasks_synthetic_data(redis_db: Redis, slow_sync: bool = True, t
             await _store_synthetic_data_in_redis(redis_db, task, new_synthetic_data)
 
     else:
-        for task in Task:
+        for task in tcfg.TASK_TO_CONFIG:
             now = datetime.datetime.now().timestamp()
             synthetic_data_version = await sutils.get_synthetic_data_version(redis_db, task)
             if synthetic_data_version is None or now - synthetic_data_version > scst.SYNTHETIC_DATA_EXPIRATION_TIME:
