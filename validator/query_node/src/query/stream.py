@@ -105,7 +105,7 @@ async def consume_generator(
 
     try:
         first_chunk = await generator.__anext__()
-    except (StopAsyncIteration, httpx.ConnectError, httpx.ReadError, httpx.HTTPError) as e:
+    except (StopAsyncIteration, httpx.ConnectError, httpx.ReadError, httpx.HTTPError, Exception) as e:
         logger.error(f"Error when querying node: {node.node_id} for task: {task}. Error: {e}")
         query_result = construct_500_query_result(node, task)
         await utils.adjust_contender_from_result(config, query_result, contender, synthetic_query, payload=payload)

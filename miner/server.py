@@ -6,7 +6,7 @@ from fiber.logging_utils import get_logger
 logger = get_logger(__name__)
 
 # This allows you to use uvicorn to run the server directly from the command line
-app = server.factory_app(debug=True, sync_nodes=False)
+app = server.factory_app(debug=True)
 
 
 @app.middleware("http")
