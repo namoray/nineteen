@@ -11,7 +11,6 @@ from core.logging import get_logger
 import json
 from validator.query_node.src.query_config import Config
 from validator.utils import redis_constants as rcst, redis_dataclasses as rdc
-from tasiq import AsyncQueue
 from validator.query_node.src.process_queries import process_task
 from validator.db.src.sql.nodes import get_vali_ss58_address
 from validator.db.src.database import PSQLDB
@@ -69,13 +68,13 @@ async def listen_for_tasks(config: Config):
             message_json = await config.redis_db.blpop(rcst.QUERY_QUEUE_KEY, timeout=1)
             if not message_json:
                 break
-            task = asyncio.create_task(process_task(config, rdc.QueryQueueMessage(**json.loads(message_json[1]))))
-            tasks.add(task)
+            try:
+                task = asyncio.create_task(process_task(config, rdc.QueryQueueMessage(**json.loads(message_json[1]))))
+                tasks.add(task)
+            except TypeError:
+                logger.error(f"Failed to process message: {message_json}")
 
         await asyncio.sleep(0.01)
-
-
-tasiq_queue = AsyncQueue("redis://localhost")
 
 
 async def main() -> None:

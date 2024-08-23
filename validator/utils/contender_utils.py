@@ -9,6 +9,7 @@ from validator.utils import redis_utils as rutils, redis_dataclasses as rdc
 from redis.asyncio import Redis
 from core.logging import get_logger
 import uuid
+from validator.utils import generic_constants as gcst
 
 logger = get_logger(__name__)
 
@@ -16,7 +17,7 @@ logger = get_logger(__name__)
 def construct_synthetic_query_message(task: Task) -> str:
     return json.dumps(
         asdict(
-            rdc.QueryQueueMessage(query_payload={}, query_type="synthetic", task=task.value, job_id=uuid.uuid4().hex)
+            rdc.QueryQueueMessage(query_payload={}, query_type=gcst.SYNTHETIC, task=task.value, job_id=uuid.uuid4().hex)
         )
     )
 
