@@ -9,6 +9,10 @@ tasks:
     cmds: 
       - ENV_FILE=.dev.env python -m validator.query_node.src.main
 
+  entry_node_dev:
+    cmds:
+      - uvicorn validator.entry_node.src.server:app --reload --host 127.0.0.1 --port 8000 --env-file .dev.env
+
   dev_setup:
     cmds:
       - docker-compose --env-file .dev.env -f docker-compose.dev.yml up -d

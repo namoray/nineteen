@@ -5,7 +5,7 @@ from fastapi import Depends
 
 from fastapi.responses import StreamingResponse
 from fiber.miner.security.encryption import decrypt_general_payload
-from core.models import request_models
+from core.models import payload_models
 from fastapi.routing import APIRouter
 from core.models.utility_models import ImageHashes
 from core.tasks_config import TASK_TO_CONFIG
@@ -18,8 +18,8 @@ logger = get_logger(__name__)
 
 
 async def chat_completions(
-    decrypted_payload: request_models.ChatRequest = Depends(
-        partial(decrypt_general_payload, request_models.ChatRequest)
+    decrypted_payload: payload_models.ChatPayload = Depends(
+        partial(decrypt_general_payload, payload_models.ChatPayload)
     ),
 ) -> StreamingResponse:
     decrypted_payload.model = "NousResearch/Hermes-3-Llama-3.1-8B"
@@ -29,17 +29,17 @@ async def chat_completions(
 
 
 async def text_to_image(
-    decrypted_payload: request_models.TextToImageRequest = Depends(
-        partial(decrypt_general_payload, request_models.TextToImageRequest)
+    decrypted_payload: payload_models.TextToImageRequest = Depends(
+        partial(decrypt_general_payload, payload_models.TextToImageRequest)
     ),
-) -> request_models.TextToImageResponse:
+) -> payload_models.TextToImageResponse:
     image_data = bytearray()
     for _ in range(1024 * 1024 * 3):  # 3 bytes per pixel (RGB)
         image_data.append(random.randint(0, 255))
 
     # Encode the image data as a base64 string
     image_b64 = base64.b64encode(image_data).decode("utf-8")
-    response = request_models.TextToImageResponse(
+    response = payload_models.TextToImageResponse(
         image_b64=image_b64,
         is_nsfw=False,
         clip_embeddings=[],

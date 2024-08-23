@@ -1,7 +1,7 @@
 import asyncio
 import json
 from redis.asyncio import Redis
-from core.models.request_models import TextToImageResponse
+from core.models.payload_models import TextToImageResponse
 from validator.models import Contender
 from validator.query_node.src.query_config import Config
 from core.tasks import Task
@@ -12,6 +12,7 @@ from validator.utils import redis_constants as rcst, redis_dataclasses as rdc
 from validator.query_node.src.query import stream, nonstream
 from validator.db.src.sql.contenders import get_contenders_for_task
 from validator.db.src.sql.nodes import get_node
+from tasiq import AsyncQueue, Task as TasiqTask, TaskOptions
 
 logger = get_logger(__name__)
 
@@ -87,25 +88,4 @@ async def process_task(config: Config, message: rdc.QueryQueueMessage):
     if stream:
         return await _handle_stream_query(config, message, contenders_to_query)
     else:
-        return
         return await _handle_nonstream_query(config=config, message=message, contenders_to_query=contenders_to_query)
-
-
-async def listen_for_tasks(config: Config):
-    tasks: set[asyncio.Task] = set()
-
-    logger.info("Listening for tasks.")
-    while True:
-        done = {t for t in tasks if t.done()}
-        tasks.difference_update(done)
-        for t in done:
-            await t
-
-        while len(tasks) < MAX_CONCURRENT_TASKS:
-            message_json = await config.redis_db.blpop(rcst.QUERY_QUEUE_KEY, timeout=1)
-            if not message_json:
-                break
-            task = asyncio.create_task(process_task(config, rdc.QueryQueueMessage(**json.loads(message_json[1]))))
-            tasks.add(task)
-
-        await asyncio.sleep(0.01)

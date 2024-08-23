@@ -8,13 +8,17 @@ import asyncio
 from redis.asyncio import Redis
 
 from core.logging import get_logger
-
-from validator.db.src.sql.nodes import get_vali_ss58_address
+import json
 from validator.query_node.src.query_config import Config
-from validator.query_node.src.process_queries import listen_for_tasks
+from validator.utils import redis_constants as rcst, redis_dataclasses as rdc
+from tasiq import AsyncQueue
+from validator.query_node.src.process_queries import process_task
+from validator.db.src.sql.nodes import get_vali_ss58_address
 from validator.db.src.database import PSQLDB
 
 logger = get_logger(__name__)
+
+MAX_CONCURRENT_TASKS = 1
 
 
 async def load_config() -> Config:
@@ -51,9 +55,33 @@ async def load_config() -> Config:
     )
 
 
+async def listen_for_tasks(config: Config):
+    tasks: set[asyncio.Task] = set()
+
+    logger.info("Listening for tasks.")
+    while True:
+        done = {t for t in tasks if t.done()}
+        tasks.difference_update(done)
+        for t in done:
+            await t
+
+        while len(tasks) < MAX_CONCURRENT_TASKS:
+            message_json = await config.redis_db.blpop(rcst.QUERY_QUEUE_KEY, timeout=1)
+            if not message_json:
+                break
+            task = asyncio.create_task(process_task(config, rdc.QueryQueueMessage(**json.loads(message_json[1]))))
+            tasks.add(task)
+
+        await asyncio.sleep(0.01)
+
+
+tasiq_queue = AsyncQueue("redis://localhost")
+
+
 async def main() -> None:
     config = await load_config()
     logger.debug(f"config: {config}")
+
     await asyncio.gather(
         listen_for_tasks(config),
     )

@@ -17,9 +17,6 @@ class Message(BaseModel):
     role: Role = Role.user
     content: str = "Remind me that I have forgot to set the messages"
 
-    class Config:
-        extra = "allow"
-
 
 class QueryResult(BaseModel):
     formatted_response: Any

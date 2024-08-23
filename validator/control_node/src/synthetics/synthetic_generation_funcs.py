@@ -8,7 +8,7 @@ from validator.utils import (
 )
 from core.tasks import Task
 from core import tasks_config
-from core.models import request_models
+from core.models import payload_models
 
 import markovify
 import datasets
@@ -47,7 +47,7 @@ async def _get_markov_sentence(max_words: int = 10) -> str:
     return text
 
 
-async def generate_chat_synthetic(model: str) -> request_models.ChatRequest:
+async def generate_chat_synthetic(model: str) -> payload_models.ChatPayload:
     user_content = await _get_markov_sentence(max_words=140)
     messages = [utility_models.Message(content=user_content, role=utility_models.Role.user.value)]
 
@@ -64,7 +64,7 @@ async def generate_chat_synthetic(model: str) -> request_models.ChatRequest:
                 role=utility_models.Role.user.value,
             )
         )
-    return request_models.ChatRequest(
+    return payload_models.ChatPayload(
         messages=messages,
         temperature=round(random.random(), 1),
         max_tokens=1024,
@@ -76,7 +76,7 @@ async def generate_chat_synthetic(model: str) -> request_models.ChatRequest:
 
 async def generate_text_to_image_synthetic(
     model: str,
-) -> request_models.TextToImageRequest:
+) -> payload_models.TextToImageRequest:
     prompt = await _get_markov_sentence(max_words=20)
     negative_prompt = await _get_markov_sentence(max_words=20)
     seed = random.randint(1, scst.MAX_SEED)
@@ -89,7 +89,7 @@ async def generate_text_to_image_synthetic(
     else:
         raise ValueError(f"Engine {model} not supported")
 
-    return request_models.TextToImageRequest(
+    return payload_models.TextToImageRequest(
         prompt=prompt,
         negative_prompt=negative_prompt,
         seed=seed,

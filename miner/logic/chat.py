@@ -1,7 +1,7 @@
 import httpx
 from fiber.logging_utils import get_logger
 
-from core.models import request_models
+from core.models import payload_models
 
 logger = get_logger(__name__)
 
@@ -9,7 +9,7 @@ logger = get_logger(__name__)
 LLAMA_3_8B_ADDRESS = "http://62.169.159.78:8000/v1/chat/completions"
 
 
-async def chat_stream(decrypted_payload: request_models.ChatRequest):
+async def chat_stream(decrypted_payload: payload_models.ChatPayload):
     if True:
         for i in range(100):
             yield f"data: {i}\n\n"
