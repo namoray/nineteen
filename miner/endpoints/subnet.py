@@ -1,23 +1,20 @@
 import base64
 from functools import partial
-import json
 import random
 from fastapi import Depends
 
 from fastapi.responses import StreamingResponse
 from fiber.miner.security.encryption import decrypt_general_payload
-import httpx
 from core.models import request_models
 from fastapi.routing import APIRouter
 from core.models.utility_models import ImageHashes
 from core.tasks_config import TASK_TO_CONFIG
 from fiber.logging_utils import get_logger
 
+from miner.logic.chat import chat_stream
+
 
 logger = get_logger(__name__)
-
-
-LLAMA_3_8B_ADDRESS = "http://62.169.159.78:8000/v1/chat/completions"
 
 
 async def chat_completions(
@@ -25,35 +22,10 @@ async def chat_completions(
         partial(decrypt_general_payload, request_models.ChatRequest)
     ),
 ) -> StreamingResponse:
-    
     decrypted_payload.model = "NousResearch/Hermes-3-Llama-3.1-8B"
-    
-    async def iterator():
-        async with httpx.AsyncClient(timeout=90) as client:  # noqa
-            async with client.stream("POST", LLAMA_3_8B_ADDRESS, json=decrypted_payload.model_dump()) as resp:
-                async for chunk in resp.aiter_lines():
-                    try:
-                        received_event_chunks = chunk.split("\n\n")
-                        for event in received_event_chunks:
-                            if event == "":
-                                continue
-                            prefix, _, data = event.partition(":")
-                            if data.strip() == "[DONE]":
-                                break
-                            loaded_chunk = json.loads(data)
-                            content = loaded_chunk["choices"][0]["delta"].get("content", "")
-                            logprobs_obj = loaded_chunk["choices"][0].get("logprobs", {})
-                            if logprobs_obj:
-                                logprob = logprobs_obj.get("content", [{}])[0].get("logprob")
-                                data = json.dumps({"text": content, "logprob": logprob})
-                                yield f"data: {data}\n\n"
-                    except Exception as e:
-                        logger.error(f"Error in streaming text from the server: {e}. Original chunk: {chunk}")
-                        # Optionally, you can choose to yield an error message or continue silently
-                        # yield f"data: {{\"error\": \"{str(e)}\"}}\n\n"
+    generator = chat_stream(decrypted_payload)
 
-    return StreamingResponse(iterator(), media_type="text/event-stream")
-    return StreamingResponse(iterator(), media_type="text/event-stream")
+    return StreamingResponse(generator, media_type="text/event-stream")
 
 
 async def text_to_image(

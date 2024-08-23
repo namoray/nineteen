@@ -2,7 +2,7 @@ import asyncio
 from datetime import datetime, timedelta
 import random
 import json
-from typing import List, Dict, Any, Optional, Union
+from typing import List, Any
 
 
 from core.models import utility_models
@@ -23,11 +23,11 @@ from validator.db.src.sql.rewards_and_scores import (
     delete_uid_data_older_than,
     select_recent_reward_data_for_a_task,
     select_recent_reward_data,
-    delete_specific_task
+    delete_specific_task,
 )
 from asyncpg import Connection
 
-from validator.models import PeriodScore, RewardData
+from validator.models import RewardData
 
 
 MAX_TASKS_IN_DB_STORE = 1000
@@ -83,7 +83,7 @@ async def potentially_store_result_in_db(
                 )
 
 
-async def select_and_delete_task_result(psql_db: PSQLDB, task: Task) -> Optional[Union[List[Dict[str, Any]], str]]:
+async def select_and_delete_task_result(psql_db: PSQLDB, task: Task) -> tuple[list[dict[str, Any]], str] | None:
     async with await psql_db.connection() as connection:
         row = await select_task_for_deletion(connection, task.value)
 
@@ -93,9 +93,6 @@ async def select_and_delete_task_result(psql_db: PSQLDB, task: Task) -> Optional
         await delete_specific_task(connection, task.value, checking_data)
 
     return checking_data_loaded, node_hotkey
-
-
-
 
 
 async def clean_tables_of_hotkeys(connection: Connection, node_hotkeys: List[str]) -> None:
@@ -152,4 +149,3 @@ async def fetch_recent_most_rewards_for_uid(
     ]
 
     return reward_data_list
-
