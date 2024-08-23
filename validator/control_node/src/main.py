@@ -14,8 +14,8 @@ from validator.control_node.src.control_config import Config
 from fiber.chain_interactions import interface
 from fiber.chain_interactions import chain_utils
 from validator.control_node.src.score_results import score_results
-from validator.control_node.src.synthetics import refresh_synthetic_data  #noqa
-from validator.control_node.src.cycle import execute_cycle  #noqa
+from validator.control_node.src.synthetics import refresh_synthetic_data  # noqa
+from validator.control_node.src.cycle import execute_cycle  # noqa
 
 from validator.db.src.database import PSQLDB
 
@@ -28,7 +28,7 @@ def load_config() -> Config:
     gpu_server_address: str | None = os.getenv("GPU_SERVER_ADDRESS")
     if gpu_server_address is None:
         raise ValueError("GPU_SERVER_ADDRESS must be set")
-    
+
     wallet_name = os.getenv("WALLET_NAME", "default")
     hotkey_name = os.getenv("HOTKEY_NAME", "default")
     netuid = os.getenv("NETUID")
@@ -46,9 +46,13 @@ def load_config() -> Config:
 
     replace_with_docker_localhost = bool(os.getenv("REPLACE_WITH_DOCKER_LOCALHOST", "false").lower() == "true")
 
-    substrate_interface = interface.get_substrate_interface(
-        subtensor_network=subtensor_network, subtensor_address=subtensor_address
-    )
+    refresh_nodes: bool = os.getenv("REFRESH_NODES", "true").lower() == "true"
+    if refresh_nodes:
+        substrate_interface = interface.get_substrate_interface(
+            subtensor_network=subtensor_network, subtensor_address=subtensor_address
+        )
+    else:
+        substrate_interface = None
     keypair = chain_utils.load_hotkey_keypair(wallet_name=wallet_name, hotkey_name=hotkey_name)
 
     return Config(
@@ -63,6 +67,7 @@ def load_config() -> Config:
         seconds_between_syncs=int(os.getenv("SECONDS_BETWEEN_SYNCS", str(ccst.SCORING_PERIOD_TIME))),
         replace_with_docker_localhost=replace_with_docker_localhost,
         replace_with_localhost=localhost,
+        refresh_nodes=refresh_nodes,
     )
 
 

@@ -11,6 +11,7 @@ from validator.db.src.sql.nodes import (
     migrate_nodes_to_history,
     insert_nodes,
     get_last_updated_time_for_nodes,
+    get_nodes
 )
 from core.logging import get_logger
 from fiber.chain_interactions import fetch_nodes

@@ -30,7 +30,8 @@ class Config:
     subtensor_address: str
     netuid: int
     seconds_between_syncs: int
+    replace_with_localhost: bool
+    replace_with_docker_localhost: bool 
+    refresh_nodes: bool
     httpx_client: httpx.AsyncClient = httpx.AsyncClient()
     debug: bool = os.getenv("ENV", "prod").lower() == "dev"
-    replace_with_localhost: bool = False
-    replace_with_docker_localhost: bool = False
