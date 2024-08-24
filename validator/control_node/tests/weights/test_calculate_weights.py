@@ -17,7 +17,7 @@ class TestWeightsCalculationFunctional(unittest.IsolatedAsyncioTestCase):
         await self.psql_db.connect()
 
     async def asyncTearDown(self):
-        await self.redis_db.aclose()
+        await self.redis_db.close()
         await self.psql_db.close()
 
     def test_apply_non_linear_transformation(self):

@@ -13,7 +13,7 @@ from fiber.validator import client
 from fiber.chain_interactions.models import Node
 from core import tasks_config as tcfg
 from validator.utils import redis_constants as rcst
-
+from validator.utils import generic_constants as gcst
 from fiber.logging_utils import get_logger
 
 logger = get_logger(__name__)
@@ -62,9 +62,11 @@ def _get_formatted_payload(content: str, first_message: bool, add_finish_reason:
 
 
 async def _handle_event(config: Config, event: str, synthetic_query: bool, job_id: str) -> None:
-    if synthetic_query:
-        return
-    await config.redis_db.rpush(rcst.QUERY_RESULTS_KEY + ":" + job_id, event)
+    # TODO: Uncomment
+    # if synthetic_query:
+    #     return
+    logger.debug(f"Handling: {event} for job: {job_id}")
+    await config.redis_db.publish(f"{rcst.JOB_RESULTS}:{job_id}", event)
 
 
 async def async_chain(first_chunk, async_gen):
@@ -114,6 +116,7 @@ async def consume_generator(
     start_time, text_jsons, status_code, first_message = time.time(), [], 200, True
     try:
         async for text in async_chain(first_chunk, generator):
+            logger.debug(f"text: {text}")
             if isinstance(text, bytes):
                 text = text.decode()
             if isinstance(text, str):
@@ -126,7 +129,7 @@ async def consume_generator(
                 except (IndexError, json.JSONDecodeError) as e:
                     logger.warning(f"Error {e} when trying to load text: {text}")
                     break
-
+                
                 text_jsons.extend(loaded_jsons)
                 for text_json in loaded_jsons:
                     if not isinstance(text_json, dict):

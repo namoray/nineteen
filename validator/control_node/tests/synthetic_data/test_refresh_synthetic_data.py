@@ -17,7 +17,7 @@ class TestSyntheticDataStorageFunctional(unittest.IsolatedAsyncioTestCase):
         await self.redis_db.flushdb()
 
     async def asyncTearDown(self):
-        await self.redis_db.aclose()
+        await self.redis_db.close()
         await self.psql_db.close()
 
     async def test_update_tasks_synthetic_data(self):

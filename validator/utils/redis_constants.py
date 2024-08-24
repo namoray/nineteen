@@ -28,3 +28,4 @@ SIGNATURE = "signature"
 
 SYNTHETIC_QUERY = "synthetic_query"
 ORGANIC_QUERY = "organic_query"
+JOB_RESULTS ="JOB_RESULTS"

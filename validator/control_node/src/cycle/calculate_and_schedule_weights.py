@@ -65,7 +65,6 @@ async def main(substrate_interface: SubstrateInterface, keypair: Keypair):
             await get_and_set_weights(config)
     finally:
         await config.psql_db.close()
-        await config.redis_db.aclose()
 
 
 if __name__ == "__main__":

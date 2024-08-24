@@ -1,3 +1,4 @@
+import json
 import httpx
 from fiber.logging_utils import get_logger
 
@@ -12,7 +13,8 @@ LLAMA_3_8B_ADDRESS = "http://62.169.159.78:8000/v1/chat/completions"
 async def chat_stream(decrypted_payload: payload_models.ChatPayload):
     if True:
         for i in range(100):
-            yield f"data: {i}\n\n"
+            data = {"choices": [{"delta": {"content": f"{i}"}}]}
+            yield f"data: {json.dumps(data)}\n\n"
         yield "data: [DONE]\n\n"
     else:
         async with httpx.AsyncClient(timeout=90) as client:

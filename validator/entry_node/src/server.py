@@ -2,7 +2,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 import uvicorn
-from validator.entry_node.src.text.chat import router as chat_router
+from validator.entry_node.src.endpoints.text import router as chat_router
 from validator.entry_node.src.core import configuration
 from core.logging import get_logger
 

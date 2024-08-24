@@ -24,7 +24,7 @@ class TestSyntheticSchedulerFunctional(unittest.IsolatedAsyncioTestCase):
         await self.redis_db.flushdb()
 
     async def asyncTearDown(self):
-        await self.redis_db.aclose()
+        await self.redis_db.close()
         await self.psql_db.close()
 
     async def test_schedule_and_process_synthetics(

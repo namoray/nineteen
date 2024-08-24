@@ -159,7 +159,7 @@ async def score_task(config: Config, task: Task, max_tasks_to_score: int):
         data_and_hotkey = await db_functions.select_and_delete_task_result(config.psql_db, task)
         if data_and_hotkey is None:
             logger.warning(f"No data left to score for task {task}")
-            continue
+            break
 
         raw_checking_data, node_hotkey = data_and_hotkey
         results, synthetic_query, payload_dict_str = (
@@ -204,7 +204,6 @@ async def main(config: Config):
         await score_results(config)
     finally:
         await config.psql_db.close()
-        await config.redis_db.aclose()
 
 
 if __name__ == "__main__":

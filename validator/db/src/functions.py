@@ -86,7 +86,8 @@ async def potentially_store_result_in_db(
 async def select_and_delete_task_result(psql_db: PSQLDB, task: Task) -> tuple[list[dict[str, Any]], str] | None:
     async with await psql_db.connection() as connection:
         row = await select_task_for_deletion(connection, task.value)
-
+        if row is None:
+            return None
         checking_data, node_hotkey = row
         checking_data_loaded = json.loads(checking_data)
 

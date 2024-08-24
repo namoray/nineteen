@@ -13,6 +13,7 @@ from validator.entry_node.src.models import request_models
 import asyncio
 
 from redis.asyncio.client import PubSub
+
 logger = get_logger(__name__)
 
 router = APIRouter()
@@ -27,19 +28,23 @@ async def _wait_for_acknowledgement(pubsub: PubSub, job_id: str) -> bool:
         channel = message["channel"].decode()
         if channel == f"{gcst.ACKNLOWEDGED}:{job_id}":
             logger.info(f"Job {job_id} confirmed by worker")
-            return True
-
+            break
+    await pubsub.unsubscribe(f"{gcst.ACKNLOWEDGED}:{job_id}")
+    return True
+    
 
 
 async def _stream_results(pubsub: PubSub, job_id: str) -> AsyncGenerator[str, None]:
+    print("STREAMING")
     async for message in pubsub.listen():
-        if message["type"] == "message":
-            channel = message["channel"].decode()
-            if channel == f"job_result_{job_id}":
-                result = json.loads(message["data"])
-                yield json.dumps(result)
-                if result.get("status") == "DONE":
-                    break
+        logger.debug(f"GOT MESSAGE: {message}")
+        channel = message["channel"].decode()
+        if channel == f"{rcst.JOB_RESULTS}:{job_id}" and message['type'] == 'message':
+            yield message['data'].decode()
+            if "[DONE]" in message['data'].decode():
+                break
+    await pubsub.unsubscribe(f"{rcst.JOB_RESULTS}:{job_id}")
+
 
 
 async def make_organic_query(
@@ -48,14 +53,14 @@ async def make_organic_query(
     stream: bool,
     task: str,
 ) -> AsyncGenerator[str, None]:
-    job_id = str(uuid.uuid4())
+    job_id = "TEST"
     organic_message = _construct_organic_message(payload=payload, job_id=job_id, task=task)
 
     await redis_db.lpush(rcst.QUERY_QUEUE_KEY, organic_message)
 
     pubsub = redis_db.pubsub()
-    logger.debug("here!")
-    await pubsub.subscribe(f"{gcst.ACKNLOWEDGED}:{job_id}", f"job_result_{job_id}")
+    await pubsub.subscribe(f"{gcst.ACKNLOWEDGED}:{job_id}")
+    await pubsub.subscribe(f"{rcst.JOB_RESULTS}:{job_id}")
 
     try:
         await asyncio.wait_for(_wait_for_acknowledgement(pubsub, job_id), timeout=1)
@@ -70,10 +75,10 @@ async def make_organic_query(
                 if result_dict.get("status") == "DONE":
                     return JSONResponse(content=result_dict)
     except asyncio.TimeoutError:
-        logger.error(f"No confirmation received for job {job_id} within timeout period. Task: {task}, model: {payload['model']}")
+        logger.error(
+            f"No confirmation received for job {job_id} within timeout period. Task: {task}, model: {payload['model']}"
+        )
         raise HTTPException(status_code=500, detail="Unable to proccess request")
-    finally:
-        await pubsub.unsubscribe(f"{gcst.ACKNLOWEDGED}:{job_id}", f"job_result_{job_id}")
 
 
 @router.post("/chat")
