@@ -32,7 +32,7 @@ async def test_external_server_connection(config: Config) -> bool:
         try:
             response = await client.get(config.external_server_url)
             response.raise_for_status()
-            logger.info("Successfully connected to the external scoring server.")
+            logger.info("connected to the external scoring server.")
             return True
         except httpx.HTTPError as http_err:
             logger.error(f"Failed to connect to the external scoring server: {http_err}")

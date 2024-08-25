@@ -104,7 +104,7 @@ async def query_nonstream(
             status_code=response.status_code,
             success=True,
         )
-        logger.info(f"✅ Successfully queried node: {node_id} for task: {contender.task} - Response time: {response_time}")
+        logger.info(f"✅ Queried node: {node_id} for task: {contender.task} - time: {response_time}")
     else:
         query_result = utility_models.QueryResult(
             formatted_response=None,
@@ -115,7 +115,7 @@ async def query_nonstream(
             status_code=response.status_code,
             success=False,
         )
-        logger.debug(f"❌ Unsuccessfully queried node: {node_id} for task: {contender.task}")
+        logger.debug(f"❌ queried node: {node_id} for task: {contender.task}")
 
     await utils.adjust_contender_from_result(
         config=config, query_result=query_result, contender=contender, synthetic_query=synthetic_query, payload=payload

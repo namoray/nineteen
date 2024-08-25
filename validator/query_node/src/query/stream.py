@@ -13,7 +13,6 @@ from fiber.validator import client
 from fiber.chain_interactions.models import Node
 from core import tasks_config as tcfg
 from validator.utils import redis_constants as rcst
-from validator.utils import generic_constants as gcst
 from fiber.logging_utils import get_logger
 
 logger = get_logger(__name__)
@@ -63,9 +62,8 @@ def _get_formatted_payload(content: str, first_message: bool, add_finish_reason:
 
 async def _handle_event(config: Config, event: str, synthetic_query: bool, job_id: str) -> None:
     # TODO: Uncomment
-    # if synthetic_query:
-    #     return
-    logger.debug(f"Handling: {event} for job: {job_id}")
+    if synthetic_query:
+        return
     await config.redis_db.publish(f"{rcst.JOB_RESULTS}:{job_id}", event)
 
 
@@ -101,22 +99,20 @@ async def consume_generator(
     assert job_id
     task = contender.task
 
-    logger.debug(
-        f"Querying node {node.node_id} for task: {task}. Debug: {bool(debug)}. Synthetic: {synthetic_query}."
-    )
-
     try:
         first_chunk = await generator.__anext__()
-    except (StopAsyncIteration, httpx.ConnectError, httpx.ReadError, httpx.HTTPError, Exception) as e:
-        logger.error(f"Error when querying node: {node.node_id} for task: {task}. Error: {e}")
+    except (StopAsyncIteration, httpx.ConnectError, httpx.ReadError, httpx.HTTPError, httpx.ReadTimeout, Exception) as e:
+        error_type = type(e).__name__
+        error_details = str(e)
+
+        logger.error(f"Error when querying node: {node.node_id} for task: {task}. Error: {error_type} - {error_details}")
         query_result = construct_500_query_result(node, task)
         await utils.adjust_contender_from_result(config, query_result, contender, synthetic_query, payload=payload)
         return
-
+  
     start_time, text_jsons, status_code, first_message = time.time(), [], 200, True
     try:
         async for text in async_chain(first_chunk, generator):
-            logger.debug(f"text: {text}")
             if isinstance(text, bytes):
                 text = text.decode()
             if isinstance(text, str):
@@ -153,7 +149,7 @@ async def consume_generator(
                 config, event=f"data: {last_payload}\n\n", synthetic_query=synthetic_query, job_id=job_id
             )
             await _handle_event(config, event="data: [DONE]\n\n", synthetic_query=synthetic_query, job_id=job_id)
-            logger.info(f"✅ Successfully queried node: {node.node_id} for task: {task}. Success: {not first_message}.")
+            logger.info(f"✅ Queried node: {node.node_id} for task: {task}. Success: {not first_message}.")
 
         response_time = time.time() - start_time
         query_result = utility_models.QueryResult(
@@ -176,22 +172,19 @@ async def consume_generator(
 
 
 async def query_node_stream(config: Config, contender: Contender, node: Node, payload: dict):
-    try:
-        address = client.construct_server_address(
-            node,
-            replace_with_docker_localhost=config.replace_with_docker_localhost,
-            replace_with_localhost=config.replace_with_localhost,
-        )
-        return client.make_streamed_post(
-            httpx_client=config.httpx_client,
-            server_address=address,
-            validator_ss58_address=config.ss58_address,
-            fernet=node.fernet,
-            symmetric_key_uuid=node.symmetric_key_uuid,
-            payload=payload,
-            endpoint=tcfg.TASK_TO_CONFIG[Task(contender.task)].endpoint,
-            timeout=tcfg.TASK_TO_CONFIG[Task(contender.task)].timeout,
-        )
-    except Exception as e:
-        logger.error(f"Error when querying node: {node.node_id} for task: {contender.task}. Error: {e}")
-        return None
+    address = client.construct_server_address(
+        node,
+        replace_with_docker_localhost=config.replace_with_docker_localhost,
+        replace_with_localhost=config.replace_with_localhost,
+    )
+    return client.make_streamed_post(
+        httpx_client=config.httpx_client,
+        server_address=address,
+        validator_ss58_address=config.ss58_address,
+        fernet=node.fernet,
+        symmetric_key_uuid=node.symmetric_key_uuid,
+        payload=payload,
+        endpoint=tcfg.TASK_TO_CONFIG[Task(contender.task)].endpoint,
+        timeout=tcfg.TASK_TO_CONFIG[Task(contender.task)].timeout,
+    )
+

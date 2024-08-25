@@ -1,6 +1,5 @@
 import json
 from typing import Any, AsyncGenerator
-import uuid
 from fastapi import Depends, HTTPException
 from fastapi.responses import JSONResponse, StreamingResponse
 from redis.asyncio import Redis
@@ -16,7 +15,6 @@ from redis.asyncio.client import PubSub
 
 logger = get_logger(__name__)
 
-router = APIRouter()
 
 
 def _construct_organic_message(payload: dict, job_id: str, task: str) -> dict[str, Any]:
@@ -81,7 +79,6 @@ async def make_organic_query(
         raise HTTPException(status_code=500, detail="Unable to proccess request")
 
 
-@router.post("/chat")
 async def chat(
     chat_request: request_models.ChatRequest,
     config: Config = Depends(get_config),
@@ -92,3 +89,7 @@ async def chat(
         redis_db=config.redis_db, payload=payload.model_dump(), stream=True, task=payload.model
     )
     return StreamingResponse(text_generator, media_type="sse")
+
+
+router = APIRouter()
+router.add_api_route("/v1/chat/completions", chat, methods=["POST"], tags=["Text"])

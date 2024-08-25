@@ -11,9 +11,9 @@ app = server.factory_app(debug=True)
 
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
-    logger.info(f"Request: {request.method} {request.url}")
+    # logger.info(f"Request: {request.method} {request.url}")
     response: Response = await call_next(request)
-    logger.info(f"Response: Status {response.status_code}")
+    # logger.info(f"Response: Status {response.status_code}")
     if response.status_code != 200:
         logger.error(f"Response error content: {response}")
     return response

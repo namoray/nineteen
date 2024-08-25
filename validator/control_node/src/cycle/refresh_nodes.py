@@ -10,8 +10,7 @@ from fiber.chain_interactions.models import Node
 from validator.db.src.sql.nodes import (
     migrate_nodes_to_history,
     insert_nodes,
-    get_last_updated_time_for_nodes,
-    get_nodes
+    get_last_updated_time_for_nodes
 )
 from core.logging import get_logger
 from fiber.chain_interactions import fetch_nodes
@@ -136,5 +135,5 @@ async def perform_handshakes(nodes: list[Node], config: Config) -> None:
     async with await config.psql_db.connection() as connection:
         await insert_symmetric_keys_for_nodes(connection, nodes)
 
-    logger.info(f"✅ Successfully performed handshakes with {len(nodes)} nodes!")
+    logger.info(f"✅ performed handshakes with {len(nodes)} nodes!")
     return nodes

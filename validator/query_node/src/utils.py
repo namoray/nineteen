@@ -35,7 +35,7 @@ async def adjust_contender_from_result(
         await db_functions.potentially_store_result_in_db(
             config.psql_db, query_result, query_result.task, synthetic_query=synthetic_query, payload=payload
         )
-        logger.debug(f"Adjusted contender: {contender.id} for task: {query_result.task}")
+        logger.debug(f"Adjusted node {contender.node_id} for task {query_result.task}.")
 
     elif query_result.status_code == 429:
         await update_contender_429_count(config, contender)
