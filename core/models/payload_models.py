@@ -40,7 +40,7 @@ class TextToImageRequest(BaseModel):
 
 
 class TextToImageResponse(BaseModel):
-    image_b64: str
-    is_nsfw: bool
-    clip_embeddings: list[float]
-    image_hashes: utility_models.ImageHashes
+    image_b64: str | None
+    is_nsfw: bool | None
+    clip_embeddings: list[float] | None
+    image_hashes: utility_models.ImageHashes | None

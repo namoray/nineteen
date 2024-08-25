@@ -36,10 +36,14 @@ async def text_to_image(
     config: Config = Depends(get_config),
 ) -> payload_models.TextToImageResponse:
     image_response = await get_image_from_server(
-        httpx_client=config.httpx_client, body=decrypted_payload, post_endpoint=mcst.TEXT_TO_IMAGE_SERVER_ENDPOINT, timeout=15
+        httpx_client=config.httpx_client, body=decrypted_payload, post_endpoint=mcst.TEXT_TO_IMAGE_SERVER_ENDPOINT, timeout=30
     )
     if image_response is None:
         raise HTTPException(status_code=500, detail="Image generation failed")
+    if image_response.get("image_b64") is None:
+        logger.debug(f"Image response: {image_response}")
+        if image_response.get("is_nsfw") is None:
+            raise HTTPException(status_code=500, detail="Image generation failed")
     return payload_models.TextToImageResponse(**image_response)
 
 

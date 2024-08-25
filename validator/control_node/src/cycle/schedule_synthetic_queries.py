@@ -1,5 +1,6 @@
 import asyncio
 from dataclasses import dataclass
+import random
 import time
 from typing import Dict, List
 import heapq
@@ -55,15 +56,16 @@ async def _initialize_task_schedules(task_groups: Dict[Task, List[Contender]]) -
     current_time = time.time()
     for task, contenders in task_groups.items():
         total_requests = _calculate_task_requests(task, contenders)
-        interval = 3600 / total_requests if total_requests > 0 else 3600
-        schedule = TaskScheduleInfo(
-            task=task,
-            total_requests=total_requests,
-            interval=interval,
-            next_schedule_time=current_time,
-            remaining_requests=total_requests,
-        )
-        heapq.heappush(schedules, schedule)
+        if total_requests > 0:
+            interval = 3600 / (total_requests + 1) 
+            schedule = TaskScheduleInfo(
+                task=task,
+                total_requests=total_requests,
+                interval=interval,
+                next_schedule_time=current_time + random.random() * interval,
+                remaining_requests=total_requests,
+            )
+            heapq.heappush(schedules, schedule)
     return schedules
 
 
@@ -96,9 +98,10 @@ async def schedule_synthetics_until_done(config: Config):
         schedule = heapq.heappop(task_schedules)
         current_time = time.time()
         time_to_sleep = schedule.next_schedule_time - current_time
+        task = schedule.task
 
         if time_to_sleep > 0:
-            logger.info(f"Sleeping for {time_to_sleep:.2f} seconds")
+            logger.info(f"Sleeping for {time_to_sleep:.2f} seconds for the next task {task}")
             sleep_chunk = 2  # Sleep in 2-second chunks to make debugging easier
             while time_to_sleep > 0:
                 await asyncio.sleep(min(sleep_chunk, time_to_sleep))
