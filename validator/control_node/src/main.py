@@ -54,6 +54,7 @@ def load_config() -> Config:
     else:
         substrate_interface = None
     keypair = chain_utils.load_hotkey_keypair(wallet_name=wallet_name, hotkey_name=hotkey_name)
+    capacity_to_score_multiplier = float(os.getenv("CAPACITY_TO_SCORE_MULTIPLIER", 1.0))
 
     return Config(
         substrate_interface=substrate_interface,
@@ -68,6 +69,7 @@ def load_config() -> Config:
         replace_with_docker_localhost=replace_with_docker_localhost,
         replace_with_localhost=localhost,
         refresh_nodes=refresh_nodes,
+        capacity_to_score_multiplier=capacity_to_score_multiplier
     )
 
 

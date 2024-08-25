@@ -1,3 +1,4 @@
+import json
 import httpx
 from pydantic import BaseModel
 from core.logging import get_logger
@@ -21,9 +22,17 @@ async def get_image_from_server(
         return data
 
     except httpx.HTTPStatusError as error:
-        logger.warning(
-            f"Status error when getting an image; response {error.response.status_code} while making request to {endpoint}: {error}"
-        )
+        error_details = {
+            "status_code": error.response.status_code,
+            "request_url": str(error.request.url),
+            "request_method": error.request.method,
+            "request_headers": dict(error.request.headers),
+            "request_body": json.loads(error.request.content.decode()) if error.request.content else None,
+            "response_headers": dict(error.response.headers),
+            "response_body": error.response.text,
+        }
+        logger.error(f"Detailed error information:\n{json.dumps(error_details, indent=2)}")
+        logger.error(f"Status error when getting an image; response {error.response.status_code} while making request to {endpoint}")
         return None
     except httpx.RequestError as error:
         logger.warning(f"Request error getting an image; An error occurred while making request to {endpoint}: {error}")

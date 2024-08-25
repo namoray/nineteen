@@ -1,0 +1,2 @@
+
+TEXT_TO_IMAGE_SERVER_ENDPOINT = "text-to-image"

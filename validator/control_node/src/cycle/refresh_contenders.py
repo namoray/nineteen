@@ -32,9 +32,9 @@ def _get_validator_stake_proportion(nodes: list[Node], hotkey_ss58_address: str)
     raise ValueError(f"Unable to find validator {hotkey_ss58_address} in nodes.")
 
 
-def _get_capacity_to_score(capacity: float) -> float:
+def _get_capacity_to_score(capacity: float, capacity_to_score_multiplier: float) -> float:
     """TODO: Finish"""
-    return capacity * 1
+    return capacity * capacity_to_score_multiplier
 
 
 async def _store_and_migrate_old_contenders(config: Config, contenders: List[Contender]):
@@ -99,7 +99,7 @@ async def _get_contenders_from_nodes(config: Config, nodes: list[Node]) -> List[
 
             task_config = tcfg.TASK_TO_CONFIG[Task(task)]
             capacity = min(max(declared_capacity, 0), task_config.max_capacity) * validator_stake_proportion
-            capacity_to_score = _get_capacity_to_score(capacity)
+            capacity_to_score = _get_capacity_to_score(capacity, config.capacity_to_score_multiplier)
 
             contenders.append(
                 Contender(

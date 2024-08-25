@@ -33,5 +33,6 @@ class Config:
     replace_with_localhost: bool
     replace_with_docker_localhost: bool 
     refresh_nodes: bool
+    capacity_to_score_multiplier: float
     httpx_client: httpx.AsyncClient = httpx.AsyncClient()
     debug: bool = os.getenv("ENV", "prod").lower() == "dev"

@@ -86,8 +86,13 @@ async def generate_text_to_image_synthetic(
         width = 1024
         cfg_scale = 4.0
         steps = 10
+    elif model == Task.dreamshaper_text_to_image.value:
+        height = 1024
+        width = 1024
+        cfg_scale = 3.0
+        steps = 10
     else:
-        raise ValueError(f"Engine {model} not supported")
+        raise ValueError(f"Model {model} not supported")
 
     return payload_models.TextToImageRequest(
         prompt=prompt,

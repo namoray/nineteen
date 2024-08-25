@@ -183,8 +183,6 @@ async def score_task(config: Config, task: Task, max_tasks_to_score: int):
             sleep_time = min(60 * (2 ** (consecutive_errors - 1)), 300)  # Max sleep time of 5 minutes
             await asyncio.sleep(sleep_time)
 
-        logger.debug("payload: {}".format(payload))
-
         await process_and_store_score(
             config=config,
             task=task,

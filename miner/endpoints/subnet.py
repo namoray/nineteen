@@ -1,5 +1,5 @@
 from functools import partial
-from fastapi import Depends
+from fastapi import Depends, HTTPException
 
 from fastapi.responses import StreamingResponse
 from fiber.miner.security.encryption import decrypt_general_payload
@@ -7,6 +7,7 @@ from core.models import payload_models
 from fastapi.routing import APIRouter
 from core.tasks_config import TASK_TO_CONFIG
 from fiber.logging_utils import get_logger
+from miner import constants as mcst
 
 from miner.logic.chat import chat_stream
 from miner.logic.image import get_image_from_server
@@ -35,8 +36,10 @@ async def text_to_image(
     config: Config = Depends(get_config),
 ) -> payload_models.TextToImageResponse:
     image_response = await get_image_from_server(
-        httpx_client=config.httpx_client, body=decrypted_payload, post_endpoint="text-to-image", timeout=15
+        httpx_client=config.httpx_client, body=decrypted_payload, post_endpoint=mcst.TEXT_TO_IMAGE_SERVER_ENDPOINT, timeout=15
     )
+    if image_response is None:
+        raise HTTPException(status_code=500, detail="Image generation failed")
     return payload_models.TextToImageResponse(**image_response)
 
 
@@ -53,4 +56,3 @@ def factory_router() -> APIRouter:
 
 
 # docker run --runtime nvidia --gpus all \ -v ~/.cache/huggingface:/root/.cache/huggingface \ -p 8000:8000 \ --ipc=host \ vllm/vllm-openai:latest \ --model unsloth/Meta-Llama-3.1-8B-Instruct --tokenizer tau-vision/llama-tokenizer-fix
- 
