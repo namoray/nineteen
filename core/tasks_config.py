@@ -198,27 +198,27 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
     #     weight=0.1,
     #     timeout=15,
     # ),
-    Task.dreamshaper_image_to_image: FullTaskConfig(
-        task=Task.dreamshaper_image_to_image,
-        max_capacity=2_000,
-        scoring_config=TaskScoringConfig(
-            task=Task.dreamshaper_image_to_image, mean=0.21, variance=5, overhead=0.5, task_type=TaskType.IMAGE
-        ),
-        orchestrator_server_config=OrchestratorServerConfig(
-            checking_server_needed=ServerType.IMAGE,
-            checking_load_model_config={},
-            checking_function="check_image_result",
-        ),
-        synthetic_generation_config=SyntheticGenerationConfig(
-            func="generate_image_to_image_synthetic",
-            kwargs={"model": Task.dreamshaper_image_to_image.value},
-        ),
-        endpoint="/image-to-image",
-        volume_to_requests_conversion=10,
-        is_stream=False,
-        weight=0.1,
-        timeout=15,
-    ),
+    # Task.dreamshaper_image_to_image: FullTaskConfig(
+    #     task=Task.dreamshaper_image_to_image,
+    #     max_capacity=2_000,
+    #     scoring_config=TaskScoringConfig(
+    #         task=Task.dreamshaper_image_to_image, mean=0.21, variance=5, overhead=0.5, task_type=TaskType.IMAGE
+    #     ),
+    #     orchestrator_server_config=OrchestratorServerConfig(
+    #         checking_server_needed=ServerType.IMAGE,
+    #         checking_load_model_config={},
+    #         checking_function="check_image_result",
+    #     ),
+    #     synthetic_generation_config=SyntheticGenerationConfig(
+    #         func="generate_image_to_image_synthetic",
+    #         kwargs={"model": Task.dreamshaper_image_to_image.value},
+    #     ),
+    #     endpoint="/image-to-image",
+    #     volume_to_requests_conversion=10,
+    #     is_stream=False,
+    #     weight=0.1,
+    #     timeout=15,
+    # ),
     # Task.proteus_image_to_image: FullTaskConfig(
     #     task=Task.proteus_image_to_image,
     #     max_capacity=2_000,
@@ -240,37 +240,46 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
     #     weight=0.1,
     #     timeout=15,
     # ),
-    # Task.jugger_inpainting: FullTaskConfig(
-    #     task=Task.jugger_inpainting,
-    #     max_capacity=float(capacity=4_000,
-    #     scoring_config=TaskScoringConfig(
-    #         task=Task.jugger_inpainting, mean=0.23, variance=2, overhead=1.2, task_type=TaskType.IMAGE
-    #     ),
-    #     orchestrator_server_config=OrchestratorServerConfig(
-    #         checking_server_needed=ServerType.IMAGE,
-    #         checking_load_model_config={},
-    #         checking_function="check_image_result",
-    #     ),
-    #     synthetic_generation_config=SyntheticGenerationConfig(func="generate_inpaint_synthetic", kwargs={}),
-    #     endpoint="Inpaint",
-    #     volume_to_requests_conversion=20,
-    #     is_stream=False,
-    # ),
-    # Task.avatar: FullTaskConfig(
-    #     task=Task.avatar,
-    #     max_capacity=float(capacity=1_120,
-    #     scoring_config=TaskScoringConfig(task=Task.avatar, mean=1, variance=20, overhead=5.0, task_type=TaskType.IMAGE),
-    #     orchestrator_server_config=OrchestratorServerConfig(
-    #         checking_server_needed=ServerType.IMAGE,
-    #         checking_load_model_config={},
-    #         checking_function="check_image_result",
-    #     ),
-    #     synthetic_generation_config=SyntheticGenerationConfig(
-    #         func="generate_avatar_synthetic",
-    #         kwargs={},
-    #     ),
-    #     endpoint="Avatar",
-    #     volume_to_requests_conversion=10,
-    #     is_stream=False,
-    # ),
+    Task.avatar: FullTaskConfig(
+        task=Task.avatar,
+        max_capacity=2_000,
+        scoring_config=TaskScoringConfig(
+            task=Task.avatar, mean=0.21, variance=5, overhead=0.5, task_type=TaskType.IMAGE
+        ),
+        orchestrator_server_config=OrchestratorServerConfig(
+            checking_server_needed=ServerType.IMAGE,
+            checking_load_model_config={},
+            checking_function="check_image_result",
+        ),
+        synthetic_generation_config=SyntheticGenerationConfig(
+            func="generate_avatar_synthetic",
+            kwargs={},
+        ),
+        endpoint="/avatar",
+        volume_to_requests_conversion=10,
+        is_stream=False,
+        weight=0.1,
+        timeout=15,
+    ),
+    Task.inpaint: FullTaskConfig(
+        task=Task.inpaint,
+        max_capacity=1,
+        scoring_config=TaskScoringConfig(
+            task=Task.inpaint, mean=0.21, variance=5, overhead=0.5, task_type=TaskType.IMAGE
+        ),
+        orchestrator_server_config=OrchestratorServerConfig(
+            checking_server_needed=ServerType.IMAGE,
+            checking_load_model_config={},
+            checking_function="check_image_result",
+        ),
+        synthetic_generation_config=SyntheticGenerationConfig(
+            func="generate_inpaint_synthetic",
+            kwargs={},
+        ),
+        endpoint="/inpaint",
+        volume_to_requests_conversion=10,
+        is_stream=False,
+        weight=0.1,
+        timeout=15,
+    ),
 }

@@ -9,4 +9,4 @@ tests
 - - Make the weight setting make sense
 - - look at my notes on phone
 - - make so you can access the subnet with tao & tao only
-- - - scoring table for historic stuff
+- - scoring table for historic stuff

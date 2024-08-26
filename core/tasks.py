@@ -10,4 +10,6 @@ class Task(Enum):
     dreamshaper_image_to_image = "dreamshaper-image-to-image"
     flux_schnell_text_to_image = "flux-schnell-text-to-image"
     flux_schnell_image_to_image = "flux-schnell-image-to-image"
+    inpaint = "inpaint"
+    avatar = "avatar"
     

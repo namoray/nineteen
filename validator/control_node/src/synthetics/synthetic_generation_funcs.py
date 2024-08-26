@@ -146,7 +146,6 @@ async def generate_image_to_image_synthetic(
     init_image = await sutils.get_random_image_b64(cache)
 
     return payload_models.ImageToImageRequest(
-        init_image=init_image,
         prompt=prompt,
         negative_prompt=negative_prompt,
         seed=seed,
@@ -156,48 +155,51 @@ async def generate_image_to_image_synthetic(
         height=height,
         image_strength=image_strength,
         model=model,
+        init_image=init_image,
     )
 
 
-# async def generate_inpaint_synthetic() -> base_models.InpaintIncoming:
-#     cache = image_cache_factory()
-#     positive_text = await _get_markov_sentence(max_words=20)
-#     text_prompts = [dc.TextPrompt(text=positive_text, weight=1.0)]
-#     seed = random.randint(1, scst.MAX_SEED)
+async def generate_inpaint_synthetic() -> payload_models.InpaintRequest:
+    cache = image_cache_factory()
+    prompt = await _get_markov_sentence(max_words=20)
+    negative_prompt = await _get_markov_sentence(max_words=20)
+    seed = random.randint(1, scst.MAX_SEED)
 
-#     init_image = await sutils.get_random_image_b64(cache)
-#     mask_image = sutils.generate_mask_with_circle(init_image)
+    init_image = await sutils.get_random_image_b64(cache)
+    mask_image = sutils.generate_mask_with_circle(init_image)
 
-#     return base_models.InpaintIncoming(
-#         text_prompts=text_prompts,
-#         init_image=init_image,
-#         ipadapter_strength=0.5,
-#         control_strength=0.5,
-#         seed=seed,
-#         mask_image=mask_image,
-#         height=1016,
-#         width=1016,
-#         steps=8,
-#     )
+    return payload_models.InpaintRequest(
+        prompt=prompt,
+        negative_prompt=negative_prompt,
+        ipadapter_strength=0.5,
+        control_strength=0.5,
+        seed=seed,
+        height=1016,
+        width=1016,
+        steps=8,
+        init_image=init_image,
+        mask_image=mask_image,
+    )
 
 
-# async def generate_avatar_synthetic() -> base_models.AvatarIncoming:
-#     positive_text = await _get_markov_sentence(max_words=20)
-#     text_prompts = [dc.TextPrompt(text=positive_text, weight=1.0)]
-#     seed = random.randint(1, scst.MAX_SEED)
+async def generate_avatar_synthetic() -> payload_models.AvatarRequest:
+    prompt = await _get_markov_sentence(max_words=20)
+    negative_prompt = await _get_markov_sentence(max_words=20)
+    seed = random.randint(1, scst.MAX_SEED)
 
-#     init_image = sutils.get_randomly_edited_face_picture_for_avatar()
+    init_image = sutils.get_randomly_edited_face_picture_for_avatar()
 
-#     return base_models.AvatarIncoming(
-#         init_image=init_image,
-#         text_prompts=text_prompts,
-#         ipadapter_strength=0.5,
-#         control_strength=0.5,
-#         height=1280,
-#         width=1280,
-#         seed=seed,
-#         steps=8,
-#     )
+    return payload_models.AvatarRequest(
+        prompt=prompt,
+        negative_prompt=negative_prompt,
+        ipadapter_strength=0.5,
+        control_strength=0.5,
+        height=1280,
+        width=1280,
+        seed=seed,
+        steps=8,
+        init_image=init_image,
+    )
 
 
 async def generate_synthetic_data(task: Task) -> None:

@@ -1,6 +1,8 @@
 from fastapi import Request, Response
 from fiber.miner import server
-from miner.endpoints.subnet import factory_router as subnet_factory_router
+from miner.endpoints.text import factory_router as text_factory_router
+from miner.endpoints.image import factory_router as image_factory_router
+from miner.endpoints.generic import factory_router as generic_factory_router
 from fiber.logging_utils import get_logger
 from starlette.middleware.base import _StreamingResponse
 logger = get_logger(__name__)
@@ -33,8 +35,12 @@ async def exception_handler(request: Request, exc: Exception):
     return {"detail": "Internal Server Error"}
 
 
-subnet_router = subnet_factory_router()
-app.include_router(subnet_router)
+text_router = text_factory_router()
+image_router = image_factory_router()
+generic_router = generic_factory_router()
+app.include_router(text_router)
+app.include_router(image_router)
+app.include_router(generic_router)
 
 if __name__ == "__main__":
     import uvicorn
