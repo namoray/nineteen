@@ -1,5 +1,6 @@
 import asyncio
 from dataclasses import dataclass
+import json
 import random
 import time
 from typing import Dict, List
@@ -12,6 +13,8 @@ from validator.models import Contender
 from core.tasks import Task
 from core import tasks_config as tcfg
 from validator.utils import contender_utils as putils
+from validator.utils import generic_constants as gcst
+from validator.utils import redis_constants as rcst
 from core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -50,6 +53,10 @@ def _calculate_task_requests(task: Task, contenders: List[Contender]) -> int:
     total_capacity = sum(c.capacity_to_score for c in contenders)
     return int(total_capacity / config.volume_to_requests_conversion)
 
+def _get_initial_schedule_time(current_time: float, interval: float) -> float:
+    # TODO: Remove for prod
+    return current_time
+    return current_time + random.random() * interval
 
 async def _initialize_task_schedules(task_groups: Dict[Task, List[Contender]]) -> List[TaskScheduleInfo]:
     schedules = []
@@ -84,10 +91,27 @@ async def _schedule_synthetic_query(redis_db: Redis, task: Task, max_len: int):
     await putils.add_synthetic_query_to_queue(redis_db, task, max_len)
 
 
+
+async def _clear_old_synthetic_queries(redis_db: Redis):
+    all_items = await redis_db.lrange(rcst.QUERY_QUEUE_KEY, 0, -1)
+    
+    non_synthetic_items = [
+        item for item in all_items 
+        if json.loads(item).get("query_type") != gcst.SYNTHETIC
+    ]
+    await redis_db.delete(rcst.QUERY_QUEUE_KEY)
+
+    if non_synthetic_items:
+        await redis_db.rpush(rcst.QUERY_QUEUE_KEY, *non_synthetic_items)
+    
+    logger.info(f"Cleared {len(all_items) - len(non_synthetic_items)} synthetic queries from the queue")
+
+
 async def schedule_synthetics_until_done(config: Config):
     contenders = await _load_contenders(config.psql_db)
     task_groups = await _group_contenders_by_task(contenders)
     task_schedules = await _initialize_task_schedules(task_groups)
+    await _clear_old_synthetic_queries(config.redis_db)
 
     logger.debug(f"Contenders: {contenders}, schedules: {task_schedules}, ")
 

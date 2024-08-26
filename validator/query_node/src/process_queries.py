@@ -1,5 +1,5 @@
 from redis.asyncio import Redis
-from core.models.payload_models import TextToImageResponse
+from core.models.payload_models import ImageResponse
 from validator.models import Contender
 from validator.query_node.src.query_config import Config
 from core.tasks import Task
@@ -62,7 +62,7 @@ async def _handle_nonstream_query(
             contender=contender,
             node=node,
             payload=message.query_payload,
-            response_model=TextToImageResponse,
+            response_model=ImageResponse,
             synthetic_query=message.query_type == gcst.SYNTHETIC,
         )
 

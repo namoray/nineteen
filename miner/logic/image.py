@@ -15,7 +15,7 @@ async def get_image_from_server(
     endpoint = IMAGE_WORKER_ADDRESS.rstrip("/") + "/" + post_endpoint
 
     try:
-        logger.debug(f"Sending request to {endpoint} with body {body.model_dump()}")
+        logger.debug(f"Sending request to {endpoint}")
         response = await httpx_client.post(endpoint, json=body.model_dump(), timeout=timeout)
         response.raise_for_status()
 

@@ -23,7 +23,6 @@ async def adjust_contender_from_result(
     """
     Update the db with consumed volume
     Store the task result in the db for checking (potentially)
-
     """
 
     if query_result.status_code == 200 and query_result.success:

@@ -15,7 +15,7 @@ import datasets
 import diskcache
 from functools import lru_cache
 from core.logging import get_logger
-
+from validator.utils import synthetic_utils as sutils
 logger = get_logger(__name__)
 
 
@@ -79,6 +79,7 @@ async def generate_text_to_image_synthetic(
 ) -> payload_models.TextToImageRequest:
     prompt = await _get_markov_sentence(max_words=20)
     negative_prompt = await _get_markov_sentence(max_words=20)
+    # TODO: Fix to be our allowed seeds
     seed = random.randint(1, scst.MAX_SEED)
 
     if model == Task.proteus_text_to_image.value:
@@ -111,49 +112,51 @@ async def generate_text_to_image_synthetic(
     )
 
 
-# async def generate_image_to_image_synthetic(
-#     model: str,
-# ) -> base_models.ImageToImageIncoming:
-#     cache = image_cache_factory()
+async def generate_image_to_image_synthetic(
+    model: str,
+) -> payload_models.ImageToImageRequest:
+    cache = image_cache_factory()
 
-#     positive_text = await _get_markov_sentence(max_words=20)
-#     text_prompts = [dc.TextPrompt(text=positive_text, weight=1.0)]
-#     seed = random.randint(1, scst.MAX_SEED)
+    prompt = await _get_markov_sentence(max_words=20)
+    negative_prompt = await _get_markov_sentence(max_words=20)
+    # TODO: Fix to be our allowed seeds
+    seed = random.randint(1, scst.MAX_SEED)
 
-#     if model == Task.PLAYGROUND.value:
-#         height = 1024
-#         width = 1024
-#         cfg_scale = 4.0
-#         steps = 30
-#         image_strength = 0.5
-#     elif model == Task.PROTEUS.value:
-#         height = 1280
-#         width = 1280
-#         cfg_scale = 2.0
-#         steps = 8
-#         image_strength = 0.5
-#     elif model == Task.DREAMSHAPER.value:
-#         height = 1024
-#         width = 1024
-#         cfg_scale = 3.5
-#         steps = 8
-#         image_strength = 0.5
-#     else:
-#         raise ValueError(f"Engine {model} not supported")
+    if model == Task.flux_schnell_image_to_image.value:
+        height = 1024
+        width = 1024
+        cfg_scale = 3.0
+        steps = 10
+        image_strength = 0.5
+    elif model == Task.dreamshaper_image_to_image.value:
+        height = 1024
+        width = 1024
+        cfg_scale = 2.0
+        steps = 10
+        image_strength = 0.5
+    elif model == Task.proteus_image_to_image.value:
+        height = 1024
+        width = 1024
+        cfg_scale = 2.0
+        steps = 10
+        image_strength = 0.5
+    else:
+        raise ValueError(f"Engine {model} not supported")
 
-#     init_image = await sutils.get_random_image_b64(cache)
+    init_image = await sutils.get_random_image_b64(cache)
 
-#     return base_models.ImageToImageIncoming(
-#         init_image=init_image,
-#         image_strength=image_strength,
-#         text_prompts=text_prompts,
-#         seed=seed,
-#         model=model,
-#         height=height,
-#         width=width,
-#         cfg_scale=cfg_scale,
-#         steps=steps,
-#     )
+    return payload_models.ImageToImageRequest(
+        init_image=init_image,
+        prompt=prompt,
+        negative_prompt=negative_prompt,
+        seed=seed,
+        steps=steps,
+        cfg_scale=cfg_scale,
+        width=width,
+        height=height,
+        image_strength=image_strength,
+        model=model,
+    )
 
 
 # async def generate_inpaint_synthetic() -> base_models.InpaintIncoming:

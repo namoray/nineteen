@@ -34,7 +34,7 @@ async def text_to_image(
         partial(decrypt_general_payload, payload_models.TextToImageRequest)
     ),
     config: Config = Depends(get_config),
-) -> payload_models.TextToImageResponse:
+) -> payload_models.ImageResponse:
     image_response = await get_image_from_server(
         httpx_client=config.httpx_client, body=decrypted_payload, post_endpoint=mcst.TEXT_TO_IMAGE_SERVER_ENDPOINT, timeout=30
     )
@@ -44,8 +44,24 @@ async def text_to_image(
         logger.debug(f"Image response: {image_response}")
         if image_response.get("is_nsfw") is None:
             raise HTTPException(status_code=500, detail="Image generation failed")
-    return payload_models.TextToImageResponse(**image_response)
+    return payload_models.ImageResponse(**image_response)
 
+async def image_to_image(
+    decrypted_payload: payload_models.ImageToImageRequest = Depends(
+        partial(decrypt_general_payload, payload_models.ImageToImageRequest)
+    ),
+    config: Config = Depends(get_config),
+) -> payload_models.ImageResponse:
+    image_response = await get_image_from_server(
+        httpx_client=config.httpx_client, body=decrypted_payload, post_endpoint=mcst.IMAGE_TO_IMAGE_SERVER_ENDPOINT, timeout=30
+    )
+    if image_response is None:
+        raise HTTPException(status_code=500, detail="Image generation failed")
+    if image_response.get("image_b64") is None:
+        logger.debug(f"Image response: {image_response}")
+        if image_response.get("is_nsfw") is None:
+            raise HTTPException(status_code=500, detail="Image generation failed")
+    return payload_models.ImageResponse(**image_response)
 
 async def capacity() -> dict[str, float]:
     return {task: config.max_capacity for task, config in TASK_TO_CONFIG.items()}
@@ -56,6 +72,7 @@ def factory_router() -> APIRouter:
     router.add_api_route("/capacity", capacity, tags=["Subnet"], methods=["GET"])
     router.add_api_route("/chat/completions", chat_completions, tags=["Subnet"], methods=["POST"])
     router.add_api_route("/text-to-image", text_to_image, tags=["Subnet"], methods=["POST"])
+    router.add_api_route("/image-to-image", image_to_image, tags=["Subnet"], methods=["POST"])
     return router
 
 
