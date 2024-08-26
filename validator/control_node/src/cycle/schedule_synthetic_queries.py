@@ -96,8 +96,7 @@ async def schedule_synthetics_until_done(config: Config):
 
     while task_schedules:
         schedule = heapq.heappop(task_schedules)
-        current_time = time.time()
-        time_to_sleep = schedule.next_schedule_time - current_time
+        time_to_sleep = schedule.next_schedule_time - time.time()
         task = schedule.task
 
         if time_to_sleep > 0:
@@ -119,7 +118,7 @@ async def schedule_synthetics_until_done(config: Config):
 
             remaining_requests = latest_remaining_requests - 1
             await _update_redis_remaining_requests(config.redis_db, schedule.task, remaining_requests)
-            schedule.next_schedule_time = current_time + schedule.interval
+            schedule.next_schedule_time = time.time() + schedule.interval
             schedule.remaining_requests = remaining_requests
 
         if remaining_requests > 0:
