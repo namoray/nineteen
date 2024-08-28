@@ -49,7 +49,9 @@ async def _group_contenders_by_task(contenders: List[Contender]) -> Dict[Task, L
 
 
 def _calculate_task_requests(task: Task, contenders: List[Contender]) -> int:
-    config = tcfg.TASK_TO_CONFIG[task]
+    config = tcfg.get_task_config(task)
+    if config is None:
+        return 0
     total_capacity = sum(c.capacity_to_score for c in contenders)
     return int(total_capacity / config.volume_to_requests_conversion)
 

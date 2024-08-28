@@ -33,8 +33,8 @@ async def _process_image_request(
 
 
 async def text_to_image(
-    decrypted_payload: payload_models.TextToImageRequest = Depends(
-        partial(decrypt_general_payload, payload_models.TextToImageRequest)
+    decrypted_payload: payload_models.TextToImagePayload = Depends(
+        partial(decrypt_general_payload, payload_models.TextToImagePayload)
     ),
     config: Config = Depends(get_config),
 ) -> payload_models.ImageResponse:
@@ -42,8 +42,8 @@ async def text_to_image(
 
 
 async def image_to_image(
-    decrypted_payload: payload_models.ImageToImageRequest = Depends(
-        partial(decrypt_general_payload, payload_models.ImageToImageRequest)
+    decrypted_payload: payload_models.ImageToImagePayload = Depends(
+        partial(decrypt_general_payload, payload_models.ImageToImagePayload)
     ),
     config: Config = Depends(get_config),
 ) -> payload_models.ImageResponse:
@@ -51,8 +51,8 @@ async def image_to_image(
 
 
 async def inpaint(
-    decrypted_payload: payload_models.InpaintRequest = Depends(
-        partial(decrypt_general_payload, payload_models.InpaintRequest)
+    decrypted_payload: payload_models.InpaintPayload = Depends(
+        partial(decrypt_general_payload, payload_models.InpaintPayload)
     ),
     config: Config = Depends(get_config),
 ) -> payload_models.ImageResponse:
@@ -60,8 +60,8 @@ async def inpaint(
 
 
 async def avatar(
-    decrypted_payload: payload_models.AvatarRequest = Depends(
-        partial(decrypt_general_payload, payload_models.AvatarRequest)
+    decrypted_payload: payload_models.AvatarPayload = Depends(
+        partial(decrypt_general_payload, payload_models.AvatarPayload)
     ),
     config: Config = Depends(get_config),
 ) -> payload_models.ImageResponse:

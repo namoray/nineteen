@@ -59,8 +59,10 @@ def _calculate_work_clip(number_of_images: int) -> float:
 
 
 def calculate_speed_modifier(task: Task, result: Dict[str, Any], payload: dict) -> float:
-
-    config = tcfg.TASK_TO_CONFIG[task].scoring_config
+    task_config = tcfg.get_task_config(task)
+    if task_config is None:
+        return 0
+    config = task_config.scoring_config
 
     response_time = result.get("response_time")
 
@@ -94,7 +96,10 @@ def calculate_work(
     steps: float | None = None,
 ) -> float:
     """Gets volume for the task that was executed"""
-    config = tcfg.TASK_TO_CONFIG[task].scoring_config
+    task_config = tcfg.get_task_config(task)
+    if task_config is None:
+        return 0
+    config = task_config.scoring_config
 
     raw_formatted_response = result.get("formatted_response", {})
 

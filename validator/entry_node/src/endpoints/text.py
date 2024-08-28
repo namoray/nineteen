@@ -1,7 +1,8 @@
 import json
 from typing import Any, AsyncGenerator
+import uuid
 from fastapi import Depends, HTTPException
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import StreamingResponse
 from redis.asyncio import Redis
 from core.logging import get_logger
 from fastapi.routing import APIRouter
@@ -16,7 +17,6 @@ from redis.asyncio.client import PubSub
 logger = get_logger(__name__)
 
 
-
 def _construct_organic_message(payload: dict, job_id: str, task: str) -> dict[str, Any]:
     return json.dumps({"query_type": gcst.ORGANIC, "query_payload": payload, "task": task, "job_id": job_id})
 
@@ -29,7 +29,6 @@ async def _wait_for_acknowledgement(pubsub: PubSub, job_id: str) -> bool:
             break
     await pubsub.unsubscribe(f"{gcst.ACKNLOWEDGED}:{job_id}")
     return True
-    
 
 
 async def _stream_results(pubsub: PubSub, job_id: str) -> AsyncGenerator[str, None]:
@@ -37,21 +36,19 @@ async def _stream_results(pubsub: PubSub, job_id: str) -> AsyncGenerator[str, No
     async for message in pubsub.listen():
         logger.debug(f"GOT MESSAGE: {message}")
         channel = message["channel"].decode()
-        if channel == f"{rcst.JOB_RESULTS}:{job_id}" and message['type'] == 'message':
-            yield message['data'].decode()
-            if "[DONE]" in message['data'].decode():
+        if channel == f"{rcst.JOB_RESULTS}:{job_id}" and message["type"] == "message":
+            yield message["data"].decode()
+            if "[DONE]" in message["data"].decode():
                 break
     await pubsub.unsubscribe(f"{rcst.JOB_RESULTS}:{job_id}")
 
 
-
-async def make_organic_query(
+async def make_stream_organic_query(
     redis_db: Redis,
     payload: dict[str, Any],
-    stream: bool,
     task: str,
 ) -> AsyncGenerator[str, None]:
-    job_id = "TEST"
+    job_id = uuid.uuid4().hex
     organic_message = _construct_organic_message(payload=payload, job_id=job_id, task=task)
 
     await redis_db.lpush(rcst.QUERY_QUEUE_KEY, organic_message)
@@ -63,15 +60,8 @@ async def make_organic_query(
     try:
         await asyncio.wait_for(_wait_for_acknowledgement(pubsub, job_id), timeout=1)
 
-        if stream:
-            return _stream_results(pubsub, job_id)
-        else:
-            logger.error("No stream implemented yet")
-            return
-            async for result in _stream_results(pubsub, job_id):
-                result_dict = json.loads(result)
-                if result_dict.get("status") == "DONE":
-                    return JSONResponse(content=result_dict)
+        return _stream_results(pubsub, job_id)
+
     except asyncio.TimeoutError:
         logger.error(
             f"No confirmation received for job {job_id} within timeout period. Task: {task}, model: {payload['model']}"
@@ -85,8 +75,8 @@ async def chat(
 ) -> StreamingResponse:
     payload = request_models.chat_to_payload(chat_request)
 
-    text_generator = await make_organic_query(
-        redis_db=config.redis_db, payload=payload.model_dump(), stream=True, task=payload.model
+    text_generator = await make_stream_organic_query(
+        redis_db=config.redis_db, payload=payload.model_dump(), task=payload.model
     )
     return StreamingResponse(text_generator, media_type="sse")
 

@@ -13,3 +13,4 @@ class Task(Enum):
     inpaint = "inpaint"
     avatar = "avatar"
     
+unique_tasks = set(i.value for i in Task)

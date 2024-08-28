@@ -2,6 +2,7 @@ import os
 
 from dotenv import load_dotenv
 from typing import TypeVar
+import httpx
 from pydantic import BaseModel
 from redis.asyncio import Redis
 from aiocache import cached
@@ -18,6 +19,8 @@ from dataclasses import dataclass
 class Config:
     redis_db: Redis
     psql_db: PSQLDB
+    prod: bool 
+    httpx_client: httpx.AsyncClient
 
 
 @cached(ttl=None)
@@ -33,7 +36,11 @@ async def factory_config() -> Config:
     await psql_db.connect()
     redis_db = Redis(host=redis_host)
 
+    prod = bool(os.getenv("ENV", "prod").lower() == "prod")
+
     return Config(
         psql_db=psql_db,
         redis_db=redis_db,
+        prod=prod,
+        httpx_client=httpx.AsyncClient(),
     )

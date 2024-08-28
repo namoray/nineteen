@@ -1,4 +1,4 @@
-line-length = 120
+line-length = 180
 
 [lint.isort]
 lines-after-imports = 2

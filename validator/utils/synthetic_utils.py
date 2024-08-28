@@ -189,8 +189,10 @@ async def fetch_synthetic_data_for_task(redis_db: Redis, task: Task) -> dict[str
     )
     if synthetic_data is None:
         raise ValueError(f"No synthetic data found for task: {task}")
-
-    task_type = tasks_config.TASK_TO_CONFIG[task].scoring_config.task_type
+    task_config = tasks_config.get_task_config(task)
+    if task_config is None:
+        raise ValueError(f"No task config found for task: {task}")
+    task_type = task_config.scoring_config.task_type
     if task_type == tasks_config.TaskType.IMAGE:
         synthetic_data[scst.SEED] = random.randint(1, 1_000_000_000)
         synthetic_data[scst.TEXT_PROMPTS] = _get_random_text_prompt()

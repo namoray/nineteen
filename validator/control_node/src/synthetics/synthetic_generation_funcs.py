@@ -1,6 +1,7 @@
 import asyncio
 import random
 import sys
+from typing import Any
 
 from core.models import utility_models
 from validator.utils import (
@@ -76,7 +77,7 @@ async def generate_chat_synthetic(model: str) -> payload_models.ChatPayload:
 
 async def generate_text_to_image_synthetic(
     model: str,
-) -> payload_models.TextToImageRequest:
+) -> payload_models.TextToImagePayload:
     prompt = await _get_markov_sentence(max_words=20)
     negative_prompt = await _get_markov_sentence(max_words=20)
     # TODO: Fix to be our allowed seeds
@@ -100,7 +101,7 @@ async def generate_text_to_image_synthetic(
     else:
         raise ValueError(f"Model {model} not supported")
 
-    return payload_models.TextToImageRequest(
+    return payload_models.TextToImagePayload(
         prompt=prompt,
         negative_prompt=negative_prompt,
         seed=seed,
@@ -114,7 +115,7 @@ async def generate_text_to_image_synthetic(
 
 async def generate_image_to_image_synthetic(
     model: str,
-) -> payload_models.ImageToImageRequest:
+) -> payload_models.ImageToImagePayload:
     cache = image_cache_factory()
 
     prompt = await _get_markov_sentence(max_words=20)
@@ -145,7 +146,7 @@ async def generate_image_to_image_synthetic(
 
     init_image = await sutils.get_random_image_b64(cache)
 
-    return payload_models.ImageToImageRequest(
+    return payload_models.ImageToImagePayload(
         prompt=prompt,
         negative_prompt=negative_prompt,
         seed=seed,
@@ -159,7 +160,7 @@ async def generate_image_to_image_synthetic(
     )
 
 
-async def generate_inpaint_synthetic() -> payload_models.InpaintRequest:
+async def generate_inpaint_synthetic() -> payload_models.InpaintPayload:
     cache = image_cache_factory()
     prompt = await _get_markov_sentence(max_words=20)
     negative_prompt = await _get_markov_sentence(max_words=20)
@@ -168,7 +169,7 @@ async def generate_inpaint_synthetic() -> payload_models.InpaintRequest:
     init_image = await sutils.get_random_image_b64(cache)
     mask_image = sutils.generate_mask_with_circle(init_image)
 
-    return payload_models.InpaintRequest(
+    return payload_models.InpaintPayload(
         prompt=prompt,
         negative_prompt=negative_prompt,
         ipadapter_strength=0.5,
@@ -182,14 +183,14 @@ async def generate_inpaint_synthetic() -> payload_models.InpaintRequest:
     )
 
 
-async def generate_avatar_synthetic() -> payload_models.AvatarRequest:
+async def generate_avatar_synthetic() -> payload_models.AvatarPayload:
     prompt = await _get_markov_sentence(max_words=20)
     negative_prompt = await _get_markov_sentence(max_words=20)
     seed = random.randint(1, scst.MAX_SEED)
 
     init_image = sutils.get_randomly_edited_face_picture_for_avatar()
 
-    return payload_models.AvatarRequest(
+    return payload_models.AvatarPayload(
         prompt=prompt,
         negative_prompt=negative_prompt,
         ipadapter_strength=0.5,
@@ -202,12 +203,14 @@ async def generate_avatar_synthetic() -> payload_models.AvatarRequest:
     )
 
 
-async def generate_synthetic_data(task: Task) -> None:
+async def generate_synthetic_data(task: Task) -> Any:
     """
     Gets task config and dynamically calls the synthetic generation function
     Not super clean, but it works
     """
-    task_config = tasks_config.TASK_TO_CONFIG[task]
+    task_config = tasks_config.get_task_config(task)
+    if task_config is None:
+        return
     generative_function_name = task_config.synthetic_generation_config.func
 
     if generative_function_name not in sys.modules[__name__].__dict__:

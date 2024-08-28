@@ -12,7 +12,8 @@ from validator.models import Contender
 from fiber.validator import client
 from fiber.chain_interactions.models import Node
 from core import tasks_config as tcfg
-from validator.utils import redis_constants as rcst
+from validator.utils import generic_utils, redis_constants as rcst
+from validator.utils import generic_constants as gcst
 from fiber.logging_utils import get_logger
 
 logger = get_logger(__name__)
@@ -60,11 +61,23 @@ def _get_formatted_payload(content: str, first_message: bool, add_finish_reason:
     return dumped_payload
 
 
-async def _handle_event(config: Config, event: str, synthetic_query: bool, job_id: str) -> None:
+async def _handle_event(
+    config: Config,
+    content: str | None,
+    synthetic_query: bool,
+    job_id: str,
+    status_code: int,
+    error_message: str | None = None,
+) -> None:
     # TODO: Uncomment
     if synthetic_query:
         return
-    await config.redis_db.publish(f"{rcst.JOB_RESULTS}:{job_id}", event)
+    if content is not None:
+        if isinstance(content, dict):
+            content = json.dumps(content)
+        await config.redis_db.publish(f"{rcst.JOB_RESULTS}:{job_id}", generic_utils.get_success_event(content=content, job_id=job_id, status_code=status_code))
+    else:
+        await config.redis_db.publish(f"{rcst.JOB_RESULTS}:{job_id}", generic_utils.get_error_event(job_id=job_id, error_message=error_message, status_code=status_code))
 
 
 async def async_chain(first_chunk, async_gen):
@@ -119,7 +132,7 @@ async def consume_generator(
                 try:
                     loaded_jsons = _load_sse_jsons(text)
                     if isinstance(loaded_jsons, dict):
-                        status_code = loaded_jsons.get("status_code")
+                        status_code = loaded_jsons.get(gcst.STATUS_CODE)
                         break
 
                 except (IndexError, json.JSONDecodeError) as e:

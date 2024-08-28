@@ -108,7 +108,7 @@ async def calculate_scores_for_settings_weights(
 ) -> tuple[list[int], list[float]]:
     total_hotkey_scores: dict[str, float] = {}
 
-    for task in Task:
+    for task in tcfg.TASK_TO_CONFIG:
         task_weight = tcfg.TASK_TO_CONFIG[task].weight
         logger.debug(f"Processing task: {task}, weight: {task_weight}")
 
