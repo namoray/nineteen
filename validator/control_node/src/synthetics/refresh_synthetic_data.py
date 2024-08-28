@@ -37,7 +37,8 @@ async def update_tasks_synthetic_data(redis_db: Redis, slow_sync: bool = True, t
         synthetic_data_version = await sutils.get_synthetic_data_version(redis_db, task)
         if synthetic_data_version is None or now - synthetic_data_version > scst.SYNTHETIC_DATA_EXPIRATION_TIME:
             new_synthetic_data = await synthetic_generation_funcs.generate_synthetic_data(task)
-            await _store_synthetic_data_in_redis(redis_db, task, new_synthetic_data)
+            if new_synthetic_data is not None:
+                await _store_synthetic_data_in_redis(redis_db, task, new_synthetic_data)
 
     else:
         for task in tcfg.TASK_TO_CONFIG:
@@ -45,7 +46,8 @@ async def update_tasks_synthetic_data(redis_db: Redis, slow_sync: bool = True, t
             synthetic_data_version = await sutils.get_synthetic_data_version(redis_db, task)
             if synthetic_data_version is None or now - synthetic_data_version > scst.SYNTHETIC_DATA_EXPIRATION_TIME:
                 new_synthetic_data = await synthetic_generation_funcs.generate_synthetic_data(task)
-                await _store_synthetic_data_in_redis(redis_db, task, new_synthetic_data)
+                if new_synthetic_data is not None:
+                    await _store_synthetic_data_in_redis(redis_db, task, new_synthetic_data)
             if slow_sync:
                 await asyncio.sleep(0.1)
 

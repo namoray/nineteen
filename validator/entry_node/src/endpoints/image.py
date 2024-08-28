@@ -25,11 +25,11 @@ def _construct_organic_message(payload: dict, job_id: str, task: str) -> dict[st
     return json.dumps({"query_type": gcst.ORGANIC, "query_payload": payload, "task": task, "job_id": job_id})
 
 
-async def _wait_for_acknowledgement(pubsub: PubSub, job_id: str) -> bool:
+async def _wait_for_acknowledgement(pubsub: PubSub, job_id: str, task: str) -> bool:
     async for message in pubsub.listen():
         channel = message["channel"].decode()
         if channel == f"{gcst.ACKNLOWEDGED}:{job_id}":
-            logger.info(f"Job {job_id} confirmed by worker")
+            logger.info(f"Job {job_id} for task {task} confirmed by worker")
             break
     await pubsub.unsubscribe(f"{gcst.ACKNLOWEDGED}:{job_id}")
     return True
@@ -64,14 +64,14 @@ async def make_non_stream_organic_query(redis_db: Redis, payload: dict[str, Any]
     await pubsub.subscribe(f"{gcst.ACKNLOWEDGED}:{job_id}")
 
     try:
-        await asyncio.wait_for(_wait_for_acknowledgement(pubsub, job_id), timeout=1)
+        await asyncio.wait_for(_wait_for_acknowledgement(pubsub, job_id, task), timeout=1)
 
         await pubsub.subscribe(f"{rcst.JOB_RESULTS}:{job_id}")
         return await asyncio.wait_for(_collect_single_result(pubsub, job_id), timeout=timeout)
 
     except asyncio.TimeoutError:
-        logger.error(f"No confirmation received for job {job_id} within timeout period. Task: {task}, model: {payload['model']}")
-        raise HTTPException(status_code=500, detail="Unable to proccess request")
+        logger.error(f"No confirmation received for job {job_id} within timeout period. Task: {task}")
+        raise HTTPException(status_code=500, detail=f"Unable to proccess task: {task}, please try again later.")
 
 async def process_image_request(
     payload: payload_models.TextToImagePayload | payload_models.ImageToImagePayload | payload_models.InpaintPayload | payload_models.AvatarPayload,
