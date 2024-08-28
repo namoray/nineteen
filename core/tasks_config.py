@@ -225,48 +225,48 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         timeout=15,
         enabled=True,
     ),
-    # Task.avatar: FullTaskConfig(
-    #     task=Task.avatar,
-    #     max_capacity=2_000,
-    #     scoring_config=TaskScoringConfig(
-    #         task=Task.avatar, mean=0.21, variance=5, overhead=0.5, task_type=TaskType.IMAGE
-    #     ),
-    #     orchestrator_server_config=OrchestratorServerConfig(
-    #         checking_server_needed=ServerType.IMAGE,
-    #         checking_load_model_config={},
-    #         checking_function="check_image_result",
-    #     ),
-    #     synthetic_generation_config=SyntheticGenerationConfig(
-    #         func="generate_avatar_synthetic",
-    #         kwargs={},
-    #     ),
-    #     endpoint="/avatar",
-    #     volume_to_requests_conversion=10,
-    #     is_stream=False,
-    #     weight=0.1,
-    #     timeout=15,
-    # ),
-    # Task.inpaint: FullTaskConfig(
-    #     task=Task.inpaint,
-    #     max_capacity=1,
-    #     scoring_config=TaskScoringConfig(
-    #         task=Task.inpaint, mean=0.21, variance=5, overhead=0.5, task_type=TaskType.IMAGE
-    #     ),
-    #     orchestrator_server_config=OrchestratorServerConfig(
-    #         checking_server_needed=ServerType.IMAGE,
-    #         checking_load_model_config={},
-    #         checking_function="check_image_result",
-    #     ),
-    #     synthetic_generation_config=SyntheticGenerationConfig(
-    #         func="generate_inpaint_synthetic",
-    #         kwargs={},
-    #     ),
-    #     endpoint="/inpaint",
-    #     volume_to_requests_conversion=10,
-    #     is_stream=False,
-    #     weight=0.1,
-    #     timeout=15,
-    # ),
+    Task.avatar: FullTaskConfig(
+        task=Task.avatar,
+        max_capacity=2_000,
+        scoring_config=TaskScoringConfig(
+            task=Task.avatar, mean=0.21, variance=5, overhead=0.5, task_type=TaskType.IMAGE
+        ),
+        orchestrator_server_config=OrchestratorServerConfig(
+            checking_server_needed=ServerType.IMAGE,
+            checking_load_model_config={},
+            checking_function="check_image_result",
+        ),
+        synthetic_generation_config=SyntheticGenerationConfig(
+            func="generate_avatar_synthetic",
+            kwargs={},
+        ),
+        endpoint="/avatar",
+        volume_to_requests_conversion=10,
+        is_stream=False,
+        weight=0.1,
+        timeout=15,
+    ),
+    Task.inpaint: FullTaskConfig(
+        task=Task.inpaint,
+        max_capacity=1,
+        scoring_config=TaskScoringConfig(
+            task=Task.inpaint, mean=0.21, variance=5, overhead=0.5, task_type=TaskType.IMAGE
+        ),
+        orchestrator_server_config=OrchestratorServerConfig(
+            checking_server_needed=ServerType.IMAGE,
+            checking_load_model_config={},
+            checking_function="check_image_result",
+        ),
+        synthetic_generation_config=SyntheticGenerationConfig(
+            func="generate_inpaint_synthetic",
+            kwargs={},
+        ),
+        endpoint="/inpaint",
+        volume_to_requests_conversion=10,
+        is_stream=False,
+        weight=0.1,
+        timeout=15,
+    ),
 }
 
 def get_task_config(task: Task) -> FullTaskConfig | None:

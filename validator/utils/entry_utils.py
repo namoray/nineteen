@@ -2,9 +2,9 @@ import base64
 import httpx
 
 
-async def fetch_image_b64(url: str) -> str:
-    async with httpx.AsyncClient() as client:
-        response = await client.get(url)
+async def fetch_image_b64(url: str, httpx_client: httpx.AsyncClient) -> str:
+
+    response = await httpx_client.get(url)
     image_data = response.content
     return base64.b64encode(image_data).decode("utf-8")
 

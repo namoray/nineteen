@@ -1,4 +1,3 @@
-import base64
 import random
 from fastapi import HTTPException
 import httpx
@@ -39,12 +38,12 @@ def chat_to_payload(chat_request: ChatRequest) -> payload_models.ChatPayload:
 
 
 class TextToImageRequest(BaseModel):
-    prompt: str = Field(...)
-    negative_prompt: str | None = Field(None, title="Negative Prompt", description="Negative Prompt for text generation.")
-    steps: int = Field(10, title="Steps", description="Steps for text generation.")
-    cfg_scale: float = Field(3, title="CFG Scale", description="CFG Scale for text generation.")
-    width: int = Field(1024, title="Width", description="Width for text generation.")
-    height: int = Field(1024, title="Height", description="Height for text generation.")
+    prompt: str = Field(..., description="Prompt for image generation")
+    negative_prompt: str | None = Field(None, description="Negative prompt for image generation")
+    steps: int = Field(10, description="Steps for image generation")
+    cfg_scale: float = Field(3, description="CFG scale for image generation")
+    width: int = Field(1024, description="Width for image generation")
+    height: int = Field(1024, description="Height for image generation")
     model: str = Field(default=Task.proteus_text_to_image.value, title="Model")
 
 
@@ -59,24 +58,30 @@ class ImageToImageRequest(BaseModel):
     init_image: str = Field(
         ...,
         description="Base64 encoded image",
-        examples=["https://lastfm.freetls.fastly.net/i/u/770x0/443c5e1c35fd38bb5a49a7d00612dab3.jpg#443c5e1c35fd38bb5a49a7d00612dab3", "iVBORw0KGgoAAAANSUhEUgAAAAUA"],
+        examples=[
+            "https://lastfm.freetls.fastly.net/i/u/770x0/443c5e1c35fd38bb5a49a7d00612dab3.jpg#443c5e1c35fd38bb5a49a7d00612dab3",
+            "iVBORw0KGgoAAAANSUhEUgAAAAUA",
+        ],
     )
     prompt: str = Field(..., examples=["A beautiful landscape with a river and mountains", "A futuristic city with flying cars"])
-    negative_prompt: str | None = Field(None, title="Negative Prompt", description="Negative Prompt for text generation.")
-    steps: int = Field(10, title="Steps", description="Steps for text generation.")
-    cfg_scale: float = Field(3, title="CFG Scale", description="CFG Scale for text generation.")
-    width: int = Field(1024, title="Width", description="Width for text generation.")
-    height: int = Field(1024, title="Height", description="Height for text generation.")
+    negative_prompt: str | None = Field(None, description="Negative prompt for image generation")
+    steps: int = Field(10, description="Steps for image generation")
+    cfg_scale: float = Field(3, description="CFG scale for image generation")
+    width: int = Field(1024, description="Width for image generation")
+    height: int = Field(1024, description="Height for image generation")
     model: str = Field(default=Task.proteus_image_to_image.value, title="Model")
 
 
-async def image_to_image_to_payload(image_to_image_request: ImageToImageRequest, httpx_client: httpx.AsyncClient, prod: bool) -> payload_models.ImageToImagePayload:
-    if "https://" in image_to_image_request.init_image:
-        image_b64 = await fetch_image_b64(image_to_image_request.init_image)
-    else:
-        if not image_b64_is_valid(image_to_image_request.init_image):
-            raise HTTPException(status_code=400, detail="Invalid init image!")
-        image_b64 = image_to_image_request.init_image
+async def image_to_image_to_payload(
+    image_to_image_request: ImageToImageRequest, httpx_client: httpx.AsyncClient, prod: bool
+) -> payload_models.ImageToImagePayload:
+    image_b64 = (
+        await fetch_image_b64(image_to_image_request.init_image, httpx_client)
+        if "https://" in image_to_image_request.init_image
+        else image_to_image_request.init_image
+    )
+    if not image_b64_is_valid(image_b64):
+        raise HTTPException(status_code=400, detail="Invalid init image!")
     return payload_models.ImageToImagePayload(
         init_image=image_b64,
         prompt=image_to_image_request.prompt,
@@ -86,6 +91,99 @@ async def image_to_image_to_payload(image_to_image_request: ImageToImageRequest,
         width=image_to_image_request.width,
         height=image_to_image_request.height,
         model=image_to_image_request.model,
+        seed=random.randint(1, 100000),
+    )
+
+
+class InpaintRequest(BaseModel):
+    prompt: str = Field(..., description="Prompt for inpainting")
+    negative_prompt: str | None = Field(None, description="Negative prompt for inpainting")
+    steps: int = Field(10, description="Steps for inpainting")
+    cfg_scale: float = Field(3, description="CFG scale for inpainting")
+    width: int = Field(1024, description="Width for inpainting")
+    height: int = Field(1024, description="Height for inpainting")
+    init_image: str = Field(
+        ...,
+        description="Base64 encoded or URL for image",
+        examples=[
+            "https://lastfm.freetls.fastly.net/i/u/770x0/443c5e1c35fd38bb5a49a7d00612dab3.jpg#443c5e1c35fd38bb5a49a7d00612dab3",
+            "iVBORw0KGgoAAAANSUhEUgAAAAUA",
+        ],
+    )
+    mask: str = Field(
+        ...,
+        description="Base64 encoded or URL for image",
+        examples=[
+            "https://lastfm.freetls.fastly.net/i/u/770x0/443c5e1c35fd38bb5a49a7d00612dab3.jpg#443c5e1c35fd38bb5a49a7d00612dab3",
+            "iVBORw0KGgoAAAANSUhEUgAAAAUA",
+        ],
+    )
+
+
+async def inpaint_to_payload(
+    inpaint_request: InpaintRequest, httpx_client: httpx.AsyncClient, prod: bool
+) -> payload_models.InpaintPayload:
+    image_b64 = (
+        await fetch_image_b64(inpaint_request.init_image, httpx_client)
+        if "https://" in inpaint_request.init_image
+        else inpaint_request.init_image
+    )
+    if not image_b64_is_valid(image_b64):
+        raise HTTPException(status_code=400, detail="Invalid init image!")
+    return payload_models.InpaintPayload(
+        init_image=image_b64,
+        prompt=inpaint_request.prompt,
+        negative_prompt=inpaint_request.negative_prompt,
+        steps=inpaint_request.steps,
+        cfg_scale=inpaint_request.cfg_scale,
+        width=inpaint_request.width,
+        height=inpaint_request.height,
+        mask=inpaint_request.mask,
+        seed=random.randint(1, 100000),
+    )
+
+
+class AvatarRequest(BaseModel):
+    prompt: str = Field(
+        ...,
+        description="Prompt for avatar generation",
+        examples=[ "A futuristic Man in a city with flying cars"],
+    )
+    negative_prompt: str | None = Field(
+        None, description="Negative prompt for avatar generation", examples=["wheels", " mountains"]
+    )
+    steps: int = Field(10, description="Steps for avatar generation")
+    cfg_scale: float = Field(3, description="CFG scale for avatar generation")
+    width: int = Field(1024, description="Width for avatar generation")
+    height: int = Field(1024, description="Height for avatar generation")
+    init_image: str = Field(
+        ...,
+        description="Base64 encoded or URL for image",
+        examples=[
+            "https://lastfm.freetls.fastly.net/i/u/770x0/443c5e1c35fd38bb5a49a7d00612dab3.jpg#443c5e1c35fd38bb5a49a7d00612dab3",
+            "iVBORw0KGgoAAAANSUhEUgAAAAUA",
+        ],
+    )
+
+
+async def avatar_to_payload(
+    avatar_request: AvatarRequest, httpx_client: httpx.AsyncClient, prod: bool
+) -> payload_models.AvatarPayload:
+    image_b64 = (
+        await fetch_image_b64(avatar_request.init_image, httpx_client)
+        if "https://" in avatar_request.init_image
+        else avatar_request.init_image
+    )
+    if not image_b64_is_valid(image_b64):
+        raise HTTPException(status_code=400, detail="Invalid init image!")
+    return payload_models.AvatarPayload(
+        init_image=image_b64,
+        prompt=avatar_request.prompt,
+        negative_prompt=avatar_request.negative_prompt,
+        steps=avatar_request.steps,
+        cfg_scale=avatar_request.cfg_scale,
+        width=avatar_request.width,
+        height=avatar_request.height,
         seed=random.randint(1, 100000),
     )
 

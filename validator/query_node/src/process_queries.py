@@ -100,7 +100,7 @@ async def process_task(config: Config, message: rdc.QueryQueueMessage):
             synthetic_query=message.query_type == gcst.SYNTHETIC,
             job_id=message.job_id,
             status_code=500,
-            error_message="Task config not found, please try again",
+            error_message=f"Can't find the task {task.value}, please try again later",
         )
 
     stream = task_config.is_stream
