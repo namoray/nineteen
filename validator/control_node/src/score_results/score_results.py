@@ -7,9 +7,8 @@ Stores the scored results in the database and potentially posts stats to TauVisi
 import asyncio
 import random
 import json
-import os
-import binascii
 from typing import Any, Dict
+import uuid
 
 import httpx
 
@@ -22,6 +21,7 @@ from validator.utils import work_and_speed_functions
 from validator.db.src import functions as db_functions
 from validator.db.src.sql.rewards_and_scores import select_tasks_and_number_of_results, sql_insert_reward_data
 from validator.control_node.src.control_config import Config
+
 from core import constants as ccst
 
 logger = get_logger(__name__)
@@ -58,8 +58,8 @@ async def send_result_for_scoring(
     config: Config, checking_data: Dict[str, Any], node_hotkey: str, consecutive_errors: int
 ) -> tuple[Dict[str, Any] | None, int]:
     # TODO: Remove after debug
-    rand_score = 1 if random.random() < 0.8 else 0 if random.random() < 0.9 else random.random()
-    return {"node_scores": {checking_data["query_result"]["node_id"]: rand_score}}, 0
+    # rand_score = 1 if random.random() < 0.8 else 0 if random.random() < 0.9 else random.random()
+    # return {"node_scores": {checking_data["query_result"]["node_id"]: rand_score}}, 0
     async with httpx.AsyncClient(timeout=180) as client:
         try:
             response = await client.post(config.external_server_url + "check-result", json=checking_data)
@@ -116,7 +116,7 @@ async def process_and_store_score(
 
     for node_id, quality_score in node_scores.items():
         reward_data = RewardData(
-            id=binascii.hexlify(os.urandom(16)).decode("utf-8"),
+            id=uuid.uuid4().hex,
             task=task.value,
             node_id=int(node_id),
             quality_score=quality_score,
@@ -146,9 +146,7 @@ async def score_results(config: Config):
             await asyncio.sleep(5)
             continue
 
-        task_to_score = Task(
-            random.choices(list(tasks_and_results.keys()), weights=list(tasks_and_results.values()), k=1)[0]
-        )
+        task_to_score = Task(random.choices(list(tasks_and_results.keys()), weights=list(tasks_and_results.values()), k=1)[0])
 
         await score_task(config, task_to_score, max_tasks_to_score=200)
 
@@ -176,9 +174,7 @@ async def score_task(config: Config, task: Task, max_tasks_to_score: int):
             "task": task.value,
         }
 
-        task_result, consecutive_errors = await send_result_for_scoring(
-            config, checking_data, node_hotkey, consecutive_errors
-        )
+        task_result, consecutive_errors = await send_result_for_scoring(config, checking_data, node_hotkey, consecutive_errors)
         if task_result is None:
             sleep_time = min(60 * (2 ** (consecutive_errors - 1)), 300)  # Max sleep time of 5 minutes
             await asyncio.sleep(sleep_time)

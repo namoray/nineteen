@@ -97,7 +97,9 @@ async def _get_contenders_from_nodes(config: Config, nodes: list[Node]) -> List[
                 logger.debug(f"Task {task} is not a valid task")
                 continue
 
-            task_config = tcfg.TASK_TO_CONFIG[Task(task)]
+            task_config = tcfg.get_enabled_task_config(Task(task))
+            if task_config is None:
+                continue
             capacity = min(max(declared_capacity, 0), task_config.max_capacity) * validator_stake_proportion
             capacity_to_score = _get_capacity_to_score(capacity, config.capacity_to_score_multiplier)
 

@@ -93,7 +93,7 @@ async def process_task(config: Config, message: rdc.QueryQueueMessage):
     else:
         message.query_payload = await putils.get_synthetic_payload(config.redis_db, task)
 
-    task_config = tcfg.get_task_config(task)
+    task_config = tcfg.get_enabled_task_config(task)
     if task_config is None:
         await _handle_error(
             config=config,

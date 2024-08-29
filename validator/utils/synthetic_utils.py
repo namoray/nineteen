@@ -189,7 +189,7 @@ async def fetch_synthetic_data_for_task(redis_db: Redis, task: Task) -> dict[str
     )
     if synthetic_data is None:
         raise ValueError(f"No synthetic data found for task: {task}")
-    task_config = tasks_config.get_task_config(task)
+    task_config = tasks_config.get_enabled_task_config(task)
     if task_config is None:
         raise ValueError(f"No task config found for task: {task}")
     task_type = task_config.scoring_config.task_type

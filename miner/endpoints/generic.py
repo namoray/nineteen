@@ -7,7 +7,7 @@ logger = get_logger(__name__)
 
 
 async def capacity() -> dict[str, float]:
-    return {task: config.max_capacity for task, config in TASK_TO_CONFIG.items()}
+    return {task: config.max_capacity for task, config in TASK_TO_CONFIG.items() if config.enabled}
 
 
 def factory_router() -> APIRouter:

@@ -7,4 +7,5 @@ tests
 - - look at my notes on phone
 - - make so you can access the subnet with tao & tao only
 - - use cursor with subnet & put out guide
-- - scoring table for historic stuff
+- - 
+

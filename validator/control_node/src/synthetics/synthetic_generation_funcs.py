@@ -208,7 +208,7 @@ async def generate_synthetic_data(task: Task) -> Any:
     Gets task config and dynamically calls the synthetic generation function
     Not super clean, but it works
     """
-    task_config = tasks_config.get_task_config(task)
+    task_config = tasks_config.get_enabled_task_config(task)
     if task_config is None:
         return
     generative_function_name = task_config.synthetic_generation_config.func

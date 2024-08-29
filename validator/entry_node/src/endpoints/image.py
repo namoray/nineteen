@@ -7,7 +7,7 @@ from core.logging import get_logger
 from fastapi.routing import APIRouter
 from core.models import payload_models
 from core.tasks import Task
-from core.tasks_config import get_task_config
+from core.tasks_config import get_enabled_task_config
 from validator.entry_node.src.core.configuration import Config
 from validator.entry_node.src.core.dependencies import get_config
 from validator.utils import redis_constants as rcst, generic_constants as gcst
@@ -78,7 +78,7 @@ async def process_image_request(
     task: Task,
     config: Config,
 ) -> request_models.ImageResponse:
-    task_config = get_task_config(task)
+    task_config = get_enabled_task_config(task)
     if task_config is None:
         raise HTTPException(status_code=400, detail="Invalid model")
 
