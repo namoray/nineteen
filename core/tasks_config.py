@@ -67,7 +67,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         task=Task.chat_llama_3_1_8b,
         max_capacity=576_000,
         scoring_config=TaskScoringConfig(
-            task=Task.chat_llama_3_1_8b, mean=1 / 80, variance=100, overhead=1.0, task_type=TaskType.TEXT
+            task=Task.chat_llama_3_1_8b, overhead=0.4, mean=0.3, variance=4, task_type=TaskType.TEXT
         ),
         orchestrator_server_config=OrchestratorServerConfig(
             server_needed=ServerType.LLM.value,
@@ -96,7 +96,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         task=Task.chat_llama_3_1_70b,
         max_capacity=576_000,
         scoring_config=TaskScoringConfig(
-            task=Task.chat_llama_3_1_70b, mean=1 / 80, variance=100, overhead=1.0, task_type=TaskType.TEXT
+            task=Task.chat_llama_3_1_70b, overhead=0.3, mean=0.018, variance=130, task_type=TaskType.TEXT
         ),
         orchestrator_server_config=OrchestratorServerConfig(
             server_needed=ServerType.LLM.value,
@@ -123,7 +123,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         task=Task.proteus_text_to_image,
         max_capacity=3_600,
         scoring_config=TaskScoringConfig(
-            task=Task.proteus_text_to_image, mean=0.32, variance=3, overhead=0.5, task_type=TaskType.IMAGE
+            task=Task.proteus_text_to_image, mean=0.2, variance=7, overhead=0.25, task_type=TaskType.IMAGE
         ),
         orchestrator_server_config=OrchestratorServerConfig(
             server_needed=ServerType.IMAGE.value,
@@ -136,90 +136,42 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
             func="generate_text_to_image_synthetic",
             kwargs={"model": Task.proteus_text_to_image.value},
         ),
-        endpoint="/text-to-image",
+        endpoint=Endpoints.text_to_image.value,
         volume_to_requests_conversion=10,
         is_stream=False,
         weight=0.1,
         timeout=5,
-        enabled=False,
+        enabled=True,
     ),
     Task.proteus_image_to_image: FullTaskConfig(
         task=Task.proteus_image_to_image,
         max_capacity=2_000,
         scoring_config=TaskScoringConfig(
-            task=Task.proteus_image_to_image, mean=0.35, variance=3, overhead=0.5, task_type=TaskType.IMAGE
+            task=Task.proteus_image_to_image, mean=0.24, variance=5, overhead=0.6, task_type=TaskType.IMAGE
         ),
         orchestrator_server_config=OrchestratorServerConfig(
             server_needed=ServerType.IMAGE.value,
             load_model_config={},
             checking_function="check_image_result",
-            endpoint=Endpoints.text_to_image.value,
+            endpoint=Endpoints.image_to_image.value,
             task=Task.proteus_image_to_image.value,
         ),
         synthetic_generation_config=SyntheticGenerationConfig(
             func="generate_image_to_image_synthetic",
             kwargs={"model": Task.proteus_image_to_image.value},
         ),
-        endpoint="/image-to-image",
+        endpoint=Endpoints.image_to_image.value,
         volume_to_requests_conversion=10,
         is_stream=False,
         weight=0.1,
         timeout=20,
-        enabled=False,
-    ),
-    Task.dreamshaper_text_to_image: FullTaskConfig(
-        task=Task.dreamshaper_text_to_image,
-        max_capacity=3_600,
-        scoring_config=TaskScoringConfig(
-            task=Task.dreamshaper_text_to_image, mean=0.40, variance=3, overhead=0.5, task_type=TaskType.IMAGE
-        ),
-        orchestrator_server_config=OrchestratorServerConfig(
-            server_needed=ServerType.IMAGE.value,
-            load_model_config={},
-            checking_function="check_image_result",
-            endpoint=Endpoints.text_to_image.value,
-            task=Task.dreamshaper_text_to_image.value,
-        ),
-        synthetic_generation_config=SyntheticGenerationConfig(
-            func="generate_text_to_image_synthetic",
-            kwargs={"model": Task.dreamshaper_text_to_image.value},
-        ),
-        endpoint="/text-to-image",
-        volume_to_requests_conversion=10,
-        is_stream=False,
-        weight=0.1,
-        timeout=5,
-        enabled=False,
-    ),
-    Task.dreamshaper_image_to_image: FullTaskConfig(
-        task=Task.dreamshaper_image_to_image,
-        max_capacity=2_000,
-        scoring_config=TaskScoringConfig(
-            task=Task.dreamshaper_image_to_image, mean=0.21, variance=5, overhead=0.5, task_type=TaskType.IMAGE
-        ),
-        orchestrator_server_config=OrchestratorServerConfig(
-            server_needed=ServerType.IMAGE.value,
-            load_model_config={},
-            checking_function="check_image_result",
-            endpoint=Endpoints.text_to_image.value,
-            task=Task.dreamshaper_image_to_image.value,
-        ),
-        synthetic_generation_config=SyntheticGenerationConfig(
-            func="generate_image_to_image_synthetic",
-            kwargs={"model": Task.dreamshaper_image_to_image.value},
-        ),
-        endpoint="/image-to-image",
-        volume_to_requests_conversion=10,
-        is_stream=False,
-        weight=0.1,
-        timeout=15,
-        enabled=False,
+        enabled=True,
     ),
     Task.flux_schnell_text_to_image: FullTaskConfig(
         task=Task.flux_schnell_text_to_image,
         max_capacity=3_600,
         scoring_config=TaskScoringConfig(
-            task=Task.flux_schnell_text_to_image, mean=0.40, variance=3, overhead=0.5, task_type=TaskType.IMAGE
+            task=Task.flux_schnell_text_to_image, mean=0.30, variance=7, overhead=0.4, task_type=TaskType.IMAGE
         ),
         orchestrator_server_config=OrchestratorServerConfig(
             server_needed=ServerType.IMAGE.value,
@@ -237,75 +189,125 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         is_stream=False,
         weight=0.1,
         timeout=20,
-        enabled=False,
+        enabled=True,
     ),
     Task.flux_schnell_image_to_image: FullTaskConfig(
         task=Task.flux_schnell_image_to_image,
         max_capacity=2_000,
         scoring_config=TaskScoringConfig(
-            task=Task.flux_schnell_image_to_image, mean=0.21, variance=5, overhead=0.5, task_type=TaskType.IMAGE
+            task=Task.flux_schnell_image_to_image, mean=0.36, variance=5, overhead=0.6, task_type=TaskType.IMAGE
         ),
         orchestrator_server_config=OrchestratorServerConfig(
             server_needed=ServerType.IMAGE.value,
             load_model_config={},
             checking_function="check_image_result",
-            endpoint=Endpoints.text_to_image.value,
+            endpoint=Endpoints.image_to_image.value,
             task=Task.flux_schnell_image_to_image.value,
         ),
         synthetic_generation_config=SyntheticGenerationConfig(
             func="generate_image_to_image_synthetic",
             kwargs={"model": Task.flux_schnell_image_to_image.value},
         ),
-        endpoint="/image-to-image",
+        endpoint=Endpoints.image_to_image.value,
         volume_to_requests_conversion=10,
         is_stream=False,
         weight=0.1,
         timeout=15,
-        enabled=False,
+        enabled=True,
     ),
     Task.avatar: FullTaskConfig(
         task=Task.avatar,
         max_capacity=2_000,
-        scoring_config=TaskScoringConfig(task=Task.avatar, mean=0.21, variance=5, overhead=0.5, task_type=TaskType.IMAGE),
+        scoring_config=TaskScoringConfig(task=Task.avatar, mean=0.50, variance=4, overhead=0.5, task_type=TaskType.IMAGE),
         orchestrator_server_config=OrchestratorServerConfig(
             server_needed=ServerType.IMAGE.value,
             load_model_config={},
             checking_function="check_image_result",
-            endpoint=Endpoints.text_to_image.value,
+            endpoint=Endpoints.avatar.value,
             task=Task.avatar.value,
         ),
         synthetic_generation_config=SyntheticGenerationConfig(
             func="generate_avatar_synthetic",
             kwargs={},
         ),
-        endpoint="/avatar",
+        endpoint=Endpoints.avatar.value,
         volume_to_requests_conversion=10,
         is_stream=False,
         weight=0.1,
         timeout=15,
-        enabled=False,
+        enabled=True,
     ),
-    Task.inpaint: FullTaskConfig(
-        task=Task.inpaint,
-        max_capacity=1,
-        scoring_config=TaskScoringConfig(task=Task.inpaint, mean=0.21, variance=5, overhead=0.5, task_type=TaskType.IMAGE),
+    Task.dreamshaper_text_to_image: FullTaskConfig(
+        task=Task.dreamshaper_text_to_image,
+        max_capacity=3_600,
+        scoring_config=TaskScoringConfig(
+            task=Task.dreamshaper_text_to_image, mean=0.22, variance=7, overhead=0.3, task_type=TaskType.IMAGE
+        ),
         orchestrator_server_config=OrchestratorServerConfig(
             server_needed=ServerType.IMAGE.value,
             load_model_config={},
             checking_function="check_image_result",
             endpoint=Endpoints.text_to_image.value,
-            task=Task.inpaint.value,
+            task=Task.dreamshaper_text_to_image.value,
         ),
         synthetic_generation_config=SyntheticGenerationConfig(
-            func="generate_inpaint_synthetic",
-            kwargs={},
+            func="generate_text_to_image_synthetic",
+            kwargs={"model": Task.dreamshaper_text_to_image.value},
         ),
-        endpoint="/inpaint",
+        endpoint=Endpoints.text_to_image.value,
+        volume_to_requests_conversion=10,
+        is_stream=False,
+        weight=0.1,
+        timeout=5,
+        enabled=True,
+    ),
+    Task.dreamshaper_image_to_image: FullTaskConfig(
+        task=Task.dreamshaper_image_to_image,
+        max_capacity=2_000,
+        scoring_config=TaskScoringConfig(
+            task=Task.dreamshaper_image_to_image, mean=0.28, variance=5, overhead=0.6, task_type=TaskType.IMAGE
+        ),
+        orchestrator_server_config=OrchestratorServerConfig(
+            server_needed=ServerType.IMAGE.value,
+            load_model_config={},
+            checking_function="check_image_result",
+            endpoint=Endpoints.image_to_image.value,
+            task=Task.dreamshaper_image_to_image.value,
+        ),
+        synthetic_generation_config=SyntheticGenerationConfig(
+            func="generate_image_to_image_synthetic",
+            kwargs={"model": Task.dreamshaper_image_to_image.value},
+        ),
+        endpoint=Endpoints.image_to_image.value,
         volume_to_requests_conversion=10,
         is_stream=False,
         weight=0.1,
         timeout=15,
-        enabled=False,
+        enabled=True,
+    ),
+    Task.inpaint: FullTaskConfig(
+        task=Task.inpaint,
+        max_capacity=2_000,
+        scoring_config=TaskScoringConfig(
+            task=Task.inpaint, mean=0.3, variance=4, overhead=0.4, task_type=TaskType.IMAGE
+        ),
+        orchestrator_server_config=OrchestratorServerConfig(
+            server_needed=ServerType.IMAGE.value,
+            load_model_config={},
+            checking_function="check_image_result",
+            endpoint=Endpoints.inpaint.value,
+            task=Task.inpaint.value,
+        ),
+        synthetic_generation_config=SyntheticGenerationConfig(
+            func="generate_inpaint_synthetic",
+            kwargs={"model": Task.inpaint.value},
+        ),
+        endpoint=Endpoints.inpaint.value,
+        volume_to_requests_conversion=10,
+        is_stream=False,
+        weight=0.1,
+        timeout=15,
+        enabled=True,
     ),
 }
 

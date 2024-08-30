@@ -24,7 +24,7 @@ def _construct_organic_message(payload: dict, job_id: str, task: str) -> dict[st
 async def _wait_for_acknowledgement(pubsub: PubSub, job_id: str) -> bool:
     async for message in pubsub.listen():
         channel = message["channel"].decode()
-        if channel == f"{gcst.ACKNLOWEDGED}:{job_id}":
+        if channel == f"{gcst.ACKNLOWEDGED}:{job_id}" and message["type"] == "message":
             logger.info(f"Job {job_id} confirmed by worker")
             break
     await pubsub.unsubscribe(f"{gcst.ACKNLOWEDGED}:{job_id}")
@@ -80,7 +80,7 @@ async def make_stream_organic_query(
         return _stream_results(pubsub, job_id, first_chunk)
 
     except asyncio.TimeoutError:
-        logger.error(f"No confirmation received for job {job_id} within timeout period. Task: {task}, model: {payload['model']}")
+        logger.error(f"Query node down? No confirmation received for job {job_id} within timeout period. Task: {task}, model: {payload['model']}")
         raise HTTPException(status_code=500, detail="Unable to process request")
 
 

@@ -23,14 +23,9 @@ def _calculate_speed_modifier(time_per_unit: float, config: tcfg.TaskScoringConf
 
     assert variance > 0
 
-    if time_per_unit <= mean:
-        # y = 1 + (M - 1) * (b - x)^c / b^c
-        speed_modifier = 1 + (MAX_SPEED_BONUS - 1) * ((mean - time_per_unit) ** BELOW_MEAN_EXPONENT) / (
-            mean**BELOW_MEAN_EXPONENT
-        )
-    else:
-        # y = e^((b - x) * v)
-        speed_modifier = math.exp((mean - time_per_unit) * variance)
+    # Use sigmoid function to naturally cap the speed modifier
+    x = (mean - time_per_unit) * variance
+    speed_modifier = MAX_SPEED_BONUS / (1 + math.exp(-x))
 
     return speed_modifier
 

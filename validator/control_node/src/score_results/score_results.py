@@ -16,7 +16,6 @@ from core import tasks_config as tcfg
 
 from core.logging import get_logger
 from core.tasks import Task
-from validator.control_node.src.main import load_config
 from validator.models import RewardData
 from validator.utils import work_and_speed_functions
 from validator.db.src import functions as db_functions
@@ -62,10 +61,6 @@ async def send_result_for_scoring(
     # await asyncio.sleep(10)
     # rand_score = 1 if random.random() < 0.8 else 0 if random.random() < 0.9 else random.random()
     # return {"node_scores": {checking_data["query_result"]["node_id"]: rand_score}}, 0
-    # NOTE: Something about having the 3 lines above commented out causes
-    # raise exceptions.InterfaceError('pool is closing')
-    # asyncpg.exceptions._base.InterfaceError: pool is closing
-    # errors
     async with httpx.AsyncClient(timeout=180) as client:
         try:
             response = await client.post(config.gpu_server_address.rstrip("/") + "/check-result", json=check_result_payload)
@@ -95,7 +90,8 @@ async def send_result_for_scoring(
                         return None, consecutive_errors + 1
                     break
 
-            return task_response_json.get("query_result", {}), 0
+            logger.info(f"Task {task_id} is done: {task_response_json}")
+            return task_response_json.get("result", {}), 0
 
         except httpx.HTTPError as http_err:
             logger.error(f"When scoring, HTTP error occurred: {http_err}")
@@ -190,7 +186,8 @@ async def score_task(config: Config, task: Task, max_tasks_to_score: int):
             sleep_time = min(60 * (2 ** (consecutive_errors - 1)), 300)  # Max sleep time of 5 minutes
             await asyncio.sleep(sleep_time)
             continue
-
+        else:
+            logger.info(f"Successfully scored task {task} with task result: {task_result}")
         await process_and_store_score(
             config=config,
             task=task,

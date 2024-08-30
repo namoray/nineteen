@@ -25,11 +25,11 @@ def _construct_organic_message(payload: dict, job_id: str, task: str) -> dict[st
     return json.dumps({"query_type": gcst.ORGANIC, "query_payload": payload, "task": task, "job_id": job_id})
 
 
-async def _wait_for_acknowledgement(pubsub: PubSub, job_id: str, task: str) -> bool:
+async def _wait_for_acknowledgement(pubsub: PubSub, job_id: str) -> bool:
     async for message in pubsub.listen():
         channel = message["channel"].decode()
-        if channel == f"{gcst.ACKNLOWEDGED}:{job_id}":
-            logger.info(f"Job {job_id} for task {task} confirmed by worker")
+        if channel == f"{gcst.ACKNLOWEDGED}:{job_id}" and message["type"] == "message":
+            logger.info(f"Job {job_id} confirmed by worker")
             break
     await pubsub.unsubscribe(f"{gcst.ACKNLOWEDGED}:{job_id}")
     return True

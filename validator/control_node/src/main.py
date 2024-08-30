@@ -80,8 +80,8 @@ async def main() -> None:
 
     await asyncio.gather(
         score_results.main(config),  # Should be in its own thread
-        refresh_synthetic_data.main(config),  # Should be in its own thread?
-        execute_cycle.single_cycle(config),
+        # refresh_synthetic_data.main(config),  # Should be in its own thread?
+        # execute_cycle.single_cycle(config),
     )
 
 
