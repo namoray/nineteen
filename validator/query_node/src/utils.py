@@ -25,7 +25,9 @@ async def adjust_contender_from_result(
     Store the task result in the db for checking (potentially)
     """
 
+
     if query_result.status_code == 200 and query_result.success:
+        logger.debug(f"✅ Adjusting contender {contender.node_id} for task {query_result.task}")
 
         capacity_consumed = work_and_speed_functions.calculate_work(query_result.task, query_result.model_dump(), steps=payload.get("steps"))
 
@@ -37,7 +39,9 @@ async def adjust_contender_from_result(
         logger.debug(f"Adjusted node {contender.node_id} for task {query_result.task}.")
 
     elif query_result.status_code == 429:
+        logger.debug(f"❌ Adjusting contender {contender.node_id} for task {query_result.task}.")
         await update_contender_429_count(config, contender)
     else:
+        logger.debug(f"❌ Adjusting contender {contender.node_id} for task {query_result.task}.")
         await update_contender_500_count(config, contender)
     return query_result

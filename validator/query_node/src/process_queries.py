@@ -15,7 +15,7 @@ from validator.utils import generic_constants as gcst
 
 logger = get_logger(__name__)
 
-MAX_CONCURRENT_TASKS = 1
+MAX_CONCURRENT_TASKS = 10
 
 
 async def _decrement_requests_remaining(redis_db: Redis, task: Task):
@@ -30,11 +30,12 @@ async def _acknowledge_job(redis_db: Redis, job_id: str):
 
 async def _handle_stream_query(config: Config, message: rdc.QueryQueueMessage, contenders_to_query: list[Contender]) -> bool:
     success = False
+    # TODO: LIMIT the amount of contenders to query
     for contender in contenders_to_query:
         node = await get_node(config.psql_db, contender.node_id, config.netuid)
         generator = await streaming.query_node_stream(config=config, contender=contender, payload=message.query_payload, node=node)
 
-        await streaming.consume_generator(
+        success = await streaming.consume_generator(
             config=config,
             generator=generator,
             job_id=message.job_id,
@@ -43,11 +44,17 @@ async def _handle_stream_query(config: Config, message: rdc.QueryQueueMessage, c
             node=node,
             payload=message.query_payload,
         )
-        if generator is None:
+        if generator is None or not success:
             continue
-        else:
-            success = True
 
+    if not success:
+        await _handle_error(
+            config=config,
+            synthetic_query=message.query_type == gcst.SYNTHETIC,
+            job_id=message.job_id,
+            status_code=500,
+            error_message=f"Service for task {message.task} is not responding, please try again",
+        )
     return success
 
 

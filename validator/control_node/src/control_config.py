@@ -28,6 +28,7 @@ class Config:
     test_env: bool
     subtensor_network: str
     subtensor_address: str
+    gpu_server_address: str
     netuid: int
     seconds_between_syncs: int
     replace_with_localhost: bool

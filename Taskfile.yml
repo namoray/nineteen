@@ -11,7 +11,7 @@ tasks:
 
   entry_node_dev:
     cmds:
-      - uvicorn validator.entry_node.src.server:app --reload --host 127.0.0.1 --port 8000 --env-file .dev.env
+      - uvicorn validator.entry_node.src.server:app --reload --host 127.0.0.1 --port 8091 --env-file .dev.env
 
   dev_setup:
     cmds:

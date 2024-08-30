@@ -16,6 +16,7 @@ from core import tasks_config as tcfg
 
 from core.logging import get_logger
 from core.tasks import Task
+from validator.control_node.src.main import load_config
 from validator.models import RewardData
 from validator.utils import work_and_speed_functions
 from validator.db.src import functions as db_functions
@@ -30,7 +31,7 @@ logger = get_logger(__name__)
 async def test_external_server_connection(config: Config) -> bool:
     async with httpx.AsyncClient(timeout=10) as client:
         try:
-            response = await client.get(config.external_server_url)
+            response = await client.get(config.gpu_server_address)
             response.raise_for_status()
             logger.info("connected to the external scoring server.")
             return True
@@ -55,14 +56,21 @@ async def wait_for_external_server(config: Config):
 
 
 async def send_result_for_scoring(
-    config: Config, checking_data: Dict[str, Any], node_hotkey: str, consecutive_errors: int
+    config: Config, check_result_payload: dict, consecutive_errors: int
 ) -> tuple[Dict[str, Any] | None, int]:
     # TODO: Remove after debug
+    # await asyncio.sleep(10)
     # rand_score = 1 if random.random() < 0.8 else 0 if random.random() < 0.9 else random.random()
     # return {"node_scores": {checking_data["query_result"]["node_id"]: rand_score}}, 0
+    # NOTE: Something about having the 3 lines above commented out causes
+    # raise exceptions.InterfaceError('pool is closing')
+    # asyncpg.exceptions._base.InterfaceError: pool is closing
+    # errors
     async with httpx.AsyncClient(timeout=180) as client:
         try:
-            response = await client.post(config.external_server_url + "check-result", json=checking_data)
+            response = await client.post(config.gpu_server_address.rstrip("/") + "/check-result", json=check_result_payload)
+            if response.status_code == 422:
+                logger.error(f"Request failed due to {response.status_code}: {response.json().get('detail')}")
             response.raise_for_status()
             task_id = response.json().get("task_id")
 
@@ -77,7 +85,7 @@ async def send_result_for_scoring(
 
             while True:
                 await asyncio.sleep(3)
-                task_response = await client.get(f"{config.external_server_url}check-task/{task_id}")
+                task_response = await client.get(config.gpu_server_address.rstrip("/") + f"/check-task/{task_id}")
                 task_response.raise_for_status()
                 task_response_json = task_response.json()
 
@@ -166,18 +174,22 @@ async def score_task(config: Config, task: Task, max_tasks_to_score: int):
             raw_checking_data["payload"],
         )
         payload = json.loads(payload_dict_str)
+        task_config = tcfg.get_enabled_task_config(task)
+        if task_config is None:
+            logger.error(f"Task {task} is not enabled")
+            continue
+        server_config = task_config.orchestrator_server_config
 
-        checking_data = {
-            "payload": payload,
-            "synthetic_query": synthetic_query,
-            "query_result": results,
-            "task": task.value,
-        }
+        check_result_payload = {"payload": payload, "result": results, "server_config": server_config.model_dump()}
 
-        task_result, consecutive_errors = await send_result_for_scoring(config, checking_data, node_hotkey, consecutive_errors)
+        task_result, consecutive_errors = await send_result_for_scoring(
+            config, check_result_payload, consecutive_errors
+        )
         if task_result is None:
+            logger.error(f"Failed to score task {task}; I'm on {consecutive_errors} consecutive errors now")
             sleep_time = min(60 * (2 ** (consecutive_errors - 1)), 300)  # Max sleep time of 5 minutes
             await asyncio.sleep(sleep_time)
+            continue
 
         await process_and_store_score(
             config=config,
@@ -193,12 +205,4 @@ async def score_task(config: Config, task: Task, max_tasks_to_score: int):
 
 
 async def main(config: Config):
-    try:
-        # await wait_for_external_server(config)
-        await score_results(config)
-    finally:
-        await config.psql_db.close()
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
+    await score_results(config)

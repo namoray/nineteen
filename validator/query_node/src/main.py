@@ -17,7 +17,7 @@ from validator.db.src.database import PSQLDB
 
 logger = get_logger(__name__)
 
-MAX_CONCURRENT_TASKS = 1
+MAX_CONCURRENT_TASKS = 100
 
 
 async def load_config() -> Config:

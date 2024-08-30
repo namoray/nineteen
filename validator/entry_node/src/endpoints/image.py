@@ -39,7 +39,7 @@ async def _collect_single_result(pubsub: PubSub, job_id: str) -> dict:
     async for message in pubsub.listen():
         # logger.debug(f"GOT MESSAGE: {message}")
         try:
-            if message["type"] == "message" and gcst.ACKNLOWEDGED:
+            if message["type"] == "message":
                 result = json.loads(message["data"].decode())
                 if gcst.ACKNLOWEDGED in result:
                     continue

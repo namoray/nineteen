@@ -75,9 +75,15 @@ async def _handle_event(
     if content is not None:
         if isinstance(content, dict):
             content = json.dumps(content)
-        await config.redis_db.publish(f"{rcst.JOB_RESULTS}:{job_id}", generic_utils.get_success_event(content=content, job_id=job_id, status_code=status_code))
+        await config.redis_db.publish(
+            f"{rcst.JOB_RESULTS}:{job_id}",
+            generic_utils.get_success_event(content=content, job_id=job_id, status_code=status_code),
+        )
     else:
-        await config.redis_db.publish(f"{rcst.JOB_RESULTS}:{job_id}", generic_utils.get_error_event(job_id=job_id, error_message=error_message, status_code=status_code))
+        await config.redis_db.publish(
+            f"{rcst.JOB_RESULTS}:{job_id}",
+            generic_utils.get_error_event(job_id=job_id, error_message=error_message, status_code=status_code),
+        )
 
 
 async def async_chain(first_chunk, async_gen):
@@ -108,7 +114,7 @@ async def consume_generator(
     node: Node,
     payload: dict,
     debug: bool = False,
-) -> None:
+) -> bool:
     assert job_id
     task = contender.task
 
@@ -121,8 +127,8 @@ async def consume_generator(
         logger.error(f"Error when querying node: {node.node_id} for task: {task}. Error: {error_type} - {error_details}")
         query_result = construct_500_query_result(node, task)
         await utils.adjust_contender_from_result(config, query_result, contender, synthetic_query, payload=payload)
-        return
-  
+        return False
+
     start_time, text_jsons, status_code, first_message = time.time(), [], 200, True
     try:
         async for text in async_chain(first_chunk, generator):
@@ -138,30 +144,36 @@ async def consume_generator(
                 except (IndexError, json.JSONDecodeError) as e:
                     logger.warning(f"Error {e} when trying to load text: {text}")
                     break
-                
-                text_jsons.extend(loaded_jsons)
+
                 for text_json in loaded_jsons:
                     if not isinstance(text_json, dict):
-                        first_message = True  # Janky, but so we mark it as a fail
+                        first_message = True  # NOTE: Janky, but so we mark it as a fail
                         break
                     try:
                         _ = text_json["choices"][0]["delta"]["content"]
                     except KeyError:
-                        first_message = True  # Janky, but so we mark it as a fail
+                        first_message = True  # NOTE: Janky, but so we mark it as a fail
                         break
 
+                    text_jsons.append(text_json)
                     dumped_payload = json.dumps(text_json)
                     first_message = False
                     await _handle_event(
-                        config, event=f"data: {dumped_payload}\n\n", synthetic_query=synthetic_query, job_id=job_id
+                        config,
+                        content=f"data: {dumped_payload}\n\n",
+                        synthetic_query=synthetic_query,
+                        job_id=job_id,
+                        status_code=200,
                     )
 
         if len(text_jsons) > 0:
             last_payload = _get_formatted_payload("", False, add_finish_reason=True)
             await _handle_event(
-                config, event=f"data: {last_payload}\n\n", synthetic_query=synthetic_query, job_id=job_id
+                config, content=f"data: {last_payload}\n\n", synthetic_query=synthetic_query, job_id=job_id, status_code=200
             )
-            await _handle_event(config, event="data: [DONE]\n\n", synthetic_query=synthetic_query, job_id=job_id)
+            await _handle_event(
+                config, content="data: [DONE]\n\n", synthetic_query=synthetic_query, job_id=job_id, status_code=200
+            )
             logger.info(f"✅ Queried node: {node.node_id} for task: {task}. Success: {not first_message}.")
 
         response_time = time.time() - start_time
@@ -174,14 +186,16 @@ async def consume_generator(
             node_hotkey=node.hotkey,
             status_code=status_code,
         )
+        success = not first_message
     except Exception as e:
-        logger.error(
-            f"Unexpected exception when querying node: {node.node_id} for task: {task}. Payload: {payload}. Error: {e}"
-        )
+        logger.error(f"Unexpected exception when querying node: {node.node_id} for task: {task}. Payload: {payload}. Error: {e}")
         query_result = construct_500_query_result(node, task)
+        success = False
     finally:
         await utils.adjust_contender_from_result(config, query_result, contender, synthetic_query, payload=payload)
         await config.redis_db.expire(rcst.QUERY_RESULTS_KEY + ":" + job_id, 10)
+
+    return success
 
 
 async def query_node_stream(config: Config, contender: Contender, node: Node, payload: dict):
@@ -200,4 +214,3 @@ async def query_node_stream(config: Config, contender: Contender, node: Node, pa
         endpoint=tcfg.TASK_TO_CONFIG[Task(contender.task)].endpoint,
         timeout=tcfg.TASK_TO_CONFIG[Task(contender.task)].timeout,
     )
-

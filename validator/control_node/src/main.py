@@ -69,7 +69,8 @@ def load_config() -> Config:
         replace_with_docker_localhost=replace_with_docker_localhost,
         replace_with_localhost=localhost,
         refresh_nodes=refresh_nodes,
-        capacity_to_score_multiplier=capacity_to_score_multiplier
+        capacity_to_score_multiplier=capacity_to_score_multiplier,
+        gpu_server_address=gpu_server_address,
     )
 
 

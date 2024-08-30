@@ -31,14 +31,23 @@ async def _wait_for_acknowledgement(pubsub: PubSub, job_id: str) -> bool:
     return True
 
 
-async def _stream_results(pubsub: PubSub, job_id: str) -> AsyncGenerator[str, None]:
-    print("STREAMING")
+async def _stream_results(pubsub: PubSub, job_id: str, first_chunk: str) -> AsyncGenerator[str, None]:
+    yield first_chunk
     async for message in pubsub.listen():
         logger.debug(f"GOT MESSAGE: {message}")
         channel = message["channel"].decode()
+
         if channel == f"{rcst.JOB_RESULTS}:{job_id}" and message["type"] == "message":
-            yield message["data"].decode()
-            if "[DONE]" in message["data"].decode():
+            result = json.loads(message["data"].decode())
+            if gcst.ACKNLOWEDGED in result:
+                continue
+            status_code = result[gcst.STATUS_CODE]
+            if status_code >= 400:
+                raise HTTPException(status_code=status_code, detail=result[gcst.ERROR_MESSAGE])
+
+            content = result[gcst.CONTENT]
+            yield content
+            if "[DONE]" in content:
                 break
     await pubsub.unsubscribe(f"{rcst.JOB_RESULTS}:{job_id}")
 
@@ -55,18 +64,24 @@ async def make_stream_organic_query(
 
     pubsub = redis_db.pubsub()
     await pubsub.subscribe(f"{gcst.ACKNLOWEDGED}:{job_id}")
-    await pubsub.subscribe(f"{rcst.JOB_RESULTS}:{job_id}")
 
     try:
         await asyncio.wait_for(_wait_for_acknowledgement(pubsub, job_id), timeout=1)
 
-        return _stream_results(pubsub, job_id)
+        await pubsub.subscribe(f"{rcst.JOB_RESULTS}:{job_id}")
+
+        async for message in pubsub.listen():
+            if message["type"] == "message" and message["channel"].decode() == f"{rcst.JOB_RESULTS}:{job_id}":
+                result = json.loads(message["data"].decode())
+                if gcst.STATUS_CODE in result and result[gcst.STATUS_CODE] >= 400:
+                    raise HTTPException(status_code=result[gcst.STATUS_CODE], detail=result[gcst.ERROR_MESSAGE])
+                first_chunk = result[gcst.CONTENT]
+                break
+        return _stream_results(pubsub, job_id, first_chunk)
 
     except asyncio.TimeoutError:
-        logger.error(
-            f"No confirmation received for job {job_id} within timeout period. Task: {task}, model: {payload['model']}"
-        )
-        raise HTTPException(status_code=500, detail="Unable to proccess request")
+        logger.error(f"No confirmation received for job {job_id} within timeout period. Task: {task}, model: {payload['model']}")
+        raise HTTPException(status_code=500, detail="Unable to process request")
 
 
 async def chat(
@@ -75,10 +90,17 @@ async def chat(
 ) -> StreamingResponse:
     payload = request_models.chat_to_payload(chat_request)
 
-    text_generator = await make_stream_organic_query(
-        redis_db=config.redis_db, payload=payload.model_dump(), task=payload.model
-    )
-    return StreamingResponse(text_generator, media_type="sse")
+    try:
+        text_generator = await make_stream_organic_query(
+            redis_db=config.redis_db, payload=payload.model_dump(), task=payload.model
+        )
+        return StreamingResponse(text_generator, media_type="sse")
+    except HTTPException as http_exc:
+        logger.info(f"HTTPException in chat endpoint: {str(http_exc)}")
+        raise http_exc
+    except Exception as e:
+        logger.error(f"Unexpected error in chat endpoint: {str(e)}")
+        raise HTTPException(status_code=500, detail="An unexpected error occurred")
 
 
 router = APIRouter()

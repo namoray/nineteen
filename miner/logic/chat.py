@@ -16,6 +16,7 @@ async def chat_stream(httpx_client: httpx.AsyncClient, decrypted_payload: payloa
         async with httpx_client.stream(
             "POST", LLAMA_3_8B_ADDRESS, json=decrypted_payload.model_dump(), timeout=3
         ) as resp:
+            resp.raise_for_status()
             async for chunk in resp.aiter_lines():
                 try:
                     received_event_chunks = chunk.split("\n\n")
