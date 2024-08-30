@@ -27,25 +27,6 @@ logger = get_logger(__name__)
 # NOTE: any danger here of massively gorwing cache?
 @lru_cache(maxsize=1)
 def get_cached_markov_model():
-    import os
-    import os
-
-    print("Current directory contents:")
-    print(os.listdir("."))
-
-    print("\nContents of 'assets' directory:")
-    assets_path = os.path.join("..", "..", "..", "assets")
-    if os.path.exists(assets_path):
-        print(os.listdir(assets_path))
-    else:
-        print("'assets' directory not found in the expected location.")
-
-    print("\nContents of 'caption_data' directory:")
-    caption_data_path = os.path.join(assets_path, "caption_data")
-    if os.path.exists(caption_data_path):
-        print(os.listdir(caption_data_path))
-    else:
-        print("'caption_data' directory not found in the expected location.")
     logger.info("Loading markov model from caption_data...")
     dataset = datasets.load_dataset("assets/caption_data/data")
     text = [i["query"] for i in dataset["train"]]

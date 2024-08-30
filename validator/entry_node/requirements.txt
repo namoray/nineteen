@@ -6,3 +6,4 @@ redis
 uvicorn
 colorama
 aiocache
+scalar-fastapi

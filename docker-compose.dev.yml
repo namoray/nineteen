@@ -68,6 +68,35 @@ services:
     entrypoint: ["python", "-u", "/app/validator/query_node/src/main.py"]
     container_name: dev_query_node
 
+  entry_node:
+    build:
+      context: .
+      dockerfile: dockerfiles/entry_node.dockerfile
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+      restart_policy:
+        condition: on-failure
+      update_config:
+        parallelism: 1
+        delay: 10s
+      rollback_config:
+        parallelism: 1
+        delay: 10s
+    depends_on:
+      - redis
+      - postgresql
+    networks:
+      - postgres_network
+      - redis_network
+    env_file:
+      - .dev.env
+    entrypoint: ["python", "-u", "/app/validator/entry_node/src/server.py"]
+    container_name: dev_entry_node
+
   postgresql:
     image: postgres:latest
     volumes:
@@ -84,7 +113,6 @@ services:
     env_file:
       - .dev.env
     container_name: 0_dev_postgresql
-
   dbmate:
     image: amacneil/dbmate
     volumes:
