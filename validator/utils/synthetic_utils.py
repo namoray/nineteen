@@ -21,22 +21,10 @@ import uuid
 import numpy as np
 from core.logging import get_logger
 
+
 logger = get_logger(__name__)
 
 
-def get_randomly_edited_face_picture_for_avatar() -> str:
-    """
-    For avatar we need a face image.
-
-    We must satisfy the criteria: image must not be cacheable
-
-    As long as we satisfy that, we're good - since we score organic queries.
-
-    Hence, we can use a single picture and just edit it to generate 2**(1024*1024) unique images
-    """
-
-    my_boy_postie = _load_postie_to_pil("assets/postie.png")
-    return _alter_my_boy_postie(my_boy_postie)
 
 
 def _get_random_text_prompt() -> str:
@@ -124,16 +112,9 @@ async def _get_random_picsum_image(x_dim: int, y_dim: int) -> str:
     return img_b64
 
 
-def _load_postie_to_pil(image_path: str) -> Image:
-    with open(image_path, "rb") as image_file:
-        base64_string = base64.b64encode(image_file.read()).decode("utf-8")
-    pil_image = qutils.base64_to_pil(base64_string)
-    return pil_image
 
 
-def _alter_my_boy_postie(my_boy_postie: Image) -> str:
-    b64_postie_altered = qutils.alter_image(my_boy_postie)
-    return b64_postie_altered
+
 
 
 async def get_random_image_b64(cache: diskcache.Cache) -> str:
@@ -184,9 +165,7 @@ async def get_synthetic_data_version(redis_db: Redis, task: Task) -> float | Non
 
 # Takes anywhere from 1ms to 10ms
 async def fetch_synthetic_data_for_task(redis_db: Redis, task: Task) -> dict[str, Any]:
-    synthetic_data = await rutils.json_load_from_redis(
-        redis_db, key=construct_synthetic_data_task_key(task), default=None
-    )
+    synthetic_data = await rutils.json_load_from_redis(redis_db, key=construct_synthetic_data_task_key(task), default=None)
     if synthetic_data is None:
         raise ValueError(f"No synthetic data found for task: {task}")
     task_config = tasks_config.get_enabled_task_config(task)

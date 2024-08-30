@@ -31,7 +31,7 @@ async def adjust_contender_from_result(
 
         capacity_consumed = work_and_speed_functions.calculate_work(query_result.task, query_result.model_dump(), steps=payload.get("steps"))
 
-        await update_contender_capacities(config, contender, capacity_consumed)
+        await update_contender_capacities(config.psql_db, contender, capacity_consumed)
 
         await db_functions.potentially_store_result_in_db(
             config.psql_db, query_result, query_result.task, synthetic_query=synthetic_query, payload=payload
@@ -40,8 +40,8 @@ async def adjust_contender_from_result(
 
     elif query_result.status_code == 429:
         logger.debug(f"❌ Adjusting contender {contender.node_id} for task {query_result.task}.")
-        await update_contender_429_count(config, contender)
+        await update_contender_429_count(config.psql_db, contender)
     else:
         logger.debug(f"❌ Adjusting contender {contender.node_id} for task {query_result.task}.")
-        await update_contender_500_count(config, contender)
+        await update_contender_500_count(config.psql_db, contender)
     return query_result

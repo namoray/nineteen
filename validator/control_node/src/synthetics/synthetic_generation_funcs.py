@@ -10,19 +10,42 @@ from validator.utils import (
 from core.tasks import Task
 from core import tasks_config
 from core.models import payload_models
-
+from PIL import Image
+import io
+import base64
 import markovify
 import datasets
 import diskcache
 from functools import lru_cache
 from core.logging import get_logger
 from validator.utils import synthetic_utils as sutils
+import binascii
+
 logger = get_logger(__name__)
 
 
 # NOTE: any danger here of massively gorwing cache?
 @lru_cache(maxsize=1)
 def get_cached_markov_model():
+    import os
+    import os
+
+    print("Current directory contents:")
+    print(os.listdir("."))
+
+    print("\nContents of 'assets' directory:")
+    assets_path = os.path.join("..", "..", "..", "assets")
+    if os.path.exists(assets_path):
+        print(os.listdir(assets_path))
+    else:
+        print("'assets' directory not found in the expected location.")
+
+    print("\nContents of 'caption_data' directory:")
+    caption_data_path = os.path.join(assets_path, "caption_data")
+    if os.path.exists(caption_data_path):
+        print(os.listdir(caption_data_path))
+    else:
+        print("'caption_data' directory not found in the expected location.")
     logger.info("Loading markov model from caption_data...")
     dataset = datasets.load_dataset("assets/caption_data/data")
     text = [i["query"] for i in dataset["train"]]
@@ -46,6 +69,71 @@ async def _get_markov_sentence(max_words: int = 10) -> str:
     while text is None:
         text = markov_text_generation_model.make_sentence(max_words=max_words)
     return text
+
+
+def base64_to_pil(image_b64: str) -> Image.Image:
+    try:
+        image_data = base64.b64decode(image_b64)
+        image = Image.open(io.BytesIO(image_data))
+        return image
+    except binascii.Error:
+        return None
+
+
+def _load_postie_to_pil(image_path: str) -> Image:
+    with open(image_path, "rb") as image_file:
+        base64_string = base64.b64encode(image_file.read()).decode("utf-8")
+    pil_image = base64_to_pil(base64_string)
+    return pil_image
+
+
+def get_randomly_edited_face_picture_for_avatar() -> str:
+    """
+    For avatar we need a face image.
+
+    We must satisfy the criteria: image must not be cacheable
+
+    As long as we satisfy that, we're good - since we score organic queries.
+
+    Hence, we can use a single picture and just edit it to generate 2**(1024*1024) unique images
+    """
+
+    my_boy_postie = _load_postie_to_pil("assets/postie.png")
+    return _alter_my_boy_postie(my_boy_postie)
+
+
+def _alter_my_boy_postie(my_boy_postie: Image) -> str:
+    b64_postie_altered = alter_image(my_boy_postie)
+    return b64_postie_altered
+
+
+def pil_to_base64(image: Image, format: str = "JPEG") -> str:
+    buffered = io.BytesIO()
+    image.save(buffered, format=format)
+    img_str = base64.b64encode(buffered.getvalue()).decode()
+    return img_str
+
+
+def alter_image(
+    pil_image: Image.Image,
+) -> str:
+    for _ in range(3):
+        rand_x, rand_y = (
+            random.randint(0, pil_image.width - 1),
+            random.randint(0, pil_image.height - 1),
+        )
+
+        pixel = list(pil_image.getpixel((rand_x, rand_y)))
+        for i in range(3):
+            change = random.choice([-1, 1])
+            pixel[i] = max(0, min(255, pixel[i] + change))
+        pil_image.putpixel((rand_x, rand_y), tuple(pixel))
+
+    if pil_image.mode == "RGBA":
+        pil_image = pil_image.convert("RGB")
+
+    new_image = pil_to_base64(pil_image)
+    return new_image
 
 
 async def generate_chat_synthetic(model: str) -> payload_models.ChatPayload:
@@ -214,9 +302,7 @@ async def generate_synthetic_data(task: Task) -> Any:
     generative_function_name = task_config.synthetic_generation_config.func
 
     if generative_function_name not in sys.modules[__name__].__dict__:
-        raise ValueError(
-            f"Function {generative_function_name} not found in generate_synthetic_data, some config is wrong"
-        )
+        raise ValueError(f"Function {generative_function_name} not found in generate_synthetic_data, some config is wrong")
 
     # with gutils.log_time(f"Generating synthetic data for {task}", logger):
     #     func = getattr(sys.modules[__name__], generative_function_name)

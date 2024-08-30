@@ -2,8 +2,8 @@ from core.tasks import Task
 from core.logging import get_logger
 
 from asyncpg import Connection
+from validator.db.src.database import PSQLDB
 from validator.models import Contender, PeriodScore, calculate_period_score
-from validator.query_node.src.query_config import Config
 from validator.utils import database_constants as dcst
 
 logger = get_logger(__name__)
@@ -162,8 +162,8 @@ async def get_contenders_for_task(connection: Connection, task: Task, top_x: int
     return [Contender(**row) for row in rows]
 
 
-async def update_contender_capacities(config: Config, contender: Contender, capacitity_consumed: float) -> None:
-    async with await config.psql_db.connection() as connection:
+async def update_contender_capacities(psql_db: PSQLDB, contender: Contender, capacitity_consumed: float) -> None:
+    async with await psql_db.connection() as connection:
         await connection.execute(
             f"""
             UPDATE {dcst.CONTENDERS_TABLE}
@@ -176,8 +176,8 @@ async def update_contender_capacities(config: Config, contender: Contender, capa
         )
 
 
-async def update_contender_429_count(config: Config, contender: Contender) -> None:
-    async with await config.psql_db.connection() as connection:
+async def update_contender_429_count(psql_db: PSQLDB, contender: Contender) -> None:
+    async with await psql_db.connection() as connection:
         await connection.execute(
             f"""
             UPDATE {dcst.CONTENDERS_TABLE}
@@ -188,8 +188,8 @@ async def update_contender_429_count(config: Config, contender: Contender) -> No
         )
 
 
-async def update_contender_500_count(config: Config, contender: Contender) -> None:
-    async with await config.psql_db.connection() as connection:
+async def update_contender_500_count(psql_db: PSQLDB, contender: Contender) -> None:
+    async with await psql_db.connection() as connection:
         await connection.execute(
             f"""
             UPDATE {dcst.CONTENDERS_TABLE}
