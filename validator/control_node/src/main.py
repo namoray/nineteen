@@ -78,9 +78,10 @@ async def main() -> None:
     config = load_config()
     await config.psql_db.connect()
 
+    # NOTE: We could make separate threads if you wanted to be fancy
     await asyncio.gather(
-        score_results.main(config),  # Should be in its own thread
-        refresh_synthetic_data.main(config),  # Should be in its own thread?
+        # score_results.main(config),
+        # refresh_synthetic_data.main(config),
         execute_cycle.single_cycle(config),
     )
 
