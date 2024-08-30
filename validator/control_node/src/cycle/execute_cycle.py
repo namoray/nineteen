@@ -19,6 +19,7 @@ from validator.control_node.src.cycle import (
     schedule_synthetic_queries,
     # calculate_and_schedule_weights,
 )
+from core import constants as ccst
 from validator.db.src.sql.nodes import (
     get_nodes,
 )
@@ -28,9 +29,7 @@ from fiber.logging_utils import get_logger
 logger = get_logger(__name__)
 
 
-async def single_cycle(config: Config) -> None:
-    await asyncio.sleep(1)
-    return
+async def get_nodes_and_contenders(config: Config) -> None:
     logger.info("Starting cycle...")
     if config.refresh_nodes:
         logger.info("First refreshing metagraph and storing the nodes")
@@ -47,14 +46,17 @@ async def single_cycle(config: Config) -> None:
     contenders = await refresh_contenders.get_and_store_contenders(config, nodes)
 
     logger.info(f"Got all contenders! {len(contenders)} contenders will be queried...")
-    logger.info("Scheduling synthetics; this will take an hour ish...")
+
+async def schedule_synthetics(config: Config) -> None:
+    logger.info(f"Scheduling synthetics; this will take {ccst.SCORING_PERIOD_TIME // 60} minutes ish...")
 
     await schedule_synthetic_queries.schedule_synthetics_until_done(config)
 
 
 async def main(config: Config) -> None:
-    tasks = [single_cycle(config)]
+    await get_nodes_and_contenders(config)
+    tasks = [schedule_synthetics(config)]
     while True:
         await asyncio.gather(*tasks)
-        tasks = [calculate_and_schedule_weights.get_and_set_weights(config), single_cycle(config)]
-
+        await get_nodes_and_contenders(config)
+        tasks = [calculate_and_schedule_weights.get_and_set_weights(config), schedule_synthetics(config)]

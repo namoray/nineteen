@@ -112,9 +112,7 @@ async def get_last_updated_time_for_nodes(connection: Connection, netuid: int) -
 
 
 async def insert_symmetric_keys_for_nodes(connection: Connection, nodes: list[Node]) -> None:
-    logger.info(
-        f"Inserting {len([node for node in nodes if node.fernet is not None])} nodes into {dcst.NODES_TABLE}..."
-    )
+    logger.info(f"Inserting {len([node for node in nodes if node.fernet is not None])} nodes into {dcst.NODES_TABLE}...")
     await connection.executemany(
         f"""
         UPDATE {dcst.NODES_TABLE}
@@ -194,9 +192,15 @@ async def get_node(psql_db: PSQLDB, node_id: str, netuid: int) -> Node:
     node = await psql_db.fetchone(query, node_id, netuid)
 
     if node is None:
+        logger.error(f"No node found for hotkey {node_id} and netuid {netuid}")
+        logger.error(f"all nodes: {await psql_db.fetchall(f'SELECT * FROM {dcst.NODES_TABLE} WHERE {dcst.NETUID} = $1', netuid)}")
         raise ValueError(f"No node found for hotkey {node_id} and netuid {netuid}")
-
-    node["fernet"] = Fernet(node[dcst.SYMMETRIC_KEY])
+    try:
+        node["fernet"] = Fernet(node[dcst.SYMMETRIC_KEY])
+    except Exception as e:
+        logger.error(f"Error creating fernet: {e}")
+        logger.error(f"node: {node}")
+        return None
     return Node(**node)
 
 
@@ -224,3 +228,20 @@ async def get_vali_ss58_address(psql_db: PSQLDB, netuid: int) -> str | None:
         return None
 
     return node[dcst.HOTKEY]
+
+
+async def get_vali_node_id(psql_db: PSQLDB, netuid: int) -> str | None:
+    query = f"""
+        SELECT 
+            {dcst.NODE_ID}
+        FROM {dcst.NODES_TABLE}
+        WHERE {dcst.OUR_VALIDATOR} = true AND {dcst.NETUID} = $1
+    """
+
+    node = await psql_db.fetchone(query, netuid)
+
+    if node is None:
+        logger.error(f"No validator node found for netuid {netuid}")
+        return None
+
+    return node[dcst.NODE_ID]

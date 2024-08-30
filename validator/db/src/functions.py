@@ -10,9 +10,9 @@ from core.tasks import Task
 
 from validator.db.src.database import PSQLDB
 from validator.db.src.sql.rewards_and_scores import (
+    insert_task,
     select_count_of_rows_in_tasks,
     delete_oldest_rows_from_tasks,
-    insert_task,
     select_count_rows_of_task_stored_for_scoring,
     select_task_for_deletion,
     delete_reward_data_by_hotkey,
@@ -127,10 +127,13 @@ async def fetch_recent_most_rewards_for_uid(
     connection: Connection, task: Task, node_hotkey: str, quality_tasks_to_fetch: int = 50
 ) -> List[RewardData]:
     date = datetime.now() - timedelta(hours=72)
-    priority_results = await select_recent_reward_data_for_a_task(connection, task.value, date, node_hotkey)
+    priority_results = await select_recent_reward_data_for_a_task(connection, task, date, node_hotkey)
 
     y = len(priority_results)
-    fill_results = await select_recent_reward_data(connection, date, node_hotkey, quality_tasks_to_fetch - y)
+    if y < quality_tasks_to_fetch:
+        fill_results = await select_recent_reward_data(connection, date, node_hotkey, quality_tasks_to_fetch - y)
+    else:
+        fill_results = []
 
     reward_data_list = [
         RewardData(

@@ -15,6 +15,7 @@ from core import tasks_config as tcfg
 from validator.utils import contender_utils as putils
 from validator.utils import generic_constants as gcst
 from validator.utils import redis_constants as rcst
+from core import constants as ccst
 from core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -66,7 +67,7 @@ async def _initialize_task_schedules(task_groups: Dict[Task, List[Contender]]) -
     for task, contenders in task_groups.items():
         total_requests = _calculate_task_requests(task, contenders)
         if total_requests > 0:
-            interval = 3600 / (total_requests + 1) 
+            interval = ccst.SCORING_PERIOD_TIME / (total_requests + 1) 
             schedule = TaskScheduleInfo(
                 task=task,
                 total_requests=total_requests,

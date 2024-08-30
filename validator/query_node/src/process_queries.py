@@ -33,7 +33,12 @@ async def _handle_stream_query(config: Config, message: rdc.QueryQueueMessage, c
     # TODO: LIMIT the amount of contenders to query
     for contender in contenders_to_query:
         node = await get_node(config.psql_db, contender.node_id, config.netuid)
-        generator = await streaming.query_node_stream(config=config, contender=contender, payload=message.query_payload, node=node)
+        if node is None:
+            logger.error(f"Node {contender.node_id} not found in database for netuid {config.netuid}")
+            continue
+        generator = await streaming.query_node_stream(
+            config=config, contender=contender, payload=message.query_payload, node=node
+        )
 
         success = await streaming.consume_generator(
             config=config,
@@ -62,6 +67,9 @@ async def _handle_nonstream_query(config: Config, message: rdc.QueryQueueMessage
     success = False
     for contender in contenders_to_query:
         node = await get_node(config.psql_db, contender.node_id, config.netuid)
+        if node is None:
+            logger.error(f"Node {contender.node_id} not found in database for netuid {config.netuid}")
+            continue
         success = await nonstream.query_nonstream(
             config=config,
             contender=contender,
@@ -88,7 +96,10 @@ async def _handle_nonstream_query(config: Config, message: rdc.QueryQueueMessage
 
 async def _handle_error(config: Config, synthetic_query: bool, job_id: str, status_code: int, error_message: str) -> None:
     if not synthetic_query:
-        await config.redis_db.publish(f"{rcst.JOB_RESULTS}:{job_id}", gutils.get_error_event(job_id=job_id, error_message=error_message, status_code=status_code))
+        await config.redis_db.publish(
+            f"{rcst.JOB_RESULTS}:{job_id}",
+            gutils.get_error_event(job_id=job_id, error_message=error_message, status_code=status_code),
+        )
 
 
 async def process_task(config: Config, message: rdc.QueryQueueMessage):
@@ -109,6 +120,7 @@ async def process_task(config: Config, message: rdc.QueryQueueMessage):
             status_code=500,
             error_message=f"Can't find the task {task.value}, please try again later",
         )
+        return
 
     stream = task_config.is_stream
 

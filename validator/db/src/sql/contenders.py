@@ -2,7 +2,7 @@ from core.tasks import Task
 from core.logging import get_logger
 
 from asyncpg import Connection
-from validator.models import Contender, PeriodScore
+from validator.models import Contender, PeriodScore, calculate_period_score
 from validator.query_node.src.query_config import Config
 from validator.utils import database_constants as dcst
 
@@ -235,7 +235,7 @@ async def fetch_all_contenders(connection: Connection, netuid: int | None = None
     return [Contender(**row) for row in rows]
 
 
-async def fetch_hotkey_scores_for_task(connection: Connection, task: Task, node_hotkey: str) -> list[PeriodScore]:
+async def fetch_hotkey_scores_for_task(connection: Connection, task: str, node_hotkey: str) -> list[PeriodScore]:
     rows = await connection.fetch(
         f"""
         SELECT
@@ -249,21 +249,55 @@ async def fetch_hotkey_scores_for_task(connection: Connection, task: Task, node_
         AND {dcst.NODE_HOTKEY} = $2
         ORDER BY {dcst.CREATED_AT} DESC
         """,
-        task.value,
+        task,
         node_hotkey,
     )
     return [PeriodScore(**row) for row in rows]
 
 
-async def update_contenders_period_scores(connection: Connection, contenders: list[Contender]) -> None:
+async def update_contenders_period_scores(connection: Connection, netuid: int) -> None:
+    rows = await connection.fetch(
+        f"""
+        SELECT 
+            {dcst.CONTENDER_ID},
+            {dcst.TOTAL_REQUESTS_MADE},
+            {dcst.CAPACITY},
+            {dcst.CONSUMED_CAPACITY},
+            {dcst.REQUESTS_429},
+            {dcst.REQUESTS_500}
+        FROM {dcst.CONTENDERS_TABLE}
+        WHERE {dcst.NETUID} = $1
+    """,
+        netuid,
+    )
+
+    updates = []
+    for row in rows:
+        score = calculate_period_score(
+            float(row[dcst.TOTAL_REQUESTS_MADE]),
+            float(row[dcst.CAPACITY]),
+            float(row[dcst.CONSUMED_CAPACITY]),
+            float(row[dcst.REQUESTS_429]),
+            float(row[dcst.REQUESTS_500]),
+        )
+        if score is not None:
+            updates.append((score, row[dcst.CONTENDER_ID]))
+
+    logger.info(f"Updating {len(updates)} contenders with new period scores")
+
     await connection.executemany(
         f"""
         UPDATE {dcst.CONTENDERS_TABLE}
-        SET {dcst.PERIOD_SCORE} = $1
+        SET {dcst.PERIOD_SCORE} = $1,
+            {dcst.UPDATED_AT} = NOW() AT TIME ZONE 'UTC'
         WHERE {dcst.CONTENDER_ID} = $2
-        """,
-        [(contender.period_score, contender.id) for contender in contenders],
+    """,
+        updates,
     )
+    logger.info(f"Updated {len(updates)} contenders with new period scores")
+
+    contenders = await fetch_all_contenders(connection, netuid)
+    logger.debug(f"Found {contenders} contenders")
 
 
 async def get_and_decrement_synthetic_request_count(connection: Connection, contender_id: str) -> int | None:

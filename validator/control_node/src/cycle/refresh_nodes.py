@@ -7,11 +7,7 @@ import asyncio
 
 
 from fiber.chain_interactions.models import Node
-from validator.db.src.sql.nodes import (
-    migrate_nodes_to_history,
-    insert_nodes,
-    get_last_updated_time_for_nodes
-)
+from validator.db.src.sql.nodes import migrate_nodes_to_history, insert_nodes, get_last_updated_time_for_nodes
 from core.logging import get_logger
 from fiber.chain_interactions import fetch_nodes
 from validator.control_node.src.main import Config
@@ -46,6 +42,23 @@ async def get_and_store_nodes(config: Config) -> list[Node]:
             ip="0.0.0.1",
             ip_type=4,
             port=4001,
+            protocol=4,
+            network="test",
+            created_at=datetime.now(),
+        ),
+        Node(
+            hotkey="5GsjgdyrTjYHykduKfEHGu9DApgUeCqEMCLL8Fa2SBnmkAmb",
+            coldkey="5EFnWXKkJufZYc74pWUSBC5ubCBZCSPCrSvZfEqsFAJwBdCF",
+            node_id=2,
+            incentive=20000,
+            netuid=176,
+            stake=0,
+            trust=1,
+            vtrust=0,
+            last_updated=2404204,
+            ip="0.0.0.1",
+            ip_type=4,
+            port=4002,
             protocol=4,
             network="test",
             created_at=datetime.now(),
@@ -109,9 +122,7 @@ async def _handshake(config: Config, node: Node, async_client: httpx.AsyncClient
     )
 
     try:
-        symmetric_key, symmetric_key_uid = await handshake.perform_handshake(
-            async_client, server_address, config.keypair
-        )
+        symmetric_key, symmetric_key_uid = await handshake.perform_handshake(async_client, server_address, config.keypair)
     except (httpx.HTTPStatusError, httpx.RequestError, httpx.ConnectError) as e:
         # logger.warning(f"Failed to connect to {server_address}: {e}")
         if hasattr(e, "response"):

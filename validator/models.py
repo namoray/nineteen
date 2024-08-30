@@ -49,36 +49,35 @@ class Contender(BaseModel):
         contender_id = self.node_hotkey + "-" + self.task
         return contender_id
 
-    def calculate_period_score(self) -> float:
-        """
-        Calculate a period score (not including quality which is scored separately)
 
-        The closer we are to max volume used, the more forgiving we can be.
-        For example, if you rate limited me loads (429), but I got most of your volume,
-        then fair enough, perhaps I was querying too much
+def calculate_period_score(
+    total_requests_made: float, capacity: float, consumed_capacity: float, requests_429: float, requests_500: float
+) -> float:
+    """
+    Calculate a period score (not including quality which is scored separately)
 
-        But if I barely queried your volume, and you still rate limited me loads (429),
-        then you're very naughty, you.
-        """
-        if self.total_requests_made == 0 or self.capacity == 0:
-            return None
+    The closer we are to max volume used, the more forgiving we can be.
+    For example, if you rate limited me loads (429), but I got most of your volume,
+    then fair enough, perhaps I was querying too much
 
-        self.capacity = max(self.capacity, 1)
-        volume_unqueried = max(self.capacity - self.consumed_capacity, 0)
+    But if I barely queried your volume, and you still rate limited me loads (429),
+    then you're very naughty, you.
+    """
+    if total_requests_made == 0 or capacity == 0:
+        return None
 
-        percentage_of_volume_unqueried = volume_unqueried / self.capacity
-        percentage_of_429s = self.requests_429 / self.total_requests_made
-        percentage_of_500s = self.requests_500 / self.total_requests_made
-        percentage_of_good_requests = (
-            self.total_requests_made - self.requests_429 - self.requests_500
-        ) / self.total_requests_made
+    capacity = max(capacity, 1)
+    volume_unqueried = max(capacity - consumed_capacity, 0)
 
-        rate_limit_punishment_factor = percentage_of_429s * percentage_of_volume_unqueried
-        server_error_punishment_factor = percentage_of_500s * percentage_of_volume_unqueried
+    percentage_of_volume_unqueried = volume_unqueried / capacity
+    percentage_of_429s = requests_429 / total_requests_made
+    percentage_of_500s = requests_500 / total_requests_made
+    percentage_of_good_requests = (total_requests_made - requests_429 - requests_500) / total_requests_made
 
-        self.period_score = max(
-            percentage_of_good_requests * (1 - rate_limit_punishment_factor) * (1 - server_error_punishment_factor), 0
-        )
+    rate_limit_punishment_factor = percentage_of_429s * percentage_of_volume_unqueried
+    server_error_punishment_factor = percentage_of_500s * percentage_of_volume_unqueried
+
+    return max(percentage_of_good_requests * (1 - rate_limit_punishment_factor) * (1 - server_error_punishment_factor), 0)
 
 
 class RewardData(BaseModel):

@@ -10,6 +10,7 @@ from validator.control_node.src.cycle import calculations
 from fiber.chain_interactions import weights
 from core.logging import get_logger
 from core import constants as ccst
+from validator.db.src.sql.nodes import get_vali_node_id
 
 logger = get_logger(__name__)
 
@@ -21,25 +22,30 @@ async def _get_weights_to_set(config: Config) -> tuple[list[int], list[float]]:
     if len(contenders) == 0:
         logger.warning("No contenders to calculate weights for!")
         return
+    else:
+        logger.debug(f"Found {len(contenders)} contenders")
     node_ids, node_weights = await calculations.calculate_scores_for_settings_weights(config.psql_db, contenders)
-    logger.info("Weights calculated, about to set...")
 
     return node_ids, node_weights
 
 
 async def get_and_set_weights(config: Config) -> None:
     node_ids, node_weights = await _get_weights_to_set(config)
+    logger.info("Weights calculated, about to set...")
+
+    validator_node_id = await get_vali_node_id(config.psql_db, config.netuid)
 
     logger.info(f"Setting weights for {len(node_ids)} nodes...")
 
     success = await asyncio.to_thread(
         weights.set_node_weights(
-            config.substrate_interface,
-            config.keypair,
+            substrate_interface=config.substrate_interface,
+            keypair=config.keypair,
             node_ids=node_ids,
-            weights=node_weights,
+            node_weights=node_weights,
             netuid=config.netuid,
             version_key=ccst.VERSION_KEY,
+            validator_node_id=validator_node_id,
             wait_for_inclusion=True,
             wait_for_finalization=True,
             max_attempts=3,
@@ -48,7 +54,5 @@ async def get_and_set_weights(config: Config) -> None:
 
     if success:
         logger.info("Weights set successfully.")
-        return
-
     else:
         logger.error("Failed to set weights :(")

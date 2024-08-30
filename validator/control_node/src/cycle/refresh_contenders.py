@@ -8,7 +8,7 @@ import asyncio
 from typing import List
 
 
-from validator.db.src.sql.contenders import migrate_contenders_to_contender_history, insert_contenders
+from validator.db.src.sql.contenders import migrate_contenders_to_contender_history, insert_contenders, update_contenders_period_scores
 from validator.models import Contender
 from fiber.chain_interactions.models import Node
 from core import tasks_config as tcfg
@@ -37,11 +37,12 @@ def _get_capacity_to_score(capacity: float, capacity_to_score_multiplier: float)
     return capacity * capacity_to_score_multiplier
 
 
-async def _store_and_migrate_old_contenders(config: Config, contenders: List[Contender]):
+async def _store_and_migrate_old_contenders(config: Config, new_contenders: List[Contender]):
     logger.info("Calculating period scores & refreshing contenders")
     async with await config.psql_db.connection() as connection:
+        await update_contenders_period_scores(connection, config.netuid)
         await migrate_contenders_to_contender_history(connection)
-        await insert_contenders(connection, contenders, config.keypair.ss58_address)
+        await insert_contenders(connection, new_contenders, config.keypair.ss58_address)
 
 
 async def _fetch_node_capacity(config: Config, node: Node) -> dict[str, float] | None:
