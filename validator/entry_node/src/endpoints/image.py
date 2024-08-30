@@ -64,7 +64,7 @@ async def make_non_stream_organic_query(redis_db: Redis, payload: dict[str, Any]
     await pubsub.subscribe(f"{gcst.ACKNLOWEDGED}:{job_id}")
 
     try:
-        await asyncio.wait_for(_wait_for_acknowledgement(pubsub, job_id, task), timeout=1)
+        await asyncio.wait_for(_wait_for_acknowledgement(pubsub, job_id), timeout=1)
 
         await pubsub.subscribe(f"{rcst.JOB_RESULTS}:{job_id}")
         return await asyncio.wait_for(_collect_single_result(pubsub, job_id), timeout=timeout)
