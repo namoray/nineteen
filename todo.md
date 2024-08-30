@@ -1,7 +1,5 @@
 tests
 
-- - Make the weight setting make sense, and work 
-- - look at my notes on phone 
 - - tidy it all up real good
 
 - - Fiber docs
