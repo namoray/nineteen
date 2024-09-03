@@ -41,6 +41,6 @@ app.include_router(image_router)
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="127.0.0.1", port=8091)
+    uvicorn.run(app, host="0.0.0.0", port=8091)
 
-    # uvicorn validator.entry_node.src.server:app --reload --host 127.0.0.1 --port 8091 --env-file .dev.env
+    # uvicorn validator.entry_node.src.server:app --reload --host 0.0.0.0 --port 8091 --env-file .dev.env

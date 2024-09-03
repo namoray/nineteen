@@ -30,7 +30,7 @@ def bool_processing_func(input: str) -> bool:
         return False
 
 
-def int_processing_func(input: str) -> Optional[int]:
+def int_processing_func(input: str) -> int | None:
     try:
         return int(input)
     except ValueError:
@@ -116,9 +116,7 @@ def handle_parameters(parameters: Dict[str, Any], hotkey: str):
 
 
 def get_input(parameter_metadata: Dict[str, Dict[str, Any]]) -> Any:
-    message = (
-        f"[yellow]{parameter_metadata['message']}[/yellow][white](default: {parameter_metadata['default']})[/white]"
-    )
+    message = f"[yellow]{parameter_metadata['message']}[/yellow][white](default: {parameter_metadata['default']})[/white]"
 
     user_input = Prompt.ask(message)
     if not user_input:

@@ -11,13 +11,13 @@ tasks:
 
   entry_node_dev:
     cmds:
-      - uvicorn validator.entry_node.src.server:app --reload --host 127.0.0.1 --port 8091 --env-file .dev.env
+      - uvicorn validator.entry_node.src.server:app --reload --host 0.0.0.0 --port 8091 --env-file .dev.env
 
   miners:
     cmds:
       - |
-        uvicorn miner.server:app --reload --host 127.0.0.1 --port 4001 --env-file .1.env --log-level debug &
-        uvicorn miner.server:app --reload --host 127.0.0.1 --port 4002 --env-file .2.env --log-level debug &
+        uvicorn miner.server:app --reload --host 0.0.0.0 --port 4001 --env-file .1.env --log-level debug &
+        uvicorn miner.server:app --reload --host 0.0.0.0 --port 4002 --env-file .2.env --log-level debug &
         wait
   dev_setup:
     cmds:

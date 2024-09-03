@@ -34,7 +34,6 @@ async def _wait_for_acknowledgement(pubsub: PubSub, job_id: str) -> bool:
 async def _stream_results(pubsub: PubSub, job_id: str, first_chunk: str) -> AsyncGenerator[str, None]:
     yield first_chunk
     async for message in pubsub.listen():
-        logger.debug(f"GOT MESSAGE: {message}")
         channel = message["channel"].decode()
 
         if channel == f"{rcst.JOB_RESULTS}:{job_id}" and message["type"] == "message":
@@ -89,6 +88,8 @@ async def chat(
     config: Config = Depends(get_config),
 ) -> StreamingResponse:
     payload = request_models.chat_to_payload(chat_request)
+    # TODO: remove
+    logger.debug(f"Payload: {payload}")
 
     try:
         text_generator = await make_stream_organic_query(

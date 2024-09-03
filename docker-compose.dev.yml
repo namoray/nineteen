@@ -26,7 +26,7 @@ services:
       core:
         condition: service_started
     volumes:
-      # - .:/app
+      - .:/app
       - ~/.bittensor/wallets:/root/.bittensor/wallets
     networks:
       - postgres_network
@@ -92,6 +92,10 @@ services:
     networks:
       - postgres_network
       - redis_network
+    ports:
+      - "8091:8091"
+    volumes:
+      - .:/app 
     env_file:
       - .dev.env
     entrypoint: ["python", "-u", "/app/validator/entry_node/src/server.py"]
@@ -134,22 +138,6 @@ services:
     ports:
       - "6379:6379"
     container_name: 0_redis
-
-  prometheus:
-    image: prom/prometheus:latest
-    volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
-    container_name: 0_prometheus
-    ports:
-      - "9090:9090"
-
-  grafana:
-    image: grafana/grafana:latest
-    depends_on:
-      - prometheus
-    container_name: 0_grafana
-    ports:
-      - "3000:3000"
 
 networks:
   postgres_network:

@@ -224,7 +224,7 @@ async def get_vali_ss58_address(psql_db: PSQLDB, netuid: int) -> str | None:
     node = await psql_db.fetchone(query, netuid)
 
     if node is None:
-        logger.error(f"No validator node found for netuid {netuid}")
+        logger.error(f"I cannot find the validator node for netuid {netuid} in the DB. Maybe control node is still syncing?")
         return None
 
     return node[dcst.HOTKEY]

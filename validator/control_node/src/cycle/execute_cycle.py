@@ -47,16 +47,30 @@ async def get_nodes_and_contenders(config: Config) -> None:
 
     logger.info(f"Got all contenders! {len(contenders)} contenders will be queried...")
 
+    return contenders
+
 async def schedule_synthetics(config: Config) -> None:
     logger.info(f"Scheduling synthetics; this will take {ccst.SCORING_PERIOD_TIME // 60} minutes ish...")
 
     await schedule_synthetic_queries.schedule_synthetics_until_done(config)
 
 
+
 async def main(config: Config) -> None:
-    await get_nodes_and_contenders(config)
-    tasks = [schedule_synthetics(config)]
+    time_to_sleep_if_no_contenders = 20
+    contenders = await get_nodes_and_contenders(config)
+    if len(contenders) > 0:
+        tasks = [schedule_synthetics(config)]
+    else:
+        logger.info(f"No contenders to query, skipping synthetic scheduling and sleeping for {time_to_sleep_if_no_contenders} seconds to wait.")
+        await asyncio.sleep(time_to_sleep_if_no_contenders)  # Sleep for 5 minutes to wait for contenders to become available
+        tasks = []
     while True:
         await asyncio.gather(*tasks)
-        await get_nodes_and_contenders(config)
-        tasks = [calculate_and_schedule_weights.get_and_set_weights(config), schedule_synthetics(config)]
+        contenders = await get_nodes_and_contenders(config)
+        if len(contenders) > 0:
+            tasks = [calculate_and_schedule_weights.get_and_set_weights(config), schedule_synthetics(config)]
+        else:
+            logger.info(f"No contenders to query, skipping synthetic scheduling and sleeping for {time_to_sleep_if_no_contenders} seconds to wait.")
+            await asyncio.sleep(time_to_sleep_if_no_contenders)  # Sleep for 5 minutes to wait for contenders to become available
+            tasks = []

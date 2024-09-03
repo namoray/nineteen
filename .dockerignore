@@ -14,6 +14,10 @@ sam_vit_l_0b3195.pth
 *.bin
 docker-compose.combined.yml
 nodes.json
+fiber
+fiber/*
+fiber/fiber/*
+fiber/
 
 .DS_Store
 embeddings_for_testing.txt

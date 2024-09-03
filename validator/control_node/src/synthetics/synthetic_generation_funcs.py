@@ -78,7 +78,6 @@ def get_randomly_edited_face_picture_for_avatar() -> str:
 
     Hence, we can use a single picture and just edit it to generate 2**(1024*1024) unique images
     """
-
     my_boy_postie = _load_postie_to_pil("assets/postie.png")
     return _alter_my_boy_postie(my_boy_postie)
 

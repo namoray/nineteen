@@ -1,1 +1,0 @@
-uvicorn miner.server:app --reload --host 127.0.0.1 --port 4001 --env-file .1.env --log-level debug

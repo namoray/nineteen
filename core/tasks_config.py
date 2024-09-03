@@ -101,7 +101,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         orchestrator_server_config=OrchestratorServerConfig(
             server_needed=ServerType.LLM.value,
             load_model_config={
-                "model": "casperhansen/llama-3-70b-instruct-awq",
+                "model": "hugging-quants/Meta-Llama-3.1-70B-Instruct-AWQ-INT4",
                 "half_precision": True,
                 "tokenizer": "tau-vision/llama-3-tokenizer-fix",
             },
@@ -117,7 +117,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         is_stream=True,
         weight=0.1,
         timeout=2,
-        enabled=False,
+        enabled=True,
     ),
     Task.proteus_text_to_image: FullTaskConfig(
         task=Task.proteus_text_to_image,
@@ -312,7 +312,12 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
 }
 
 
-def get_enabled_task_config(task: Task) -> FullTaskConfig | None:
+def get_enabled_task_config(task: Task | str) -> FullTaskConfig | None:
+    if isinstance(task, str):
+        try:
+            task = Task(task)
+        except ValueError:
+            return None
     config = TASK_TO_CONFIG.get(task)
     if config is None or not config.enabled:
         return None

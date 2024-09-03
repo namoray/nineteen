@@ -15,13 +15,13 @@ from validator.db.src.sql.nodes import get_vali_node_id
 logger = get_logger(__name__)
 
 
-async def _get_weights_to_set(config: Config) -> tuple[list[int], list[float]]:
+async def _get_weights_to_set(config: Config) -> tuple[list[int], list[float]] | None:
     async with await config.psql_db.connection() as connection:
         contenders = await fetch_all_contenders(connection, None)
 
     if len(contenders) == 0:
         logger.warning("No contenders to calculate weights for!")
-        return
+        return None
     else:
         logger.debug(f"Found {len(contenders)} contenders")
     node_ids, node_weights = await calculations.calculate_scores_for_settings_weights(config.psql_db, contenders)
@@ -30,7 +30,11 @@ async def _get_weights_to_set(config: Config) -> tuple[list[int], list[float]]:
 
 
 async def get_and_set_weights(config: Config) -> None:
-    node_ids, node_weights = await _get_weights_to_set(config)
+    result = await _get_weights_to_set(config)
+    if result is None:
+        logger.info("No weights to set. Skipping weight setting.")
+        return
+    node_ids, node_weights = result
     logger.info("Weights calculated, about to set...")
 
     validator_node_id = await get_vali_node_id(config.psql_db, config.netuid)
@@ -38,18 +42,17 @@ async def get_and_set_weights(config: Config) -> None:
     logger.info(f"Setting weights for {len(node_ids)} nodes...")
 
     success = await asyncio.to_thread(
-        weights.set_node_weights(
-            substrate_interface=config.substrate_interface,
-            keypair=config.keypair,
-            node_ids=node_ids,
-            node_weights=node_weights,
-            netuid=config.netuid,
-            version_key=ccst.VERSION_KEY,
-            validator_node_id=validator_node_id,
-            wait_for_inclusion=True,
-            wait_for_finalization=True,
-            max_attempts=3,
-        )
+        weights.set_node_weights,
+        substrate_interface=config.substrate_interface,
+        keypair=config.keypair,
+        node_ids=node_ids,
+        node_weights=node_weights,
+        netuid=config.netuid,
+        version_key=ccst.VERSION_KEY,
+        validator_node_id=validator_node_id,
+        wait_for_inclusion=True,
+        wait_for_finalization=True,
+        max_attempts=3,
     )
 
     if success:

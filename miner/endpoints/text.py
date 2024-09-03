@@ -23,7 +23,6 @@ async def chat_completions(
     ),
     config: Config = Depends(get_config),
 ) -> StreamingResponse:
-    decrypted_payload.model = "unsloth/Meta-Llama-3.1-8B-Instruct"
     try:
         generator = chat_stream(config.httpx_client, decrypted_payload)
         first_chunk = await generator.__anext__()
