@@ -19,8 +19,6 @@ services:
       - redis
       - postgresql
       - core
-    volumes:
-      - .:/app
     networks:
       - postgres_network
       - redis_network
@@ -61,8 +59,6 @@ services:
       - redis
       - postgresql
       - core
-    volumes:
-      - .:/app
     networks:
       - postgres_network
       - redis_network
@@ -116,8 +112,6 @@ services:
       - redis
       - postgresql
       - core
-    volumes:
-      - .:/app
     networks:
       - postgres_network
       - redis_network

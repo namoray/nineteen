@@ -1,164 +1,104 @@
-from typing import Dict, Any, Optional
-from core import constants as ccst
-from rich.prompt import Prompt
+import secrets
+import string
+import re
+import argparse
+from typing import  Callable, Any
 
 
-def device_processing_func(input: str):
-    if "cuda" not in input:
-        input = "cuda:" + input
-    return input
+def generate_secure_password(length: int = 16) -> str:
+    alphabet = string.ascii_letters + string.digits + string.punctuation
+    return "".join(secrets.choice(alphabet) for _ in range(length))
 
 
-def optional_http_address_processing_func(input: Optional[str]) -> str:
-    if input is None:
-        return None
-    return http_address_processing_func(input)
+def validate_input(prompt: str, validator: Callable[[str], bool]) -> str:
+    while True:
+        value = input(prompt)
+        if validator(value):
+            return value
+        print("Invalid input. Please try again.")
 
 
-def http_address_processing_func(input: str) -> str:
-    if "http://" not in input and "https://" not in input:
-        input = "http://" + input
-    if input[-1] != "/":
-        input = input + "/"
-    return input
+def yes_no_validator(value: str) -> bool:
+    return value.lower() in ["y", "n", "yes", "no"]
 
 
-def bool_processing_func(input: str) -> bool:
-    if input.lower() in ["true", "t", "1", "y", "yes"]:
+def non_empty_validator(value: str) -> bool:
+    return bool(value.strip())
+
+
+def number_validator(value: str) -> bool:
+    return value.isdigit()
+
+
+def float_validator(value: str) -> bool:
+    try:
+        float(value)
         return True
-    else:
+    except ValueError:
         return False
 
 
-def int_processing_func(input: str) -> int | None:
-    try:
-        return int(input)
-    except ValueError:
-        return None
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Generate configuration file")
+    parser.add_argument("--dev", action="store_true", help="Use development configuration")
+    return parser.parse_args()
 
 
-GLOBAL_PARAMETERS = {
-    ccst.HOTKEY_PARAM: {"default": "default", "message": "Hotkey name: "},
-}
+def generate_config(dev: bool = False) -> dict[str, Any]:
+    config: dict[str, Any] = {}
 
-MISC_PARAMETERS = {
-    ccst.WALLET_NAME_PARAM: {"default": "default", "message": "Wallet Name "},
-    ccst.SUBTENSOR_NETWORK_PARAM: {
-        "default": "finney",
-        "message": "Subtensor Network (finney, test, local)",
-    },
-    ccst.SUBTENSOR_CHAINENDPOINT_PARAM: {
-        "default": None,
-        "message": "Subtensor Chain Endpoint ",
-    },
-    ccst.IS_VALIDATOR_PARAM: {
-        "default": "n",
-        "message": "Is this a Validator hotkey? (y/n) ",
-        "process_function": bool_processing_func,
-    },
-}
+    # Auto-generate database credentials
+    config["POSTGRES_USER"] = "user"
+    config["POSTGRES_PASSWORD"] = generate_secure_password()
+    config["POSTGRES_DB"] = "19_db"
+    config["POSTGRES_PORT"] = "5432"
+    config["POSTGRES_HOST"] = "postgresql"
 
-VALIDATOR_PARAMETERS = {
-    ccst.API_SERVER_PORT_PARAM: {
-        "default": None,
-        "message": "API server port (if you're running an organic validator, else leave it)",
-    },
-    ccst.EXTERNAL_SERVER_ADDRESS_PARAM: {
-        "default": ccst.EXTERNAL_SERVER_ADDRESS_PARAM,
-        "message": "External Server Address: ",
-        "process_function": http_address_processing_func,
-    },
-}
+    # User inputs
+    config["NETUID"] = validate_input("Enter NETUID: ", number_validator)
+    config["WALLET_NAME"] = validate_input("Enter wallet name: ", non_empty_validator)
+    config["HOTKEY_NAME"] = validate_input("Enter hotkey name: ", non_empty_validator)
+    config["SUBTENSOR_NETWORK"] = validate_input("Enter subtensor network: ", non_empty_validator)
+    config["GPU_SERVER_ADDRESS"] = validate_input(
+        "Enter GPU server address: ", lambda x: re.match(r"^https?://.+", x) is not None
+    )
 
-MINER_PARAMETERS = {
-    ccst.AXON_PORT_PARAM: {"default": 8091, "message": "Axon Port: "},
-    ccst.AXON_EXTERNAL_IP_PARAM: {"default": None, "message": "Axon External IP: "},
-    ccst.IMAGE_WORKER_URL_PARAM: {
-        "default": None,
-        "message": "Image Worker URL: ",
-        "process_function": optional_http_address_processing_func,
-    },
-    ccst.MIXTRAL_TEXT_WORKER_URL_PARAM: {
-        "default": None,
-        "message": "Mixtral Text Worker URL: ",
-        "process_function": optional_http_address_processing_func,
-    },
-    ccst.LLAMA_3_TEXT_WORKER_URL_PARAM: {
-        "default": None,
-        "message": "Llama 3 Text Worker URL: ",
-        "process_function": optional_http_address_processing_func,
-    },
-}
+    if dev:
+        config["ENV"] = "dev"
+        config["REFRESH_NODES"] = (
+            "true" if validate_input("Refresh nodes? (y/n): ", yes_no_validator).lower().startswith("y") else "false"
+        )
+        config["CAPACITY_TO_SCORE_MULTIPLIER"] = float(validate_input("Enter capacity to score multiplier: ", float_validator))
+        config["LOCALHOST"] = (
+            "true" if validate_input("Use localhost? (y/n): ", yes_no_validator).lower().startswith("y") else "false"
+        )
+        config["REPLACE_WITH_DOCKER_LOCALHOST"] = (
+            "true"
+            if validate_input("Replace with Docker localhost? (y/n): ", yes_no_validator).lower().startswith("y")
+            else "false"
+        )
+    else:
+        config["ENV"] = "prod"
+        config["REFRESH_NODES"] = "true"
+        config["CAPACITY_TO_SCORE_MULTIPLIER"] = 1
+        config["LOCALHOST"] = "false"
+        config["REPLACE_WITH_DOCKER_LOCALHOST"] = "true"
+
+    return config
 
 
-gpu_assigned_dict = {}
-config = {}
-
-DEFAULT_CONCURRENCY_GROUPS = {"1": 10, "2": 10, "3": 10, "4": 1}
-
-
-def _insert_defaults_for_task_configs(hotkey: str) -> None:
-    miner_db_manager.insert_default_task_configs(hotkey)
+def write_config_to_file(config: dict[str, Any], env: str) -> None:
+    filename = f".{env}.env"
+    with open(filename, "w") as f:
+        for key, value in config.items():
+            f.write(f"{key}={value}\n")
 
 
-def handle_parameters(parameters: Dict[str, Any], hotkey: str):
-    global config
-    for parameter, metadata in parameters.items():
-        if parameter == ccst.HOTKEY_PARAM:
-            continue
-        while True:
-            try:
-                user_input = get_input(metadata)
-                config[hotkey][parameter] = user_input
-                break
-            except ValueError:
-                print("Invalid input, please try again.")
-
-
-def get_input(parameter_metadata: Dict[str, Dict[str, Any]]) -> Any:
-    message = f"[yellow]{parameter_metadata['message']}[/yellow][white](default: {parameter_metadata['default']})[/white]"
-
-    user_input = Prompt.ask(message)
-    if not user_input:
-        user_input = parameter_metadata["default"]
-
-    if parameter_metadata.get("process_function", None) is not None:
-        processed_input = parameter_metadata["process_function"](user_input)
-        return processed_input
-    return user_input
-
-
-def get_config():
-    while True:
-        hotkey = get_input(GLOBAL_PARAMETERS[ccst.HOTKEY_PARAM])
-        if hotkey == "":
-            break
-
-        config[hotkey] = {}
-
-        handle_parameters(MISC_PARAMETERS, hotkey)
-
-        if config[hotkey][ccst.IS_VALIDATOR_PARAM]:
-            handle_parameters(VALIDATOR_PARAMETERS, hotkey)
-        else:
-            handle_parameters(MINER_PARAMETERS, hotkey)
-
-            print(
-                "\nNote: You must now edit your task configuration (Capacities & concurrency settings). Please use ./peer_at_sql_db.sh, or "
-                "use `sqlite3 vision_database.db` to finish your configuration"
-            )
-            _insert_defaults_for_task_configs(hotkey)
-
-        with open(f".{hotkey}.env", "w") as f:
-            f.write(f"{ccst.HOTKEY_PARAM}=" + hotkey + "\n")
-            for key, value in config[hotkey].items():
-                f.write(f"{key}=")
-                if value is not None:
-                    f.write(str(value))
-                f.write("\n")
-
-        # Check if the user wants to add another hotkey
-        add_another = input("Do you want to add another hotkey? (y/n, default n): ")
-
-        if add_another.lower() != "y":
-            break
+if __name__ == "__main__":
+    args = parse_args()
+    print("Welcome to the configuration generator!")
+    env = "dev" if args.dev else "prod"
+    config = generate_config(dev=args.dev)
+    write_config_to_file(config, env)
+    print(f"Configuration has been written to .{env}.env")
+    print("Please make sure to keep your database credentials secure.")
