@@ -109,7 +109,7 @@ async def process_and_store_score(
 ) -> None:
     node_scores = task_result.get("node_scores", {})
     if node_scores is None:
-        logger.error(f"Axon scores is none; found in the response json: {task_result}")
+        logger.error(f"NODE scores is none; found in the response json: {task_result}")
         return
 
     if task not in tcfg.TASK_TO_CONFIG:

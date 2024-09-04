@@ -56,7 +56,9 @@ def load_config() -> Config:
     else:
         substrate_interface = None
     keypair = chain_utils.load_hotkey_keypair(wallet_name=wallet_name, hotkey_name=hotkey_name)
-    capacity_to_score_multiplier = float(os.getenv("CAPACITY_TO_SCORE_MULTIPLIER", 1.0))
+
+    default_capacity_to_score_multiplier = 0.1 if subtensor_network == "test" else 1.0
+    capacity_to_score_multiplier = float(os.getenv("CAPACITY_TO_SCORE_MULTIPLIER", default_capacity_to_score_multiplier))
 
     return Config(
         substrate_interface=substrate_interface,

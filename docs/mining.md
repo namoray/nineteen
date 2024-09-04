@@ -17,7 +17,7 @@ A miner consists of serveral parts, fitting into two categories:
 - Proxy
 - Workers
 
-The proxy server is the server which has your hotkey, and spins up the axon (should probably be on a CPU close to your GPU worker servers). The worker servers are the GPU workers which perform the tasks!
+The proxy server is the server which has your hotkey, and spins up the NODE (should probably be on a CPU close to your GPU worker servers). The worker servers are the GPU workers which perform the tasks!
 
 I would advise starting with the worker servers. The simplest way to get started is to spin up four worker servers:
 

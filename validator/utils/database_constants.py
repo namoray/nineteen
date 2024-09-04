@@ -16,10 +16,10 @@ SYNTHETIC_REQUESTS_STILL_TO_MAKE = "synthetic_requests_still_to_make"
 
 # Hotkey info table
 HOTKEY = "hotkey"
-AXON_IP = "axon_ip"
+NODE_IP = "NODE_ip"
 UID = "uid"
 
-# Axon info table
+# NODE info table
 HOTKEY = "hotkey"
 COLDKEY = "coldkey"
 NODE_ID = "node_id"
@@ -40,7 +40,7 @@ OUR_VALIDATOR = "our_validator"
 CREATED_AT = "created_at"
 
 
-# Axon Info history table
+# NODE Info history table
 
 # HOTKEY = "hotkey"
 # COLDKEY = "coldkey"

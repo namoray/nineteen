@@ -23,7 +23,7 @@ A Validator consists of two parts:
 - Proxy API server
 - Orchestrator server
 
-The proxy server is the server which has your hotkey,  spins up the axon, allows you to sell your bandwidth, etc. 
+The proxy server is the server which has your hotkey,  spins up the NODE, allows you to sell your bandwidth, etc. 
 
 The Orchestrator performs the checking tasks, to make sure the miners are behaving 🫡
 

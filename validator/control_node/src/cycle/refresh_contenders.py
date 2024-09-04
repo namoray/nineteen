@@ -1,6 +1,6 @@
 """
 Calculates period scores for contenders
-Converts axons to contenders by querying them for their tasks. (Axon + Task = Contender)
+Converts NODEs to contenders by querying them for their tasks. (NODE + Task = Contender)
 Migrates old contenders and adds the new contenders to the db
 """
 

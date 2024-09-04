@@ -58,7 +58,7 @@ async def insert_nodes(connection: Connection, nodes: list[Node], network: str) 
 
 
 async def migrate_nodes_to_history(connection: Connection) -> None:  # noqa: F821
-    logger.debug("Migrating axons to axon history")
+    logger.debug("Migrating NODEs to NODE history")
     await connection.execute(
         f"""
         INSERT INTO {dcst.NODES_HISTORY_TABLE} (
@@ -98,7 +98,7 @@ async def migrate_nodes_to_history(connection: Connection) -> None:  # noqa: F82
     """
     )
 
-    logger.debug("Truncating axon info table")
+    logger.debug("Truncating NODE info table")
     await connection.execute(f"DELETE FROM {dcst.NODES_TABLE}")
 
 
@@ -154,7 +154,7 @@ async def get_nodes(psql_db: PSQLDB, netuid: int) -> list[Node]:
 
 # TODO: Do I need to add network there too?
 async def get_node_stakes(psql_db: PSQLDB, netuid: int) -> dict[str, float]:
-    axons = await psql_db.fetchall(
+    NODEs = await psql_db.fetchall(
         f"""
         SELECT {dcst.HOTKEY}, {dcst.STAKE}
         FROM {dcst.NODES_TABLE}
@@ -162,7 +162,7 @@ async def get_node_stakes(psql_db: PSQLDB, netuid: int) -> dict[str, float]:
         """,
         netuid,
     )
-    hotkey_to_stake = {axon[dcst.HOTKEY]: axon[dcst.STAKE] for axon in axons}
+    hotkey_to_stake = {NODE[dcst.HOTKEY]: NODE[dcst.STAKE] for NODE in NODEs}
 
     return hotkey_to_stake
 

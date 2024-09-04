@@ -20,7 +20,6 @@ COPY core /app/core
 
 ARG GITHUB_PAT
 
-RUN pip uninstall -y fiber && \
-    pip install git+https://${GITHUB_PAT}@github.com/namoray/fiber.git
+RUN pip install git+https://${GITHUB_PAT}@github.com/namoray/fiber.git
 
 ENV PYTHONPATH=/app:$PYTHONPATH

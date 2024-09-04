@@ -5,12 +5,12 @@ services:
       dockerfile: dockerfiles/core.dockerfile
       args:
         - GITHUB_PAT=${GITHUB_PAT}
-    image: core
+    image: dev_core
     networks:
-      - postgres_network
-      - redis_network
+      - dev_postgres_network
+      - dev_redis_network
     depends_on:
-      dbmate:
+      dev_dbmate:
         condition: service_completed_successfully
     container_name: dev_core
 
@@ -19,18 +19,18 @@ services:
       context: .
       dockerfile: dockerfiles/control_node.dockerfile
     depends_on:
-      dbmate:
+      dev_dbmate:
         condition: service_completed_successfully
-      redis:
+      dev_redis:
         condition: service_started
-      core:
+      dev_core:
         condition: service_started
     volumes:
       - .:/app
       - ~/.bittensor/wallets:/root/.bittensor/wallets
     networks:
-      - postgres_network
-      - redis_network
+      - dev_postgres_network
+      - dev_redis_network
     entrypoint: ["python", "-u", "/app/validator/control_node/src/main.py"]
     env_file:
       - .dev.env
@@ -48,21 +48,15 @@ services:
           memory: 512M
       restart_policy:
         condition: on-failure
-      update_config:
-        parallelism: 1
-        delay: 10s
-      rollback_config:
-        parallelism: 1
-        delay: 10s
     depends_on:
-      - redis
-      - postgresql
-      - core
+      - dev_redis
+      - dev_postgresql
+      - dev_core
     volumes:
       - .:/app
     networks:
-      - postgres_network
-      - redis_network
+      - dev_postgres_network
+      - dev_redis_network
     env_file:
       - .dev.env
     entrypoint: ["python", "-u", "/app/validator/query_node/src/main.py"]
@@ -80,18 +74,12 @@ services:
           memory: 512M
       restart_policy:
         condition: on-failure
-      update_config:
-        parallelism: 1
-        delay: 10s
-      rollback_config:
-        parallelism: 1
-        delay: 10s
     depends_on:
-      - redis
-      - postgresql
+      - dev_redis
+      - dev_postgresql
     networks:
-      - postgres_network
-      - redis_network
+      - dev_postgres_network
+      - dev_redis_network
     ports:
       - "8091:8091"
     volumes:
@@ -104,46 +92,47 @@ services:
   postgresql:
     image: postgres:latest
     volumes:
-      - ./postgres_data:/var/lib/postgresql/data
+      - ./dev_postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 5
     networks:
-      - postgres_network
+      - dev_postgres_network
     ports:
       - "5432:5432"
     env_file:
       - .dev.env
-    container_name: 0_dev_postgresql
+    container_name: dev_postgresql
+
   dbmate:
     image: amacneil/dbmate
     volumes:
       - ./validator/db:/db
     command: up
     depends_on:
-      postgresql:
+      dev_postgresql:
         condition: service_healthy
     networks:
-      - postgres_network
+      - dev_postgres_network
     environment:
-      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgresql:5432/${POSTGRES_DB}?sslmode=disable
-    container_name: 0_dbmate
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@dev_postgresql:5432/${POSTGRES_DB}?sslmode=disable
+    container_name: dev_dbmate
 
   redis:
     image: redis/redis-stack:latest
     networks:
-      - redis_network
+      - dev_redis_network
     ports:
       - "6379:6379"
-    container_name: 0_redis
+    container_name: dev_redis
 
 networks:
-  postgres_network:
+  dev_postgres_network:
     driver: bridge
-  redis_network:
+  dev_redis_network:
     driver: bridge
 
 volumes:
-  postgres_data:
+  dev_postgres_data:

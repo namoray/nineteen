@@ -10,6 +10,7 @@ COPY validator/models.py /app/validator/models.py
 COPY validator/db /app/validator/db
 
 COPY validator/control_node/src ./src
+COPY validator/control_node/assets ./assets
 COPY validator/control_node/pyproject.toml .
 
 ENV PYTHONPATH="${PYTHONPATH}:/app/validator/control_node/src"
