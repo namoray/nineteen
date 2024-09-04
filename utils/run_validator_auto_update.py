@@ -1,22 +1,20 @@
 import os
 import subprocess
 import time
-
-"""
-TODO: RETHINK?
-"""
-
+import argparse
 
 def should_update_local(local_commit, remote_commit):
     return local_commit != remote_commit
 
-
-os.system("./launch_validators.sh")
-time.sleep(10)
-
-
 def run_auto_updater():
+    print("Starting auto-updater...")
+    print("First i'll run the docker containers...")
+    launch_command = "docker-compose --env-file .prod.env -f docker-compose.prod.yml up -d --build"
+    os.system(launch_command)
+    time.sleep(60)
+
     while True:
+        print("Checking for updates...")
         current_branch = subprocess.getoutput("git rev-parse --abbrev-ref HEAD")
         local_commit = subprocess.getoutput("git rev-parse HEAD")
         os.system("git fetch")
@@ -24,18 +22,17 @@ def run_auto_updater():
 
         if should_update_local(local_commit, remote_commit):
             print("Local repo is not up-to-date. Updating...")
-            reset_cmd = "git reset --hard " + remote_commit
+            reset_cmd = f"git reset --hard {remote_commit}"
             process = subprocess.Popen(reset_cmd.split(), stdout=subprocess.PIPE)
             output, error = process.communicate()
 
             if error:
                 print("Error in updating:", error)
             else:
-                print("Updated local repo to latest version: {}", format(remote_commit))
+                print("Updated local repo to latest version:", remote_commit)
 
                 print("Running the autoupdate steps...")
-                # Trigger shell script. Make sure this file path starts from root
-                os.system("./autoupdate_validator_steps.sh")
+                os.system("./autoupdates_validator_steps.sh")
                 time.sleep(20)
 
                 print("Finished running the autoupdate steps! Ready to go 😎")
@@ -45,6 +42,9 @@ def run_auto_updater():
 
         time.sleep(60)
 
-
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Run auto updates for a validator")
+
+    args = parser.parse_args()
+
     run_auto_updater()
