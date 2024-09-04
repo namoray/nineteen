@@ -15,4 +15,4 @@ COPY validator/query_node/pyproject.toml .
 
 ENV PYTHONPATH="${PYTHONPATH}:/app/validator/query_node/src"
 
-CMD ["tail", "-f", "/dev/null"]
+# CMD ["tail", "-f", "/dev/null"]

@@ -16,10 +16,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 RUN pip install --upgrade pip
 
-COPY core /app/core
-
 ARG GITHUB_PAT
+# Change this below to break the cache and reinstall fiber 
+ARG BREAK_CACHE_ARG=0
+RUN pip install --no-cache-dir git+https://${GITHUB_PAT}@github.com/namoray/fiber.git
 
-RUN pip install git+https://${GITHUB_PAT}@github.com/namoray/fiber.git
+COPY core /app/core
 
 ENV PYTHONPATH=/app:$PYTHONPATH

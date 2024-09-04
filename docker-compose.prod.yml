@@ -36,6 +36,9 @@ services:
     env_file:
       - .prod.env
     container_name: control_node
+    deploy:
+      restart_policy:
+        condition: on-failure
 
   query_node:
     build:
