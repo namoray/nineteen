@@ -8,9 +8,9 @@ services:
     image: dev_core
     networks:
       - dev_postgres_network
-      - dev_redis_network
+      - redis_network
     depends_on:
-      dev_dbmate:
+      dbmate:
         condition: service_completed_successfully
     container_name: dev_core
 
@@ -19,9 +19,9 @@ services:
       context: .
       dockerfile: dockerfiles/control_node.dockerfile
     depends_on:
-      dev_dbmate:
+      dbmate:
         condition: service_completed_successfully
-      dev_redis:
+      redis:
         condition: service_started
       dev_core:
         condition: service_started
@@ -30,7 +30,7 @@ services:
       - ~/.bittensor/wallets:/root/.bittensor/wallets
     networks:
       - dev_postgres_network
-      - dev_redis_network
+      - redis_network
     entrypoint: ["python", "-u", "/app/validator/control_node/src/main.py"]
     env_file:
       - .dev.env
@@ -49,14 +49,14 @@ services:
       restart_policy:
         condition: on-failure
     depends_on:
-      - dev_redis
-      - dev_postgresql
+      - redis
+      - postgresql
       - dev_core
     volumes:
       - .:/app
     networks:
       - dev_postgres_network
-      - dev_redis_network
+      - redis_network
     env_file:
       - .dev.env
     entrypoint: ["python", "-u", "/app/validator/query_node/src/main.py"]
@@ -75,11 +75,11 @@ services:
       restart_policy:
         condition: on-failure
     depends_on:
-      - dev_redis
-      - dev_postgresql
+      - redis
+      - postgresql
     networks:
       - dev_postgres_network
-      - dev_redis_network
+      - redis_network
     ports:
       - "8091:8091"
     volumes:
@@ -89,7 +89,7 @@ services:
     entrypoint: ["python", "-u", "/app/validator/entry_node/src/server.py"]
     container_name: dev_entry_node
 
-  dev_postgresql:
+  postgresql:
     image: postgres:latest
     volumes:
       - ./dev_postgres_data:/var/lib/postgresql/data
@@ -104,34 +104,34 @@ services:
       - "5432:5432"
     env_file:
       - .dev.env
-    container_name: dev_postgresql
+    container_name: postgresql
 
-  dev_dbmate:
+  dbmate:
     image: amacneil/dbmate
     volumes:
       - ./validator/db:/db
     command: up
     depends_on:
-      dev_postgresql:
+      postgresql:
         condition: service_healthy
     networks:
       - dev_postgres_network
     environment:
-      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@dev_postgresql:5432/${POSTGRES_DB}?sslmode=disable
-    container_name: dev_dbmate
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgresql:5432/${POSTGRES_DB}?sslmode=disable
+    container_name: dbmate
 
-  dev_redis:
+  redis:
     image: redis/redis-stack:latest
     networks:
-      - dev_redis_network
+      - redis_network
     ports:
       - "6379:6379"
-    container_name: dev_redis
+    container_name: redis
 
 networks:
   dev_postgres_network:
     driver: bridge
-  dev_redis_network:
+  redis_network:
     driver: bridge
 
 volumes:

@@ -120,7 +120,7 @@ async def _get_contenders_from_nodes(config: Config, nodes: list[Node]) -> List[
     return contenders
 
 
-async def get_and_store_contenders(config: Config, nodes: list[Node]) -> None:
+async def get_and_store_contenders(config: Config, nodes: list[Node]) -> list[Contender]:
     logger.info(f"Got {len(nodes)} nodes")
     contenders = await _get_contenders_from_nodes(config, nodes)
     await _store_and_migrate_old_contenders(config, contenders)

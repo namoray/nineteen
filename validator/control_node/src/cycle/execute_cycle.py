@@ -25,11 +25,13 @@ from validator.db.src.sql.nodes import (
 )
 from fiber.logging_utils import get_logger
 
+from validator.models import Contender
+
 
 logger = get_logger(__name__)
 
 
-async def get_nodes_and_contenders(config: Config) -> None:
+async def get_nodes_and_contenders(config: Config) -> list[Contender] | None:
     logger.info("Starting cycle...")
     if config.refresh_nodes:
         logger.info("First refreshing metagraph and storing the nodes")
@@ -49,28 +51,32 @@ async def get_nodes_and_contenders(config: Config) -> None:
 
     return contenders
 
+
 async def schedule_synthetics(config: Config) -> None:
     logger.info(f"Scheduling synthetics; this will take {ccst.SCORING_PERIOD_TIME // 60} minutes ish...")
 
     await schedule_synthetic_queries.schedule_synthetics_until_done(config)
 
 
-
 async def main(config: Config) -> None:
     time_to_sleep_if_no_contenders = 20
     contenders = await get_nodes_and_contenders(config)
-    if len(contenders) > 0:
+    if contenders is None or len(contenders) > 0:
         tasks = [schedule_synthetics(config)]
     else:
-        logger.info(f"No contenders to query, skipping synthetic scheduling and sleeping for {time_to_sleep_if_no_contenders} seconds to wait.")
+        logger.info(
+            f"No contenders to query, skipping synthetic scheduling and sleeping for {time_to_sleep_if_no_contenders} seconds to wait."
+        )
         await asyncio.sleep(time_to_sleep_if_no_contenders)  # Sleep for 5 minutes to wait for contenders to become available
         tasks = []
     while True:
         await asyncio.gather(*tasks)
         contenders = await get_nodes_and_contenders(config)
-        if len(contenders) > 0:
+        if contenders is None or len(contenders) > 0:
             tasks = [calculate_and_schedule_weights.get_and_set_weights(config), schedule_synthetics(config)]
         else:
-            logger.info(f"No contenders to query, skipping synthetic scheduling and sleeping for {time_to_sleep_if_no_contenders} seconds to wait.")
+            logger.info(
+                f"No contenders to query, skipping synthetic scheduling and sleeping for {time_to_sleep_if_no_contenders} seconds to wait."
+            )
             await asyncio.sleep(time_to_sleep_if_no_contenders)  # Sleep for 5 minutes to wait for contenders to become available
             tasks = []

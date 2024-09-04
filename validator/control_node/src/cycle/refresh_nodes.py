@@ -135,7 +135,7 @@ async def _handshake(config: Config, node: Node, async_client: httpx.AsyncClient
     return node_copy
 
 
-async def perform_handshakes(nodes: list[Node], config: Config) -> None:
+async def perform_handshakes(nodes: list[Node], config: Config) -> list[Node]:
     tasks = []
     for node in nodes:
         if node.fernet is None or node.symmetric_key_uuid is None:
