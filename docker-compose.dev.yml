@@ -1,5 +1,5 @@
 services:
-  core:
+  dev_core:
     build:
       context: .
       dockerfile: dockerfiles/core.dockerfile
@@ -89,7 +89,7 @@ services:
     entrypoint: ["python", "-u", "/app/validator/entry_node/src/server.py"]
     container_name: dev_entry_node
 
-  postgresql:
+  dev_postgresql:
     image: postgres:latest
     volumes:
       - ./dev_postgres_data:/var/lib/postgresql/data
@@ -106,7 +106,7 @@ services:
       - .dev.env
     container_name: dev_postgresql
 
-  dbmate:
+  dev_dbmate:
     image: amacneil/dbmate
     volumes:
       - ./validator/db:/db
@@ -120,7 +120,7 @@ services:
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@dev_postgresql:5432/${POSTGRES_DB}?sslmode=disable
     container_name: dev_dbmate
 
-  redis:
+  dev_redis:
     image: redis/redis-stack:latest
     networks:
       - dev_redis_network
