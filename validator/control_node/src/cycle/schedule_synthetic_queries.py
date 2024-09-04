@@ -124,10 +124,8 @@ async def schedule_synthetics_until_done(config: Config):
     while task_schedules:
         schedule = heapq.heappop(task_schedules)
         time_to_sleep = schedule.next_schedule_time - time.time()
-        task = schedule.task
 
         if time_to_sleep > 0:
-            logger.info(f"Sleeping for {time_to_sleep:.2f} seconds for the next task {task}")
             sleep_chunk = 2  # Sleep in 2-second chunks to make debugging easier
             while time_to_sleep > 0:
                 await asyncio.sleep(min(sleep_chunk, time_to_sleep))

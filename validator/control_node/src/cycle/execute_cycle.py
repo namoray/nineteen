@@ -11,7 +11,7 @@ A cycle consists of
 """
 
 import asyncio
-from validator.control_node.src.main import Config
+from validator.control_node.src.control_config import Config
 from validator.control_node.src.cycle import (
     calculate_and_schedule_weights,
     refresh_nodes,
