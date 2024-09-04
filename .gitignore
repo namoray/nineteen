@@ -12,6 +12,10 @@ sam_vit_l_0b3195.pth
 postgres_data/*
 postgres_data
 
+postgres_data
+postgres_data/*
+
+
 *_keys.encrypted
 
 .bittensor

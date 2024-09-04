@@ -26,6 +26,11 @@ venv/
 .DS_Store
 embeddings_for_testing.txt
 
+postgres_data
+postgres_data/*
+.git
+
+
 hotkey_scores.json
 tmp/*
 dbmate
