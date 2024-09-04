@@ -117,7 +117,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         is_stream=True,
         weight=0.1,
         timeout=2,
-        enabled=True,
+        enabled=False,
     ),
     Task.proteus_text_to_image: FullTaskConfig(
         task=Task.proteus_text_to_image,
