@@ -3,8 +3,20 @@ import httpx
 from pydantic import BaseModel
 from core.logging import get_logger
 from miner.config import WorkerConfig
+from miner.constants import ENDPOINT_TO_PORT_MAP
 
 logger = get_logger(__name__)
+
+
+def map_endpoint(post_endpoint, engine, endpoint):
+    if post_endpoint in ["avatar", "inpaint"]:
+        return f"http://127.0.0.1:{ENDPOINT_TO_PORT_MAP[post_endpoint]}/{post_endpoint}"
+    
+    engine_task = f"{engine}-{post_endpoint}"
+    if engine_task in ENDPOINT_TO_PORT_MAP:
+        return f"http://127.0.0.1:{ENDPOINT_TO_PORT_MAP[engine_task]}/{post_endpoint}"
+
+    return endpoint
 
 
 async def get_image_from_server(
@@ -17,9 +29,12 @@ async def get_image_from_server(
     assert worker_config.IMAGE_WORKER_URL is not None, "IMAGE_WORKER_URL is not set in env vars!"
     endpoint = worker_config.IMAGE_WORKER_URL.rstrip("/") + "/" + post_endpoint
 
+    body_dict = body.model_dump()
+    endpoint = map_endpoint(post_endpoint, body_dict.get("engine", ""), endpoint)
+
     try:
         logger.debug(f"Sending request to {endpoint}")
-        response = await httpx_client.post(endpoint, json=body.model_dump(), timeout=timeout)
+        response = await httpx_client.post(endpoint, json=body_dict, timeout=timeout)
         response.raise_for_status()
 
         data = response.json()
