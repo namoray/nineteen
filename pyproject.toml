@@ -1,0 +1,7 @@
+[tool.pyright]
+exclude = ["**/node_modules", "**/__pycache__", "**/test_*.py", "**/venv/*"]
+reportMissingImports = true
+reportMissingTypeStubs = false
+pythonVersion = "3.10"
+pythonPlatform = "Linux"
+reportMissingModuleSource = false

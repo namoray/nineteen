@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "control_node"
+version = "1.0.0"
+description = "Core stuff for the validator; does not need horizontal scaling"
+dynamic = ["dependencies"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["control_node*"]
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements.txt"] }

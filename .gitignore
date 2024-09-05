@@ -9,9 +9,23 @@ sam_vit_l_0b3195.pth
 *.so
 *.gguf
 
+postgres_data/*
+postgres_data
+
+postgres_data
+postgres_data/*
+
+todo.md
+
+
+*_keys.encrypted
+
 .bittensor
+fiber
 *.safetensors
 *.bin
+docker-compose.combined.yml
+nodes.json
 
 .DS_Store
 embeddings_for_testing.txt

@@ -1,0 +1,1 @@
+docker compose --env-file .prod.env -f docker-compose.prod.yml up -d --build
