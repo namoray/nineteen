@@ -4,6 +4,7 @@ from fiber.logging_utils import get_logger
 
 from core.models import payload_models
 from core import tasks_config as tcfg
+from core.tasks import Task
 from miner.config import WorkerConfig
 
 logger = get_logger(__name__)
@@ -18,16 +19,18 @@ async def chat_stream(
     assert task_config.orchestrator_server_config.load_model_config is not None
 
     model_name = task_config.orchestrator_server_config.load_model_config["model"]
-    decrypted_payload.model = model_name
+    
 
-    if decrypted_payload.model == "unsloth/Meta-Llama-3.1-8B-Instruct":
+    if task_config.task == Task.chat_llama_3_1_8b:
         address = worker_config.LLAMA_3_1_8B_TEXT_WORKER_URL
-    elif decrypted_payload.model == "hugging-quants/Meta-Llama-3.1-70B-Instruct-AWQ-INT4":
+    elif task_config.task == Task.chat_llama_3_1_70b:
         address = worker_config.LLAMA_3_1_70B_TEXT_WORKER_URL
-    elif decrypted_payload.model == "mattshumer/Reflection-Llama-3.1-70B":
+    elif task_config.task == Task.chat_reflection_70b:
         address = worker_config.REFLECTION_70B_TEXT_WORKER_URL
     else:
         raise ValueError(f"Invalid model: {decrypted_payload.model}")
+    
+    decrypted_payload.model = model_name
 
     assert address is not None, f"Address for model: {decrypted_payload.model} is not set in env vars!"
 
