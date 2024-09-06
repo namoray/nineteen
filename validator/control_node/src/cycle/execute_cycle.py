@@ -62,21 +62,21 @@ async def main(config: Config) -> None:
     time_to_sleep_if_no_contenders = 20
     contenders = await get_nodes_and_contenders(config)
     if contenders is None or len(contenders) == 0:
-        tasks = [schedule_synthetics(config)]
-    else:
         logger.info(
             f"No contenders to query, skipping synthetic scheduling and sleeping for {time_to_sleep_if_no_contenders} seconds to wait."
         )
         await asyncio.sleep(time_to_sleep_if_no_contenders)  # Sleep for 5 minutes to wait for contenders to become available
         tasks = []
+    else:
+        tasks = [schedule_synthetics(config)]
     while True:
         await asyncio.gather(*tasks)
         contenders = await get_nodes_and_contenders(config)
         if contenders is None or len(contenders) == 0:
-            tasks = [calculate_and_schedule_weights.get_and_set_weights(config), schedule_synthetics(config)]
-        else:
             logger.info(
                 f"No contenders to query, skipping synthetic scheduling and sleeping for {time_to_sleep_if_no_contenders} seconds to wait."
             )
             await asyncio.sleep(time_to_sleep_if_no_contenders)  # Sleep for 5 minutes to wait for contenders to become available
             tasks = []
+        else:
+            tasks = [calculate_and_schedule_weights.get_and_set_weights(config), schedule_synthetics(config)]
