@@ -67,16 +67,18 @@ async def make_stream_organic_query(
     first_chunk = None
     try:
         await asyncio.wait_for(_wait_for_acknowledgement(pubsub, job_id), timeout=1)
-
         await pubsub.subscribe(f"{rcst.JOB_RESULTS}:{job_id}")
 
+        logger.info("Here waiting for a message!")  
         async for message in pubsub.listen():
+            logger.debug(f"Message: {message}")
             if message["type"] == "message" and message["channel"].decode() == f"{rcst.JOB_RESULTS}:{job_id}":
                 result = json.loads(message["data"].decode())
                 if gcst.STATUS_CODE in result and result[gcst.STATUS_CODE] >= 400:
                     raise HTTPException(status_code=result[gcst.STATUS_CODE], detail=result[gcst.ERROR_MESSAGE])
                 first_chunk = result[gcst.CONTENT]
         
+        logger.info(f" First chunk is None: {first_chunk is None}")
         if first_chunk is None:
             raise HTTPException(status_code=500, detail="Unable to process request")
         return _stream_results(pubsub, job_id, first_chunk)
@@ -98,7 +100,8 @@ async def chat(
         text_generator = await make_stream_organic_query(
             redis_db=config.redis_db, payload=payload.model_dump(), task=str(payload.model)
         )
-        return StreamingResponse(text_generator, media_type="sse")
+        logger.info("Here returning a response!")
+        return StreamingResponse(text_generator, media_type="text/event-stream")
     except HTTPException as http_exc:
         logger.info(f"HTTPException in chat endpoint: {str(http_exc)}")
         raise http_exc
