@@ -24,6 +24,8 @@ async def chat_stream(
         address = worker_config.LLAMA_3_1_8B_TEXT_WORKER_URL
     elif decrypted_payload.model == "hugging-quants/Meta-Llama-3.1-70B-Instruct-AWQ-INT4":
         address = worker_config.LLAMA_3_1_70B_TEXT_WORKER_URL
+    elif decrypted_payload.model == "mattshumer/Reflection-Llama-3.1-70B":
+        address = worker_config.REFLECTION_70B_TEXT_WORKER_URL
     else:
         raise ValueError(f"Invalid model: {decrypted_payload.model}")
 
