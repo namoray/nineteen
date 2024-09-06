@@ -36,8 +36,13 @@ async def chat_stream(
 
     if True:
         # NOTE: review timeout?
-        async with httpx_client.stream("POST", address, json=decrypted_payload.model_dump(), timeout=3) as resp:
-            resp.raise_for_status()
+        async with httpx_client.stream("POST", address, json=decrypted_payload.model_dump(), timeout=5) as resp:
+            try:
+                resp.raise_for_status()
+            except httpx.HTTPStatusError as e:
+                await resp.aread()
+                logger.error(f"HTTP Error {e.response.status_code}: {e.response.text}")
+                raise
             async for chunk in resp.aiter_lines():
                 try:
                     received_event_chunks = chunk.split("\n\n")

@@ -15,34 +15,11 @@ from validator.utils import generic_utils, redis_constants as rcst
 from validator.utils import generic_constants as gcst
 from fiber.logging_utils import get_logger
 
+from validator.utils.query_utils import load_sse_jsons
+
 logger = get_logger(__name__)
 
 
-def _load_sse_jsons(chunk: str) -> list[dict[str, Any]] | dict[str, str]:
-    try:
-        jsons = []
-        received_event_chunks = chunk.split("\n\n")
-        for event in received_event_chunks:
-            if event == "":
-                continue
-            prefix, _, data = event.partition(":")
-            if data.strip() == "[DONE]":
-                break
-            loaded_chunk = json.loads(data)
-            jsons.append(loaded_chunk)
-        return jsons
-    except json.JSONDecodeError:
-        try:
-            loaded_chunk = json.loads(chunk)
-            if "message" in loaded_chunk:
-                return {
-                    "message": loaded_chunk["message"],
-                    "status_code": "429" if "bro" in loaded_chunk["message"] else "500",
-                }
-        except json.JSONDecodeError:
-            ...
-
-    return []
 
 
 def _get_formatted_payload(content: str, first_message: bool, add_finish_reason: bool = False) -> str:
@@ -136,7 +113,7 @@ async def consume_generator(
                 text = text.decode()
             if isinstance(text, str):
                 try:
-                    loaded_jsons = _load_sse_jsons(text)
+                    loaded_jsons = load_sse_jsons(text)
                     if isinstance(loaded_jsons, dict):
                         status_code = loaded_jsons.get(gcst.STATUS_CODE)  # noqa
                         break

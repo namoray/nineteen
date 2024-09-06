@@ -40,6 +40,7 @@ async def _handle_stream_query(config: Config, message: rdc.QueryQueueMessage, c
             config=config, contender=contender, payload=message.query_payload, node=node
         )
 
+        # TODO: Make sure we still punish if generator is None
         if generator is None:
             continue
 
@@ -56,6 +57,7 @@ async def _handle_stream_query(config: Config, message: rdc.QueryQueueMessage, c
             continue
 
     if not success:
+        logger.error(f"All Contenders for task {message.task} failed to respond! :(")
         await _handle_error(
             config=config,
             synthetic_query=message.query_type == gcst.SYNTHETIC,
