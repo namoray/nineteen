@@ -117,7 +117,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         is_stream=True,
         weight=0.1,
         timeout=2,
-        enabled=False,
+        enabled=True,
     ),
     Task.chat_reflection_70b: FullTaskConfig(
         task=Task.chat_reflection_70b,
@@ -128,7 +128,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         orchestrator_server_config=OrchestratorServerConfig(
             server_needed=ServerType.LLM,
             load_model_config={
-                "model": "mattshumer/Reflection-Llama-3.1-70B",
+                "model": "mattshumer/Reflection-Llama-3.1-70B",  # NOTE: Will be a quantized version for 5.1
                 "max_model_len": 8192,
                 "gpu_utilization": 0.8,
             },
@@ -144,7 +144,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         is_stream=True,
         weight=0.1,
         timeout=4,
-        enabled=True,
+        enabled=False,  # NOTE: Wont be enabled for 5.0, likely for 5.1
     ),
     Task.proteus_text_to_image: FullTaskConfig(
         task=Task.proteus_text_to_image,
