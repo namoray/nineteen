@@ -61,7 +61,7 @@ async def schedule_synthetics(config: Config) -> None:
 async def main(config: Config) -> None:
     time_to_sleep_if_no_contenders = 20
     contenders = await get_nodes_and_contenders(config)
-    if contenders is None or len(contenders) > 0:
+    if contenders is None or len(contenders) == 0:
         tasks = [schedule_synthetics(config)]
     else:
         logger.info(
@@ -72,7 +72,7 @@ async def main(config: Config) -> None:
     while True:
         await asyncio.gather(*tasks)
         contenders = await get_nodes_and_contenders(config)
-        if contenders is None or len(contenders) > 0:
+        if contenders is None or len(contenders) == 0:
             tasks = [calculate_and_schedule_weights.get_and_set_weights(config), schedule_synthetics(config)]
         else:
             logger.info(
