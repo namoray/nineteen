@@ -1,10 +1,31 @@
+# Guide to use SN19 with Cursor
+
+### **Open settings**
+Follow these steps on a mac:
+
+![Setting up Cursor on Mac](cursor_settings.png)
+
+If you're on ubuntu or windows, please visit https://www.apple.com/shop/buy-mac for further instructions
 
 
-![alt text](cursor_settings.png)
+### **Add a new model, named exactly `chat-llama-3-8b`**
 
-![alt text](add_model.png)
+It's very important the name matches exactly
 
-![alt text](add_chat_model.png)
+![Adding Llama Model](add_llama_model.png)
 
 
-b41d9d2c-74a2-3318-a2gb-3b0066c07296
+### **Configure custom 'OPENAI' endpoint**
+
+Use:
+
+Endpoint: `https://testnet.sn19.ai/v1` - NOTE: when Nineteen 5.0 is live, you can use *ANY* validator on subnet 19
+
+Key: 3a1d9d2c-79d2-4408-bvfb-ab0036c01293
+
+![OPENAI Key Configuration](openai_key.png)
+
+
+
+# Done
+Enjoy :)
