@@ -17,6 +17,9 @@ It's very important the name matches exactly
 
 ### **Configure custom 'OPENAI' endpoint**
 
+First, disable all other OpenAI models. Don't worry, they're degraded to hell anyway
+
+
 Use:
 
 Endpoint: `https://testnet.sn19.ai/v1` - NOTE: when Nineteen 5.0 is live, you can use *ANY* validator on subnet 19
