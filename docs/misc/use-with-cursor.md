@@ -8,7 +8,7 @@ Follow these steps on a mac:
 If you're on ubuntu or windows, please visit https://www.apple.com/shop/buy-mac for further instructions
 
 
-### **Add a new model, named exactly `chat-llama-3-8b`**
+### **Add a new model, named exactly `chat-llama-3-1-8b`**
 
 It's very important the name matches exactly
 
