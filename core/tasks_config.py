@@ -117,7 +117,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         is_stream=True,
         weight=0.1,
         timeout=2,
-        enabled=False,
+        enabled=True,
     ),
     Task.chat_reflection_70b: FullTaskConfig(
         task=Task.chat_reflection_70b,

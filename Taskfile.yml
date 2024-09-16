@@ -19,9 +19,9 @@ tasks:
 
   dev_setup:
     cmds:
-      - docker compose --env-file .dev.env -f docker-compose.dev.yml up -d
-      - docker kill dev_query_node dev_control_node
-      - docker compose --env-file .dev.env -f docker-compose.dev.yml -f docker-compose.utils.yml up -d
+      - docker compose --env-file .dev.env -f docker-compose.prod.yml up -d
+      - docker compose --env-file .dev.env -f docker-compose.prod.yml -f docker-compose.utils.yml up -d
+      - docker kill query_node control_node
 
   miners_dev:
     cmds:
