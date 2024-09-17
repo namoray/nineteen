@@ -85,7 +85,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         synthetic_generation_config=SyntheticGenerationConfig(
             func="generate_chat_synthetic", kwargs={"model": Task.chat_llama_3_1_8b.value}
         ),
-        endpoint="/chat/completions",
+        endpoint=Endpoints.chat_completions.value,
         volume_to_requests_conversion=300,
         is_stream=True,
         weight=0.1,
@@ -112,39 +112,12 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         synthetic_generation_config=SyntheticGenerationConfig(
             func="generate_chat_synthetic", kwargs={"model": Task.chat_llama_3_1_70b.value}
         ),
-        endpoint="/chat/completions",
+        endpoint=Endpoints.chat_completions.value,
         volume_to_requests_conversion=300,
         is_stream=True,
         weight=0.1,
         timeout=2,
         enabled=True,
-    ),
-    Task.chat_reflection_70b: FullTaskConfig(
-        task=Task.chat_reflection_70b,
-        max_capacity=576_000,
-        scoring_config=TaskScoringConfig(
-            task=Task.chat_reflection_70b, overhead=0.4, mean=0.3, variance=4, task_type=TaskType.TEXT
-        ),
-        orchestrator_server_config=OrchestratorServerConfig(
-            server_needed=ServerType.LLM,
-            load_model_config={
-                "model": "mattshumer/Reflection-Llama-3.1-70B",  # NOTE: Will be a quantized version for 5.1
-                "max_model_len": 8192,
-                "gpu_utilization": 0.8,
-            },
-            endpoint=Endpoints.chat_completions.value,
-            checking_function="check_text_result",
-            task=Task.chat_reflection_70b.value,
-        ),
-        synthetic_generation_config=SyntheticGenerationConfig(
-            func="generate_chat_synthetic", kwargs={"model": Task.chat_reflection_70b.value}
-        ),
-        endpoint="/chat/completions",
-        volume_to_requests_conversion=300,
-        is_stream=True,
-        weight=0.1,
-        timeout=4,
-        enabled=False,  # NOTE: Wont be enabled for 5.0, likely for 5.1
     ),
     Task.proteus_text_to_image: FullTaskConfig(
         task=Task.proteus_text_to_image,

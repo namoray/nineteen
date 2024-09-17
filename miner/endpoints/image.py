@@ -38,36 +38,40 @@ async def _process_image_request(
 
 async def text_to_image(
     decrypted_payload: payload_models.TextToImagePayload = Depends(
-        partial(decrypt_general_payload, payload_models.TextToImagePayload)
+        partial(decrypt_general_payload, payload_models.TextToImagePayload, check_nonce=True)
     ),
     fiber_config: Config = Depends(get_fiber_config),
-    worker_config: WorkerConfig = Depends(get_worker_config)
+    worker_config: WorkerConfig = Depends(get_worker_config),
 ) -> payload_models.ImageResponse:
     return await _process_image_request(decrypted_payload, fiber_config, mcst.TEXT_TO_IMAGE_SERVER_ENDPOINT, worker_config)
 
 
 async def image_to_image(
     decrypted_payload: payload_models.ImageToImagePayload = Depends(
-        partial(decrypt_general_payload, payload_models.ImageToImagePayload)
+        partial(decrypt_general_payload, payload_models.ImageToImagePayload, check_nonce=True)
     ),
     fiber_config: Config = Depends(get_fiber_config),
-    worker_config: WorkerConfig = Depends(get_worker_config)
+    worker_config: WorkerConfig = Depends(get_worker_config),
 ) -> payload_models.ImageResponse:
     return await _process_image_request(decrypted_payload, fiber_config, mcst.IMAGE_TO_IMAGE_SERVER_ENDPOINT, worker_config)
 
 
 async def inpaint(
-    decrypted_payload: payload_models.InpaintPayload = Depends(partial(decrypt_general_payload, payload_models.InpaintPayload)),
+    decrypted_payload: payload_models.InpaintPayload = Depends(
+        partial(decrypt_general_payload, payload_models.InpaintPayload, check_nonce=True)
+    ),
     fiber_config: Config = Depends(get_fiber_config),
-    worker_config: WorkerConfig = Depends(get_worker_config)
+    worker_config: WorkerConfig = Depends(get_worker_config),
 ) -> payload_models.ImageResponse:
     return await _process_image_request(decrypted_payload, fiber_config, mcst.INPAINT_SERVER_ENDPOINT, worker_config)
 
 
 async def avatar(
-    decrypted_payload: payload_models.AvatarPayload = Depends(partial(decrypt_general_payload, payload_models.AvatarPayload)),
+    decrypted_payload: payload_models.AvatarPayload = Depends(
+        partial(decrypt_general_payload, payload_models.AvatarPayload, check_nonce=True)
+    ),
     fiber_config: Config = Depends(get_fiber_config),
-    worker_config: WorkerConfig = Depends(get_worker_config)
+    worker_config: WorkerConfig = Depends(get_worker_config),
 ) -> payload_models.ImageResponse:
     return await _process_image_request(decrypted_payload, fiber_config, mcst.AVATAR_SERVER_ENDPOINT, worker_config)
 
