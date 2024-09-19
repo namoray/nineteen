@@ -7,11 +7,13 @@
 - Redis password
 - Redis commander password
 
-## Shortly after Vision 5.0 release
-- Specialist miners. Miners will be in 3 categories for launch: Small LLM's, Medium LLM's, Image generation - and can only run one type of miner on a uid
 
 ## Fiber stuff:
 - Header for nonce & encrypted nonce? or sign nonce with private key?
 
 ## Workers stuff:
 - image server upgrades
+
+
+## Shortly after Vision 5.0 release
+- Specialist miners. Miners will be in 3 categories for launch: Small LLM's, Medium LLM's, Image generation - and can only run one type of miner on a uid
