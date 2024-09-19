@@ -1,13 +1,4 @@
 services:
-  core:
-    build:
-      context: .
-      dockerfile: dockerfiles/core.dockerfile
-    image: core
-    networks:
-      - postgres_network
-      - redis_network
-    container_name: test_core
 
   entry_node:
     build:
@@ -16,7 +7,6 @@ services:
     depends_on:
       - redis
       - test_db
-      - core
     volumes:
       - .:/app
     networks:
@@ -54,7 +44,6 @@ services:
     depends_on:
       - redis
       - test_db
-      - core
     volumes:
       - .:/app
     networks:
@@ -76,7 +65,6 @@ services:
       context: .
       dockerfile: dockerfiles/chain_node.dockerfile
     depends_on:
-      - core
       - test_db
       - redis
     volumes:
@@ -106,7 +94,6 @@ services:
     depends_on:
       - redis
       - test_db
-      - core
     volumes:
       - .:/app
     networks:
