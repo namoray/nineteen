@@ -14,6 +14,8 @@
 ## Workers stuff:
 - image server upgrades
 
+## testS:
+- get em working son
 
 ## Shortly after Vision 5.0 release
 - Specialist miners. Miners will be in 3 categories for launch: Small LLM's, Medium LLM's, Image generation - and can only run one type of miner on a uid
