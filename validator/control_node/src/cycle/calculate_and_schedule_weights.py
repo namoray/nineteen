@@ -43,7 +43,9 @@ async def get_and_set_weights(config: Config) -> None:
     logger.info(f"Node ids: {node_ids}")
     logger.info(f"Node weights: {node_weights}")
 
-
+    if len(node_ids) == 0:
+        logger.info("No nodes to set weights for. Skipping weight setting.")
+        return
     logger.info(f"Setting weights for {len(node_ids)} nodes...")
 
     success = await asyncio.to_thread(
