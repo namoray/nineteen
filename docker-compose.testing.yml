@@ -32,7 +32,6 @@ services:
       POSTGRES_DB: test_db
       POSTGRES_PORT: 5432
       POSTGRES_HOST: test_db
-      POSTGRES_HOST: test_db
       ENV: test
 
   query_node:
@@ -69,7 +68,6 @@ services:
       POSTGRES_DB: test_db
       POSTGRES_PORT: 5432
       POSTGRES_HOST: test_db
-      POSTGRES_HOST: test_db
       ENV: test
       NETUID: 19
 
@@ -93,7 +91,6 @@ services:
       POSTGRES_PASSWORD: test_password
       POSTGRES_DB: test_db
       POSTGRES_PORT: 5432
-      POSTGRES_HOST: test_db
       POSTGRES_HOST: test_db
       RUN_ONCE: "true"
       DUMMY: "true"
@@ -122,7 +119,6 @@ services:
       POSTGRES_PASSWORD: test_password
       POSTGRES_DB: test_db
       POSTGRES_PORT: 5432
-      POSTGRES_HOST: test_db
       POSTGRES_HOST: test_db
       ENV: test
 
@@ -179,7 +175,6 @@ services:
       POSTGRES_PASSWORD: test_password
       POSTGRES_DB: test_db
       POSTGRES_PORT: 5432
-      POSTGRES_HOST: test_db
       POSTGRES_HOST: test_db
       DATABASE_URL: "postgres://test_user:test_password@test_db:5432/test_db?sslmode=disable"
 
