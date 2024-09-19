@@ -37,47 +37,6 @@ tasks:
           if grep -q "NODE_PORT" "$env_file"; then
             node_port=$(grep "NODE_PORT" "$env_file" | cut -d '=' -f2)
             service_name="miner_$(echo $env_file | sed 's/\.//g' | sed 's/env//')"
-            echo "Creating systemd service for $env_file with port $node_port"
-            echo "[Unit]
-        Description=Miner Service for $env_file
-        After=network.target
-
-        [Service]
-        ExecStart=$(which uvicorn) miner.server:app --host 0.0.0.0 --port $node_port --env-file $(pwd)/$env_file --log-level debug
-        WorkingDirectory=$(pwd)
-        Restart=always
-        User=$(whoami)
-
-        [Install]
-        WantedBy=multi-user.target" | sudo tee /etc/systemd/system/$service_name.service
-            sudo systemctl daemon-reload
-            sudo systemctl enable $service_name
-            sudo systemctl start $service_name
+            pm2 start $service_name 'uvicorn miner.server:app --reload --host 0.0.0.0 --port $node_port --env-file $env_file --log-level debug & '
           fi
         done
-
-  stopm:
-    cmds:
-      - |
-        for service in $(sudo systemctl list-units --type=service --state=active | grep miner_ | awk '{print $1}'); do
-          echo "Stopping $service"
-          sudo systemctl stop $service
-        done
-
-  restartm:
-    cmds:
-      - |
-        for service in $(sudo systemctl list-units --type=service --state=active,failed | grep miner_ | awk '{print $1}'); do
-          echo "Restarting $service"
-          sudo systemctl restart $service
-        done
-
-  statusm:
-    cmds:
-      - |
-        for service in $(sudo systemctl list-units --type=service --all | grep miner_ | grep '\.service' | awk '{print $1}' | grep -v '^●'); do
-          echo "Status of $service:"
-          sudo systemctl status $service --no-pager
-          echo "----------------------"
-        done
- 
