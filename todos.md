@@ -6,6 +6,7 @@
 - Speed scoring to be based off medians - and potentially using the distribution of miners instead of a fixed distribution
 - Redis password
 - Redis commander password
+- Consolidate docker compose files (that might help with the above)
 
 
 ## Fiber stuff:
