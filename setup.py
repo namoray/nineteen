@@ -40,7 +40,7 @@ setup(
     description="Giving access to bittensor",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/namoray/vision",
+    url="https://github.com/namoray/nineteen",
     author="namoray",
     packages=find_packages(),
     include_package_data=True,
