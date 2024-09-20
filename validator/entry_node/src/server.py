@@ -79,4 +79,4 @@ if __name__ == "__main__":
 
     uvicorn.run(app, host="0.0.0.0", port=8091)
 
-    # uvicorn validator.entry_node.src.server:app --reload --host 0.0.0.0 --port 8091 --env-file .dev.env
+    # uvicorn validator.entry_node.src.server:app --reload --host 0.0.0.0 --port 8091 --env-file .vali.env

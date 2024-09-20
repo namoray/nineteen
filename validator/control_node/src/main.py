@@ -29,6 +29,5 @@ async def main() -> None:
         execute_cycle.main(config),
     )
 
-
 if __name__ == "__main__":
     asyncio.run(main())

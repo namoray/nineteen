@@ -4,23 +4,23 @@ tasks:
 
   set_weights:
     cmds:
-      - docker compose --env-file .prod.env -f docker-compose.prod.yml run --entrypoint "python src/cycle/calculate_and_schedule_weights.py" control_node
+      - docker compose --env-file .vali.env -f docker-compose.prod.yml run --entrypoint "python src/cycle/calculate_and_schedule_weights.py" control_node
   control_node_dev:
     cmds:
-      - ENV_FILE=.dev.env python -m validator.control_node.src.main
+      - ENV_FILE=.vali.env python -m validator.control_node.src.main
   
   query_node_dev:
     cmds: 
-      - ENV_FILE=.dev.env python -m validator.query_node.src.main
+      - ENV_FILE=.vali.env python -m validator.query_node.src.main
 
   entry_node_dev:
     cmds:
-      - uvicorn validator.entry_node.src.server:app --reload --host 0.0.0.0 --port 8091 --env-file .dev.env
+      - uvicorn validator.entry_node.src.server:app --reload --host 0.0.0.0 --port 8091 --env-file .vali.env
 
   dev_setup:
     cmds:
-      - docker compose --env-file .dev.env -f docker-compose.prod.yml up -d
-      - docker compose --env-file .dev.env -f docker-compose.prod.yml -f docker-compose.utils.yml up -d
+      - docker compose --env-file .vali.env -f docker-compose.prod.yml up -d
+      - docker compose --env-file .vali.env -f docker-compose.prod.yml -f docker-compose.utils.yml up -d
       - docker kill query_node control_node
 
   miners_dev:

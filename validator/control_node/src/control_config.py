@@ -18,7 +18,7 @@ from substrateinterface import SubstrateInterface, Keypair
 from dotenv import load_dotenv
 
 logger = get_logger(__name__)
-load_dotenv(os.getenv("ENV_FILE", ".prod.env"))
+load_dotenv(os.getenv("ENV_FILE", ".vali.env"))
 
 
 @dataclass

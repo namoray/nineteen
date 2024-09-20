@@ -2,7 +2,7 @@ from dotenv import load_dotenv
 import os
 
 # Must be done straight away, bit ugly
-load_dotenv(os.getenv("ENV_FILE", ".prod.env"))
+load_dotenv(os.getenv("ENV_FILE", ".vali.env"))
 
 import asyncio
 from redis.asyncio import Redis

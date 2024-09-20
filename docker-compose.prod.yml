@@ -17,7 +17,7 @@ services:
     volumes:
       - ~/.bittensor/wallets:/root/.bittensor/wallets
     env_file:
-      - .prod.env
+      - .vali.env
     container_name: control_node
     deploy:
       restart_policy:

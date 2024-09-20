@@ -98,7 +98,7 @@ def generate_validator_config(dev: bool = False) -> dict[str, Any]:
         config['REPLACE_WITH_DOCKER_LOCALHOST'] = "true" if validate_input("Replace with Docker localhost? (y/n): ", yes_no_validator).lower().startswith("y") else "false"
     else:
         config['ENV'] = "prod"
-        config['ENV_FILE'] = ".prod.env"
+        config['ENV_FILE'] = ".vali.env"
 
     return config
 
