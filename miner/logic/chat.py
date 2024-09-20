@@ -25,8 +25,6 @@ async def chat_stream(
         address = worker_config.LLAMA_3_1_8B_TEXT_WORKER_URL
     elif task_config.task == Task.chat_llama_3_1_70b:
         address = worker_config.LLAMA_3_1_70B_TEXT_WORKER_URL
-    elif task_config.task == Task.chat_reflection_70b:
-        address = worker_config.REFLECTION_70B_TEXT_WORKER_URL
     else:
         raise ValueError(f"Invalid model: {decrypted_payload.model}")
     

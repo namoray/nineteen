@@ -16,16 +16,5 @@ llm_models = [
         "context_length": 8192,
         "architecture": {"modality": "text->text", "tokenizer": "Llama3", "instruct_type": "llama3"},
         "pricing": {"prompt": "0.00000001", "completion": "0.000000001", "image": "0", "request": "0"},
-    },
-    {
-        "id": "mattshumer/reflection-70b",
-        "name": "Reflection 70B",
-        "created": 1725580800,
-        "description": "Reflection Llama-3.1 70B is trained with a new technique called Reflection-Tuning that teaches a LLM to detect mistakes in its reasoning and correct course.\n\nThe model was trained on synthetic data.",
-        "context_length": 8192,
-        "architecture": {"modality": "text->text", "tokenizer": "Llama3", "instruct_type": None},
-        "pricing": {"prompt": "0.000001", "completion": "0.000001", "image": "0", "request": "0"},
-        "top_provider": {"context_length": 8192, "max_completion_tokens": None, "is_moderated": False},
-        "per_request_limits": None,
-    },
+    }
 ]

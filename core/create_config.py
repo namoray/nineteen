@@ -66,7 +66,6 @@ def generate_miner_config(dev: bool = False) -> dict[str, Any]:
     config["IMAGE_WORKER_URL"] = input("Enter IMAGE_WORKER_URL: ")
     config["LLAMA_3_1_8B_TEXT_WORKER_URL"] = input("Enter LLAMA_3_1_8B_TEXT_WORKER_URL: ")
     config["LLAMA_3_1_70B_TEXT_WORKER_URL"] = input("Enter LLAMA_3_1_70B_TEXT_WORKER_URL: ")
-    config["REFLECTION_70B_TEXT_WORKER_URL"] = input("Enter REFLECTION_70B_TEXT_WORKER_URL: ")
     config["MIN_STAKE_THRESHOLD"] = input("Enter MIN_STAKE_THRESHOLD (default: 1000): ") or default_stake_threshold
     config["REFRESH_NODES"] = "true"
     return config
