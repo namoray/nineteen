@@ -57,7 +57,7 @@ def generate_miner_config(dev: bool = False) -> dict[str, Any]:
     config["WALLET_NAME"] = input("Enter wallet name (default: default): ") or "default"
     config["HOTKEY_NAME"] = input("Enter hotkey name (default: default): ") or "default"
     config["SUBTENSOR_NETWORK"] = input("Enter subtensor network (default: test): ") or "test"
-    default_stake_threshold =  "0" if config["SUBTENSOR_NETWORK"] == "test" else "1000"
+    default_stake_threshold = "0" if config["SUBTENSOR_NETWORK"] == "test" else "1000"
     config["NETUID"] = 176 if config["SUBTENSOR_NETWORK"] == "test" else 19
     config["ENV"] = "dev" if dev else "prod"
     config["IS_VALIDATOR"] = "False"
@@ -86,8 +86,8 @@ def generate_validator_config(dev: bool = False) -> dict[str, Any]:
     config["WALLET_NAME"] = input("Enter wallet name (default: default): ") or "default"
     config["HOTKEY_NAME"] = input("Enter hotkey name (default: default): ") or "default"
     config["SUBTENSOR_NETWORK"] = input("Enter subtensor network (default: finney): ") or "finney"
-
     config["NETUID"] = 176 if config["SUBTENSOR_NETWORK"] == "test" else 19
+
     config["GPU_SERVER_ADDRESS"] = validate_input(
         "Enter GPU server address: ", lambda x: re.match(r"^https?://.+", x) is not None
     )
