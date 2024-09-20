@@ -7,6 +7,7 @@
 - Redis password
 - Redis commander password
 - Consolidate docker compose files (that might help with the above)
+- api keys for entry node
 
 
 ## Fiber stuff:

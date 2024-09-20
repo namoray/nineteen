@@ -34,6 +34,7 @@ task control_node_dev  # For example
 cd ..
 git clone https://github.com/namoray/fiber.git
 cd fiber
+git pull
 pip install -e .
 cd ..
 cd nineteen
