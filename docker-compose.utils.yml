@@ -11,19 +11,6 @@ services:
       - redis
     container_name: 0_redis-commander
 
-  dozzle:
-    image: amir20/dozzle:latest
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    ports:
-      - 9000:8080
-    environment:
-      - DOZZLE_LEVEL=info
-      - DOZZLE_TAILSIZE=300
-      - DOZZLE_FILTER=
-    restart: unless-stopped
-    container_name: 0_dozzle
-
   adminer:
     image: adminer
     restart: always
