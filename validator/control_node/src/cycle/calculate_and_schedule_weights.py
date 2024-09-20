@@ -9,7 +9,7 @@ from validator.control_node.src.main import load_config
 from validator.db.src.sql.contenders import fetch_all_contenders
 from validator.control_node.src.cycle import calculations
 from fiber.chain_interactions import weights
-from core.logging import get_logger
+from core.log import get_logger
 from core import constants as ccst
 from validator.db.src.sql.nodes import get_vali_node_id
 

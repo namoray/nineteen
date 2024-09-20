@@ -1,5 +1,5 @@
 from core.tasks import Task
-from core.logging import get_logger
+from core.log import get_logger
 
 from asyncpg import Connection
 from validator.db.src.database import PSQLDB

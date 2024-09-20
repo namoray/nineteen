@@ -6,7 +6,7 @@ from validator.query_node.src.query_config import Config
 from core.tasks import Task
 from core import tasks_config as tcfg
 from validator.utils import contender_utils as putils, generic_utils as gutils, redis_constants as rcst
-from core.logging import get_logger
+from core.log import get_logger
 from validator.utils import redis_dataclasses as rdc
 from validator.query_node.src.query import nonstream, streaming
 from validator.db.src.sql.contenders import get_contenders_for_task

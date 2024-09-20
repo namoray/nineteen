@@ -14,7 +14,7 @@ from fiber.chain_interactions.models import Node
 from core import tasks_config as tcfg
 from core.tasks import Task
 from validator.control_node.src.control_config import Config
-from core.logging import get_logger
+from core.log import get_logger
 
 from fiber.validator import client
 

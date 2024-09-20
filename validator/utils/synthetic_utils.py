@@ -17,7 +17,7 @@ import diskcache
 from PIL import Image
 import uuid
 import numpy as np
-from core.logging import get_logger
+from core.log import get_logger
 
 
 logger = get_logger(__name__)

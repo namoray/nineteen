@@ -7,7 +7,7 @@ from validator.db.src.database import PSQLDB
 from validator.db.src.sql.contenders import fetch_hotkey_scores_for_task
 from validator.models import Contender, PeriodScore
 from validator.models import RewardData
-from core.logging import get_logger
+from core.log import get_logger
 
 
 logger = get_logger(__name__)

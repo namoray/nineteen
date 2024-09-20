@@ -3,7 +3,7 @@ import os
 from redis.asyncio import Redis
 
 from core import constants as ccst
-from core.logging import get_logger
+from core.log import get_logger
 
 from fiber.chain_interactions import interface
 from fiber.chain_interactions import chain_utils

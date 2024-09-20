@@ -17,7 +17,7 @@ import markovify
 import datasets
 import diskcache
 from functools import lru_cache
-from core.logging import get_logger
+from core.log import get_logger
 from validator.utils import synthetic_utils as sutils
 import binascii
 
