@@ -19,9 +19,10 @@ tasks:
 
   dev_setup:
     cmds:
-      - docker compose --env-file .vali.env -f docker-compose.yml up -d
-      - docker compose --env-file .vali.env -f docker-compose.yml -f docker-compose.utils.yml up -d
-      - docker kill query_node control_node
+      - >
+        docker compose --env-file .vali.env -f docker-compose.yml -f docker-compose.utils.yml up -d --build
+        $(docker compose config --services | grep -vE 'query_node|control_node|entry_node')
+      # Now use control_node_dev etc
 
   miners_dev:
     cmds:
