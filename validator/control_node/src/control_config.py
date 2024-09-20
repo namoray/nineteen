@@ -5,8 +5,8 @@ from redis.asyncio import Redis
 from core import constants as ccst
 from core.log import get_logger
 
-from fiber.chain_interactions import interface
-from fiber.chain_interactions import chain_utils
+from fiber.chain import interface
+from fiber.chain import chain_utils
 
 
 from validator.db.src.database import PSQLDB

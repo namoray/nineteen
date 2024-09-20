@@ -9,7 +9,7 @@ from validator.query_node.src import utils
 
 from validator.models import Contender
 from fiber.validator import client
-from fiber.chain_interactions.models import Node
+from fiber.chain.models import Node
 from core import tasks_config as tcfg
 from validator.utils import generic_utils, redis_constants as rcst
 from validator.utils import generic_constants as gcst

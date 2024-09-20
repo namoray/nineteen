@@ -6,10 +6,10 @@ migrating the old nodes to history in the process
 import asyncio
 
 
-from fiber.chain_interactions.models import Node
+from fiber.chain.models import Node
 from validator.db.src.sql.nodes import get_nodes, migrate_nodes_to_history, insert_nodes, get_last_updated_time_for_nodes
 from core.log import get_logger
-from fiber.chain_interactions import fetch_nodes
+from fiber.chain import fetch_nodes
 from validator.control_node.src.control_config import Config
 from validator.db.src.sql.nodes import insert_symmetric_keys_for_nodes, update_our_vali_node_in_db
 from fiber.validator import handshake, client
@@ -46,6 +46,8 @@ async def is_recent_update(connection, netuid: int) -> bool:
 
 
 async def fetch_nodes_from_substrate(config: Config) -> list[Node]:
+    # NOTE: Will this cause issues if this method closes the conenction
+    # on substrate interface, but we use the same substrate interface object elsewhere?
     return await asyncio.to_thread(fetch_nodes.get_nodes_for_netuid, config.substrate_interface, config.netuid)
 
 

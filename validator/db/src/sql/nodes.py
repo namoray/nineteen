@@ -1,6 +1,6 @@
 import datetime
 from validator.db.src.database import PSQLDB
-from fiber.chain_interactions.models import Node
+from fiber.chain.models import Node
 from core.log import get_logger
 
 from asyncpg import Connection

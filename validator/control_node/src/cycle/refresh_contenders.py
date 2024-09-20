@@ -10,7 +10,7 @@ from typing import List
 
 from validator.db.src.sql.contenders import migrate_contenders_to_contender_history, insert_contenders, update_contenders_period_scores
 from validator.models import Contender
-from fiber.chain_interactions.models import Node
+from fiber.chain.models import Node
 from core import tasks_config as tcfg
 from core.tasks import Task
 from validator.control_node.src.control_config import Config
