@@ -27,8 +27,8 @@ tasks:
   miners_dev:
     cmds:
       - |
-        uvicorn miner.server:app --reload --host 0.0.0.0 --port 4001 --env-file .1.env --log-level debug &
-        uvicorn miner.server:app --reload --host 0.0.0.0 --port 4002 --env-file .2.env --log-level debug &
+        ENV=DEV uvicorn miner.server:app --reload --host 0.0.0.0 --port 4001 --env-file .1.env --log-level debug
+        ENV=DEV uvicorn miner.server:app --reload --host 0.0.0.0 --port 4002 --env-file .2.env --log-level debug
         wait
   
   createm:

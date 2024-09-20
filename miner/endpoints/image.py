@@ -5,7 +5,6 @@ from fiber.miner.security.encryption import decrypt_general_payload
 from pydantic import BaseModel
 from core.models import payload_models
 from fastapi.routing import APIRouter
-from fiber.logging_utils import get_logger
 from miner import constants as mcst
 
 from miner.config import WorkerConfig
@@ -13,6 +12,7 @@ from miner.dependencies import get_worker_config
 from miner.logic.image import get_image_from_server
 from fiber.miner.core.configuration import Config
 from fiber.miner.dependencies import get_config as get_fiber_config
+from fiber.logging_utils import get_logger
 
 logger = get_logger(__name__)
 

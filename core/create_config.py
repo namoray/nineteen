@@ -107,7 +107,8 @@ def generate_validator_config(dev: bool = False) -> dict[str, Any]:
         )
     else:
         config["ENV"] = "prod"
-        config["ENV_FILE"] = ".vali.env"
+
+    config["ENV_FILE"] = ".vali.env"
 
     return config
 
