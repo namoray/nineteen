@@ -1,15 +1,21 @@
 # Instructions to help devs (Mainly Notes to self)
 
 ## Spin up all services for dev
+
+Same as always
 ```bash
-docker-compose --env-file .vali.env -f docker-compose.dev.yml  up -d
+docker-compose --env-file .vali.env -f docker-compose.yml  up -d
+```
+use run this
+```bash
+sed -i 's/ENV=[^ ]*/ENV=dev/' .vali.env
 ```
 
 ## Utils
 
 ** UTILS FOR DEV **
 ```bash
-docker-compose --env-file .vali.env -f docker-compose.dev.yml -f docker-compose.utils.yml up -d
+docker-compose --env-file .vali.env -f docker-compose.yml -f docker-compose.utils.yml up -d
 ```
 
 ** UTILS FOR PROD **
