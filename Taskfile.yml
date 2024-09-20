@@ -24,13 +24,20 @@ tasks:
         $(docker compose config --services | grep -vE 'query_node|control_node|entry_node')
       # Now use control_node_dev etc
 
-  miners_dev:
+  m1_dev:
     cmds:
-      - |
-        ENV=DEV uvicorn miner.server:app --reload --host 0.0.0.0 --port 4001 --env-file .1.env --log-level debug
-        ENV=DEV uvicorn miner.server:app --reload --host 0.0.0.0 --port 4002 --env-file .2.env --log-level debug
-        wait
-  
+      - ENV=DEV uvicorn miner.server:app --reload --host 0.0.0.0 --port 4001 --env-file .1.env --log-level debug
+
+  m2_dev:
+    cmds:
+      - ENV=DEV uvicorn miner.server:app --reload --host 0.0.0.0 --port 4002 --env-file .2.env --log-level debug
+
+  update_docker_fiber_version:
+    cmds:
+      - docker run --rm nineteen-control_node sh -c "pip install git+https://github.com/namoray/fiber.git@dev --upgrade"
+      - docker run --rm nineteen-entry_node sh -c "pip install git+https://github.com/namoray/fiber.git@dev --upgrade"
+      - docker run --rm nineteen-query_node sh -c "pip install git+https://github.com/namoray/fiber.git@dev --upgrade"
+
   createm:
     cmds:
       - bash start_miners.sh
