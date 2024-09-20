@@ -3,7 +3,7 @@ from validator.models import Contender
 from validator.query_node.src.query_config import Config
 from validator.utils import work_and_speed_functions
 from core import tasks_config as tcfg
-from core.logging import get_logger
+from core.log import get_logger
 from validator.db.src import functions as db_functions
 from validator.db.src.sql.contenders import (
     update_contender_429_count,

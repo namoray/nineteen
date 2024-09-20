@@ -5,7 +5,6 @@ from fiber.miner.security.encryption import decrypt_general_payload
 from pydantic import BaseModel
 from core.models import payload_models
 from fastapi.routing import APIRouter
-from fiber.logging_utils import get_logger
 from miner import constants as mcst
 
 from miner.config import WorkerConfig
@@ -13,6 +12,7 @@ from miner.dependencies import get_worker_config
 from miner.logic.image import get_image_from_server
 from fiber.miner.core.configuration import Config
 from fiber.miner.dependencies import get_config as get_fiber_config
+from fiber.logging_utils import get_logger
 
 logger = get_logger(__name__)
 
@@ -41,7 +41,7 @@ async def text_to_image(
         partial(decrypt_general_payload, payload_models.TextToImagePayload)
     ),
     fiber_config: Config = Depends(get_fiber_config),
-    worker_config: WorkerConfig = Depends(get_worker_config)
+    worker_config: WorkerConfig = Depends(get_worker_config),
 ) -> payload_models.ImageResponse:
     return await _process_image_request(decrypted_payload, fiber_config, mcst.TEXT_TO_IMAGE_SERVER_ENDPOINT, worker_config)
 
@@ -51,23 +51,27 @@ async def image_to_image(
         partial(decrypt_general_payload, payload_models.ImageToImagePayload)
     ),
     fiber_config: Config = Depends(get_fiber_config),
-    worker_config: WorkerConfig = Depends(get_worker_config)
+    worker_config: WorkerConfig = Depends(get_worker_config),
 ) -> payload_models.ImageResponse:
     return await _process_image_request(decrypted_payload, fiber_config, mcst.IMAGE_TO_IMAGE_SERVER_ENDPOINT, worker_config)
 
 
 async def inpaint(
-    decrypted_payload: payload_models.InpaintPayload = Depends(partial(decrypt_general_payload, payload_models.InpaintPayload)),
+    decrypted_payload: payload_models.InpaintPayload = Depends(
+        partial(decrypt_general_payload, payload_models.InpaintPayload)
+    ),
     fiber_config: Config = Depends(get_fiber_config),
-    worker_config: WorkerConfig = Depends(get_worker_config)
+    worker_config: WorkerConfig = Depends(get_worker_config),
 ) -> payload_models.ImageResponse:
     return await _process_image_request(decrypted_payload, fiber_config, mcst.INPAINT_SERVER_ENDPOINT, worker_config)
 
 
 async def avatar(
-    decrypted_payload: payload_models.AvatarPayload = Depends(partial(decrypt_general_payload, payload_models.AvatarPayload)),
+    decrypted_payload: payload_models.AvatarPayload = Depends(
+        partial(decrypt_general_payload, payload_models.AvatarPayload)
+    ),
     fiber_config: Config = Depends(get_fiber_config),
-    worker_config: WorkerConfig = Depends(get_worker_config)
+    worker_config: WorkerConfig = Depends(get_worker_config),
 ) -> payload_models.ImageResponse:
     return await _process_image_request(decrypted_payload, fiber_config, mcst.AVATAR_SERVER_ENDPOINT, worker_config)
 

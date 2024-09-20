@@ -12,7 +12,7 @@ from validator.utils import (
     synthetic_constants as scst,
 )
 from validator.control_node.src.synthetics import synthetic_generation_funcs
-from core.logging import get_logger
+from core.log import get_logger
 
 logger = get_logger(__name__)
 

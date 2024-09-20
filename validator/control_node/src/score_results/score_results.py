@@ -14,7 +14,7 @@ import httpx
 
 from core import tasks_config as tcfg
 
-from core.logging import get_logger
+from core.log import get_logger
 from core.tasks import Task
 from validator.models import RewardData
 from validator.utils import work_and_speed_functions

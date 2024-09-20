@@ -17,7 +17,7 @@ import markovify
 import datasets
 import diskcache
 from functools import lru_cache
-from core.logging import get_logger
+from core.log import get_logger
 from validator.utils import synthetic_utils as sutils
 import binascii
 
@@ -28,7 +28,11 @@ logger = get_logger(__name__)
 @lru_cache(maxsize=1)
 def get_cached_markov_model():
     logger.info("Loading markov model from caption_data...")
-    dataset = datasets.load_dataset("assets/caption_data/data")
+    # This try / except is so we work fine on docker and localhost
+    try:
+        dataset = datasets.load_dataset("assets/caption_data/data")
+    except FileNotFoundError:
+        dataset = datasets.load_dataset("validator/control_node/assets/caption_data/data")
     text = [i["query"] for i in dataset["train"]]  # type: ignore
     return markovify.Text(" ".join(text))
 

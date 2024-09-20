@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 import httpx
-from core.logging import get_logger
+from core.log import get_logger
 from validator.db.src.database import PSQLDB
 from redis.asyncio import Redis
 

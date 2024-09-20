@@ -8,8 +8,8 @@ from validator.control_node.src.control_config import Config
 from validator.control_node.src.main import load_config
 from validator.db.src.sql.contenders import fetch_all_contenders
 from validator.control_node.src.cycle import calculations
-from fiber.chain_interactions import weights
-from core.logging import get_logger
+from fiber.chain import weights
+from core.log import get_logger
 from core import constants as ccst
 from validator.db.src.sql.nodes import get_vali_node_id
 
@@ -43,7 +43,9 @@ async def get_and_set_weights(config: Config) -> None:
     logger.info(f"Node ids: {node_ids}")
     logger.info(f"Node weights: {node_weights}")
 
-
+    if len(node_ids) == 0:
+        logger.info("No nodes to set weights for. Skipping weight setting.")
+        return
     logger.info(f"Setting weights for {len(node_ids)} nodes...")
 
     success = await asyncio.to_thread(

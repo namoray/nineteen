@@ -5,7 +5,7 @@ import time
 from typing import AsyncGenerator
 
 
-from core.logging import get_logger
+from core.log import get_logger
 from validator.utils import generic_constants as gcst
 
 logger = get_logger(__name__)

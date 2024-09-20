@@ -3,7 +3,7 @@ from typing import Any
 import uuid
 from fastapi import Depends, HTTPException
 from redis.asyncio import Redis
-from core.logging import get_logger
+from core.log import get_logger
 from fastapi.routing import APIRouter
 from core.models import payload_models
 from core.tasks import Task

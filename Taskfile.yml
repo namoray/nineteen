@@ -4,39 +4,40 @@ tasks:
 
   set_weights:
     cmds:
-      - docker compose --env-file .prod.env -f docker-compose.prod.yml run --entrypoint "python src/cycle/calculate_and_schedule_weights.py" control_node
+      - docker compose --env-file .vali.env -f docker-compose.yml run --entrypoint "python src/cycle/calculate_and_schedule_weights.py" control_node
   control_node_dev:
     cmds:
-      - ENV_FILE=.dev.env python -m validator.control_node.src.main
+      - ENV_FILE=.vali.env python -m validator.control_node.src.main
   
   query_node_dev:
     cmds: 
-      - ENV_FILE=.dev.env python -m validator.query_node.src.main
+      - ENV_FILE=.vali.env python -m validator.query_node.src.main
 
   entry_node_dev:
     cmds:
-      - uvicorn validator.entry_node.src.server:app --reload --host 0.0.0.0 --port 8091 --env-file .dev.env
+      - uvicorn validator.entry_node.src.server:app --reload --host 0.0.0.0 --port 8091 --env-file .vali.env
 
   dev_setup:
     cmds:
-      - docker compose --env-file .dev.env -f docker-compose.dev.yml up -d
-      - docker kill dev_query_node dev_control_node
-      - docker compose --env-file .dev.env -f docker-compose.dev.yml -f docker-compose.utils.yml up -d
+      - echo "LOCALHOST=true" >> .vali.env
+      - docker compose --env-file .vali.env -f docker-compose.yml -f docker-compose.utils.yml up -d --build
+        $(docker compose config --services | grep -vE 'query_node|control_node|entry_node')
+      # Now use control_node_dev etc
 
-  miners_dev:
+  m1_dev:
     cmds:
-      - |
-        uvicorn miner.server:app --reload --host 0.0.0.0 --port 4001 --env-file .1.env --log-level debug &
-        uvicorn miner.server:app --reload --host 0.0.0.0 --port 4002 --env-file .2.env --log-level debug &
-        wait
-  
+      - ENV=DEV uvicorn miner.server:app --reload --host 0.0.0.0 --port 4001 --env-file .1.env --log-level debug
+
+  m2_dev:
+    cmds:
+      - ENV=DEV uvicorn miner.server:app --reload --host 0.0.0.0 --port 4002 --env-file .2.env --log-level debug
+
+  update_docker_fiber_version:
+    cmds:
+      - docker run --rm nineteen-control_node sh -c "pip install git+https://github.com/rayonlabs/fiber.git@dev --upgrade"
+      - docker run --rm nineteen-entry_node sh -c "pip install git+https://github.com/rayonlabs/fiber.git@dev --upgrade"
+      - docker run --rm nineteen-query_node sh -c "pip install git+https://github.com/rayonlabs/fiber.git@dev --upgrade"
+
   createm:
     cmds:
-      - |
-        for env_file in .*.env; do
-          if grep -q "NODE_PORT" "$env_file"; then
-            node_port=$(grep "NODE_PORT" "$env_file" | cut -d '=' -f2)
-            service_name="miner_$(echo $env_file | sed 's/\.//g' | sed 's/env//')"
-            pm2 start $service_name 'uvicorn miner.server:app --reload --host 0.0.0.0 --port $node_port --env-file $env_file --log-level debug & '
-          fi
-        done
+      - bash start_miners.sh
