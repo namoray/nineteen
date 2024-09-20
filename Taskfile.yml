@@ -4,7 +4,7 @@ tasks:
 
   set_weights:
     cmds:
-      - docker compose --env-file .vali.env -f docker-compose.prod.yml run --entrypoint "python src/cycle/calculate_and_schedule_weights.py" control_node
+      - docker compose --env-file .vali.env -f docker-compose.yml run --entrypoint "python src/cycle/calculate_and_schedule_weights.py" control_node
   control_node_dev:
     cmds:
       - ENV_FILE=.vali.env python -m validator.control_node.src.main
@@ -19,8 +19,8 @@ tasks:
 
   dev_setup:
     cmds:
-      - docker compose --env-file .vali.env -f docker-compose.prod.yml up -d
-      - docker compose --env-file .vali.env -f docker-compose.prod.yml -f docker-compose.utils.yml up -d
+      - docker compose --env-file .vali.env -f docker-compose.yml up -d
+      - docker compose --env-file .vali.env -f docker-compose.yml -f docker-compose.utils.yml up -d
       - docker kill query_node control_node
 
   miners_dev:

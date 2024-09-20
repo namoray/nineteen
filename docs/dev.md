@@ -14,7 +14,7 @@ docker-compose --env-file .vali.env -f docker-compose.dev.yml -f docker-compose.
 
 ** UTILS FOR PROD **
 ```bash
-docker-compose --env-file .vali.env -f docker-compose.prod.yml -f docker-compose.utils.yml up -d
+docker-compose --env-file .vali.env -f docker-compose.yml -f docker-compose.utils.yml up -d
 ```
 
 
