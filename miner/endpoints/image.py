@@ -38,7 +38,7 @@ async def _process_image_request(
 
 async def text_to_image(
     decrypted_payload: payload_models.TextToImagePayload = Depends(
-        partial(decrypt_general_payload, payload_models.TextToImagePayload, check_nonce=True)
+        partial(decrypt_general_payload, payload_models.TextToImagePayload)
     ),
     fiber_config: Config = Depends(get_fiber_config),
     worker_config: WorkerConfig = Depends(get_worker_config),
@@ -48,7 +48,7 @@ async def text_to_image(
 
 async def image_to_image(
     decrypted_payload: payload_models.ImageToImagePayload = Depends(
-        partial(decrypt_general_payload, payload_models.ImageToImagePayload, check_nonce=True)
+        partial(decrypt_general_payload, payload_models.ImageToImagePayload)
     ),
     fiber_config: Config = Depends(get_fiber_config),
     worker_config: WorkerConfig = Depends(get_worker_config),
@@ -58,7 +58,7 @@ async def image_to_image(
 
 async def inpaint(
     decrypted_payload: payload_models.InpaintPayload = Depends(
-        partial(decrypt_general_payload, payload_models.InpaintPayload, check_nonce=True)
+        partial(decrypt_general_payload, payload_models.InpaintPayload)
     ),
     fiber_config: Config = Depends(get_fiber_config),
     worker_config: WorkerConfig = Depends(get_worker_config),
@@ -68,7 +68,7 @@ async def inpaint(
 
 async def avatar(
     decrypted_payload: payload_models.AvatarPayload = Depends(
-        partial(decrypt_general_payload, payload_models.AvatarPayload, check_nonce=True)
+        partial(decrypt_general_payload, payload_models.AvatarPayload)
     ),
     fiber_config: Config = Depends(get_fiber_config),
     worker_config: WorkerConfig = Depends(get_worker_config),

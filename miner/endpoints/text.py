@@ -21,7 +21,7 @@ logger = get_logger(__name__)
 
 async def chat_completions(
     decrypted_payload: payload_models.ChatPayload = Depends(
-        partial(decrypt_general_payload, payload_models.ChatPayload, check_nonce=True)
+        partial(decrypt_general_payload, payload_models.ChatPayload)
     ),
     config: Config = Depends(get_config),
     worker_config: WorkerConfig = Depends(get_worker_config),
