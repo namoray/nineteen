@@ -137,7 +137,7 @@ if __name__ == "__main__":
     else:
         env = "dev" if args.dev else "prod"
         config = generate_config(dev=args.dev)
-        name = env
+        name = "vali"
 
     write_config_to_file(config, name)
     print(f"Configuration has been written to .{name}.env")
