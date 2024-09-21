@@ -23,7 +23,7 @@ load_dotenv(os.getenv("ENV_FILE", ".vali.env"))
 
 @dataclass
 class Config:
-    substrate_interface: SubstrateInterface
+    substrate: SubstrateInterface
     keypair: Keypair
     psql_db: PSQLDB
     redis_db: Redis
@@ -67,11 +67,11 @@ def load_config() -> Config:
 
     refresh_nodes: bool = os.getenv("REFRESH_NODES", "true").lower() == "true"
     if refresh_nodes:
-        substrate_interface = interface.get_substrate_interface(
+        substrate = interface.get_substrate(
             subtensor_network=subtensor_network, subtensor_address=subtensor_address
         )
     else:
-        substrate_interface = None
+        substrate = None
     keypair = chain_utils.load_hotkey_keypair(wallet_name=wallet_name, hotkey_name=hotkey_name)
 
     default_capacity_to_score_multiplier = 0.1 if subtensor_network == "test" else 1.0
@@ -79,7 +79,7 @@ def load_config() -> Config:
     logger.info(f"Capacity to score multiplier: {capacity_to_score_multiplier}")
 
     return Config(
-        substrate_interface=substrate_interface,  # type: ignore
+        substrate=substrate,  # type: ignore
         keypair=keypair,
         psql_db=PSQLDB(),
         redis_db=Redis(host=redis_host),

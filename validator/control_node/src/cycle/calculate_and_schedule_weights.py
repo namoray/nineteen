@@ -50,7 +50,7 @@ async def get_and_set_weights(config: Config) -> None:
 
     success = await asyncio.to_thread(
         weights.set_node_weights,
-        substrate_interface=config.substrate_interface,
+        substrate=config.substrate,
         keypair=config.keypair,
         node_ids=node_ids,
         node_weights=node_weights,

@@ -48,7 +48,7 @@ async def is_recent_update(connection, netuid: int) -> bool:
 async def fetch_nodes_from_substrate(config: Config) -> list[Node]:
     # NOTE: Will this cause issues if this method closes the conenction
     # on substrate interface, but we use the same substrate interface object elsewhere?
-    return await asyncio.to_thread(fetch_nodes.get_nodes_for_netuid, config.substrate_interface, config.netuid)
+    return await asyncio.to_thread(fetch_nodes.get_nodes_for_netuid, config.substrate, config.netuid)
 
 
 async def store_nodes(config: Config, nodes: list[Node]):

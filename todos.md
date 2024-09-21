@@ -14,6 +14,7 @@
 ## Fiber stuff:
 - Header for nonce & encrypted nonce? or sign nonce with private key?
 - Fix the ssl errors from substrate interface which have onyl just started appearing :(
+- T&C's
 
 ## Workers stuff:
 - image server upgrades
