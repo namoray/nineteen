@@ -84,7 +84,7 @@ async def delete_uid_data_by_hotkey(connection: Connection, hotkey: str) -> None
     )
 
 
-async def delete_task_data_older_than(connection: Connection, date: str) -> None:
+async def delete_task_data_older_than(connection: Connection, date: datetime) -> None:
     await connection.execute(
         f"""
         DELETE FROM {dcst.TABLE_TASKS} WHERE {dcst.COLUMN_CREATED_AT} < $1
@@ -93,7 +93,7 @@ async def delete_task_data_older_than(connection: Connection, date: str) -> None
     )
 
 
-async def delete_reward_data_older_than(connection: Connection, date: str) -> None:
+async def delete_reward_data_older_than(connection: Connection, date: datetime) -> None:
     await connection.execute(
         f"""
         DELETE FROM {dcst.TABLE_REWARD_DATA} WHERE {dcst.COLUMN_CREATED_AT} < $1
@@ -102,10 +102,10 @@ async def delete_reward_data_older_than(connection: Connection, date: str) -> No
     )
 
 
-async def delete_uid_data_older_than(connection: Connection, date: str) -> None:
+async def delete_contender_history_older_than(connection: Connection, date: datetime) -> None:
     await connection.execute(
         f"""
-        DELETE FROM {dcst.TABLE_UID_RECORDS} WHERE {dcst.COLUMN_CREATED_AT} < $1
+        DELETE FROM {dcst.CONTENDERS_HISTORY_TABLE} WHERE {dcst.COLUMN_CREATED_AT} < $1
         """,
         date,
     )
@@ -154,7 +154,7 @@ async def select_count_of_rows_in_tasks(connection: Connection) -> int:
     return result or 0
 
 
-async def select_count_rows_of_task_stored_for_scoring(connection: Connection, task_name: str) -> int :
+async def select_count_rows_of_task_stored_for_scoring(connection: Connection, task_name: str) -> int:
     result = await connection.fetchval(
         f"""
         SELECT COUNT(*) FROM {dcst.TABLE_TASKS} WHERE {dcst.COLUMN_TASK_NAME} = $1

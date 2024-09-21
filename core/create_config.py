@@ -86,6 +86,7 @@ def generate_validator_config(dev: bool = False) -> dict[str, Any]:
     config["HOTKEY_NAME"] = input("Enter hotkey name (default: default): ") or "default"
     config["SUBTENSOR_NETWORK"] = input("Enter subtensor network (default: finney): ") or "finney"
     config["NETUID"] = 176 if config["SUBTENSOR_NETWORK"] == "test" else 19
+    
 
     config["GPU_SERVER_ADDRESS"] = validate_input(
         "Enter GPU server address: ", lambda x: re.match(r"^https?://.+", x) is not None
@@ -107,6 +108,8 @@ def generate_validator_config(dev: bool = False) -> dict[str, Any]:
         )
     else:
         config["ENV"] = "prod"
+
+    config["CAPACITY_TO_SCORE_MULTIPLIER"] = 1
 
     config["ENV_FILE"] = ".vali.env"
 

@@ -5,6 +5,7 @@ Stores the scored results in the database and potentially posts stats to TauVisi
 """
 
 import asyncio
+from datetime import datetime, timedelta
 import random
 import json
 from typing import Any, Dict
@@ -19,7 +20,7 @@ from core.tasks import Task
 from validator.models import RewardData
 from validator.utils import work_and_speed_functions
 from validator.db.src import functions as db_functions
-from validator.db.src.sql.rewards_and_scores import select_tasks_and_number_of_results, sql_insert_reward_data
+from validator.db.src.sql.rewards_and_scores import delete_contender_history_older_than, delete_reward_data_older_than, select_tasks_and_number_of_results, sql_insert_reward_data
 from validator.control_node.src.control_config import Config
 
 from core import constants as ccst
@@ -134,7 +135,10 @@ async def process_and_store_score(
             await sql_insert_reward_data(connection, reward_data)
 
         logger.info(f"Successfully scored and stored data for task: {task}")
-
+    
+    date_to_delete = datetime.now() - timedelta(days=7)
+    await delete_reward_data_older_than(connection, date_to_delete)
+    await delete_contender_history_older_than(connection, date_to_delete)
 
 async def score_results(config: Config):
     while True:
