@@ -43,12 +43,6 @@ def _calculate_work_text(character_count: int) -> float:
     return work
 
 
-def _calculate_work_clip(number_of_images: int) -> float:
-    """
-    Work for clip is just the number of images"""
-    return number_of_images
-
-
 def calculate_speed_modifier(task_config: tcfg.FullTaskConfig, result: Dict[str, Any], payload: dict) -> float:
     config = task_config.scoring_config
 

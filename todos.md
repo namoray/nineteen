@@ -1,6 +1,6 @@
 # Features to be included in the Vision 5.0 release:
 
-- Make sure reward data and contender history is capped
+
 - Post to sn19.ai + with the created_at time pointing to the time of the query, not time of insertion
 - Speed scoring to be based off medians - and potentially using the distribution of miners instead of a fixed distribution
 - Add in DUIS
