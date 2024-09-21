@@ -9,7 +9,6 @@
 - api keys for entry node
 - DAPI
 - Change text synthetics to pull from a larger text orientated dataset
-- Change autoupdate to use pm2
 
 ## Fiber stuff:
 - Header for nonce & encrypted nonce? or sign nonce with private key?
