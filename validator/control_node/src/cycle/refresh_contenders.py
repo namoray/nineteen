@@ -57,7 +57,6 @@ async def _fetch_node_capacity(config: Config, node: Node) -> dict[str, float] |
         server_address=server_address,
         validator_ss58_address=config.keypair.ss58_address,
         symmetric_key_uuid=node.symmetric_key_uuid,
-        keypair=config.keypair,
         endpoint="/capacity",
         timeout=3,
     )
