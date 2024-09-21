@@ -125,7 +125,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         task=Task.proteus_text_to_image,
         max_capacity=3_600,
         scoring_config=TaskScoringConfig(
-            task=Task.proteus_text_to_image, mean=0.2, variance=7, overhead=0.25, task_type=TaskType.IMAGE
+            task=Task.proteus_text_to_image, mean=0.16, variance=18, overhead=0.2, task_type=TaskType.IMAGE
         ),
         orchestrator_server_config=OrchestratorServerConfig(
             server_needed=ServerType.IMAGE,
@@ -149,7 +149,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         task=Task.proteus_image_to_image,
         max_capacity=2_000,
         scoring_config=TaskScoringConfig(
-            task=Task.proteus_image_to_image, mean=0.24, variance=5, overhead=0.6, task_type=TaskType.IMAGE
+            task=Task.proteus_image_to_image, mean=0.6, variance=9, overhead=0.6, task_type=TaskType.IMAGE
         ),
         orchestrator_server_config=OrchestratorServerConfig(
             server_needed=ServerType.IMAGE,
@@ -173,7 +173,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         task=Task.flux_schnell_text_to_image,
         max_capacity=3_600,
         scoring_config=TaskScoringConfig(
-            task=Task.flux_schnell_text_to_image, mean=0.30, variance=7, overhead=0.4, task_type=TaskType.IMAGE
+            task=Task.flux_schnell_text_to_image, mean=0.40, variance=18, overhead=0.4, task_type=TaskType.IMAGE
         ),
         orchestrator_server_config=OrchestratorServerConfig(
             server_needed=ServerType.IMAGE,
@@ -197,7 +197,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         task=Task.flux_schnell_image_to_image,
         max_capacity=2_000,
         scoring_config=TaskScoringConfig(
-            task=Task.flux_schnell_image_to_image, mean=0.36, variance=5, overhead=0.6, task_type=TaskType.IMAGE
+            task=Task.flux_schnell_image_to_image, mean=0.20, variance=13, overhead=0.6, task_type=TaskType.IMAGE
         ),
         orchestrator_server_config=OrchestratorServerConfig(
             server_needed=ServerType.IMAGE,
@@ -220,7 +220,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
     Task.avatar: FullTaskConfig(
         task=Task.avatar,
         max_capacity=2_000,
-        scoring_config=TaskScoringConfig(task=Task.avatar, mean=0.50, variance=4, overhead=0.5, task_type=TaskType.IMAGE),
+        scoring_config=TaskScoringConfig(task=Task.avatar, mean=0.24, variance=10, overhead=0.45, task_type=TaskType.IMAGE),
         orchestrator_server_config=OrchestratorServerConfig(
             server_needed=ServerType.IMAGE,
             load_model_config={},
@@ -243,7 +243,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         task=Task.dreamshaper_text_to_image,
         max_capacity=3_600,
         scoring_config=TaskScoringConfig(
-            task=Task.dreamshaper_text_to_image, mean=0.22, variance=7, overhead=0.3, task_type=TaskType.IMAGE
+            task=Task.dreamshaper_text_to_image, mean=0.12, variance=18, overhead=0.3, task_type=TaskType.IMAGE
         ),
         orchestrator_server_config=OrchestratorServerConfig(
             server_needed=ServerType.IMAGE,
@@ -267,7 +267,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         task=Task.dreamshaper_image_to_image,
         max_capacity=2_000,
         scoring_config=TaskScoringConfig(
-            task=Task.dreamshaper_image_to_image, mean=0.28, variance=5, overhead=0.6, task_type=TaskType.IMAGE
+            task=Task.dreamshaper_image_to_image, mean=0.13, variance=13, overhead=0.6, task_type=TaskType.IMAGE
         ),
         orchestrator_server_config=OrchestratorServerConfig(
             server_needed=ServerType.IMAGE,
@@ -290,9 +290,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
     Task.inpaint: FullTaskConfig(
         task=Task.inpaint,
         max_capacity=2_000,
-        scoring_config=TaskScoringConfig(
-            task=Task.inpaint, mean=0.3, variance=4, overhead=0.4, task_type=TaskType.IMAGE
-        ),
+        scoring_config=TaskScoringConfig(task=Task.inpaint, mean=0.12, variance=18, overhead=0.4, task_type=TaskType.IMAGE),
         orchestrator_server_config=OrchestratorServerConfig(
             server_needed=ServerType.IMAGE,
             load_model_config={},
@@ -307,7 +305,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         endpoint=Endpoints.inpaint.value,
         volume_to_requests_conversion=10,
         is_stream=False,
-        weight=0.1,
+        weight=0.0,
         timeout=15,
         enabled=False,
     ),
