@@ -65,7 +65,7 @@ class FullTaskConfig(BaseModel):
 TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
     Task.chat_llama_3_1_8b: FullTaskConfig(
         task=Task.chat_llama_3_1_8b,
-        max_capacity=576_000,
+        max_capacity=1_500_000,
         scoring_config=TaskScoringConfig(
             task=Task.chat_llama_3_1_8b, overhead=0.4, mean=0.3, variance=4, task_type=TaskType.TEXT
         ),
@@ -90,7 +90,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         is_stream=True,
         weight=0.1,
         timeout=2,
-        enabled=True,
+        enabled=False,
     ),
     Task.chat_llama_3_1_70b: FullTaskConfig(
         task=Task.chat_llama_3_1_70b,
@@ -191,7 +191,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         is_stream=False,
         weight=0.1,
         timeout=20,
-        enabled=True,
+        enabled=False,
     ),
     Task.flux_schnell_image_to_image: FullTaskConfig(
         task=Task.flux_schnell_image_to_image,
@@ -237,7 +237,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         is_stream=False,
         weight=0.1,
         timeout=15,
-        enabled=False,
+        enabled=True,
     ),
     Task.dreamshaper_text_to_image: FullTaskConfig(
         task=Task.dreamshaper_text_to_image,

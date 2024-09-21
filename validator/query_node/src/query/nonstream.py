@@ -90,6 +90,7 @@ async def query_nonstream(
             ),
             validator_ss58_address=config.ss58_address,
             fernet=node.fernet,
+            keypair=config.keypair,
             symmetric_key_uuid=node.symmetric_key_uuid,
             endpoint=task_config.endpoint,
             payload=payload,

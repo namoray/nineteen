@@ -1,6 +1,6 @@
 import json
 import time
-from typing import Any, AsyncGenerator
+from typing import AsyncGenerator
 
 import httpx
 from core.models import utility_models
@@ -18,8 +18,6 @@ from fiber.logging_utils import get_logger
 from validator.utils.query_utils import load_sse_jsons
 
 logger = get_logger(__name__)
-
-
 
 
 def _get_formatted_payload(content: str, first_message: bool, add_finish_reason: bool = False) -> str:
@@ -104,7 +102,6 @@ async def consume_generator(
         query_result = construct_500_query_result(node, task)
         await utils.adjust_contender_from_result(config, query_result, contender, synthetic_query, payload=payload)
         return False
-
 
     start_time, text_jsons, status_code, first_message = time.time(), [], 200, True
     try:
@@ -193,6 +190,7 @@ async def query_node_stream(config: Config, contender: Contender, node: Node, pa
     return client.make_streamed_post(
         httpx_client=config.httpx_client,
         server_address=address,
+        keypair=config.keypair,
         validator_ss58_address=config.ss58_address,
         fernet=node.fernet,
         symmetric_key_uuid=node.symmetric_key_uuid,
