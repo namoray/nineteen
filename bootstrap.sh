@@ -103,6 +103,7 @@ if [ ! -d "$VENV_PATH" ]; then
     echo_ "Python venv created"
     source $VENV_PATH/bin/activate
     pip install bittensor==7.4.0
+    pip install python-dotenv==1.0.1
 else
     echo_ "Python venv already exists at $VENV_PATH"
 fi

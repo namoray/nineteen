@@ -64,6 +64,7 @@ async def post_to_nineteen_ai(
                 headers=headers,
             )
             logger.info(f"Resp status code from {BASE_URL}: {resp.status_code} for post type {data_type_to_post}")
+            resp.raise_for_status()
             return resp
         except Exception as e:
             logger.error(f"Error when posting to {BASE_URL} to store data for {data_type_to_post}: {repr(e)}")
