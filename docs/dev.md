@@ -13,15 +13,12 @@ sed -i 's/ENV=[^ ]*/ENV=dev/' .vali.env
 
 ## Utils
 
-** UTILS FOR DEV **
+** UTILS **
 ```bash
-docker compose --env-file .vali.env -f docker-compose.yml -f docker-compose.utils.yml up -d
+docker compose --env-file .vali.env -f docker-compose.yml -f docker-compose.utils.yml up -d --build
 ```
 
-** UTILS FOR PROD **
-```bash
-docker compose --env-file .vali.env -f docker-compose.yml -f docker-compose.utils.yml up -d
-```
+
 
 
 ## For dev without docker:

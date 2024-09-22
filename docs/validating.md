@@ -74,7 +74,7 @@ If you're running the autoupdater, then you should be running!
 ## Start the services if you don't have autoupdates
 
 ```bash
-docker compose --env-file .vali.env -f docker-compose.yml up -d
+docker compose --env-file .vali.env -f docker-compose.yml up -d --build
 ```
 
 See [helpful commands](./helpful-commands.md) for more information on the docker commands
