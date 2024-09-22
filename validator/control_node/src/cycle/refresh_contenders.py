@@ -25,16 +25,21 @@ from fiber.validator import client
 logger = get_logger(__name__)
 
 
-def _get_validator_stake_proportion(nodes: list[Node], hotkey_ss58_address: str) -> float:
+def _get_validator_stake_proportion(nodes: list[Node], hotkey_ss58_address: str, config: Config) -> float:
     valid_nodes = [node for node in nodes if node is not None and node.stake is not None]
     sum_stake = sum(node.stake for node in valid_nodes)
     target_node = next((node for node in valid_nodes if node.hotkey == hotkey_ss58_address), None)
     if target_node is not None:
-        if target_node.stake / sum_stake < 0.005:
+        if not config.testnet and target_node.stake / sum_stake < 0.002:
             logger.warning(
-                f"Validator {hotkey_ss58_address} has less than 0.5% of the total stake - I will round it up to 0.5% - probably this is testnet"
+                f"Validator {hotkey_ss58_address} has less than 0.2% of the total stake - I will round it up to 0.2% - probably this is testnet"
             )
-            return 0.005
+            return 0.002
+        elif config.testnet and target_node.stake / sum_stake < 0.1:
+            logger.warning(
+                f"Validator {hotkey_ss58_address} has less than 10% of the total stake - I will round it up to 10% - probably this is testnet"
+            )
+            return 0.1
         return target_node.stake / sum_stake
 
     logger.error(f"Unable to find validator {hotkey_ss58_address} in nodes.")

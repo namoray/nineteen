@@ -29,7 +29,7 @@ class Config:
     redis_db: Redis
     subtensor_network: str
     subtensor_address: str | None
-    gpu_server_address: str  | None
+    gpu_server_address: str | None
     netuid: int
     seconds_between_syncs: int
     replace_with_localhost: bool
@@ -37,7 +37,8 @@ class Config:
     refresh_nodes: bool
     capacity_to_score_multiplier: float
     httpx_client: httpx.AsyncClient = httpx.AsyncClient()
-    debug: bool = os.getenv("ENV", "prod").lower() == "dev"
+    testnet: bool = os.getenv("SUBTENSOR_NETWORK", "finney").lower() == "test"
+    debug: bool = os.getenv("ENV", "prod").lower() != "prod"
 
 
 def load_config() -> Config:
@@ -69,9 +70,7 @@ def load_config() -> Config:
 
     refresh_nodes: bool = os.getenv("REFRESH_NODES", "true").lower() == "true"
     if refresh_nodes:
-        substrate = interface.get_substrate(
-            subtensor_network=subtensor_network, subtensor_address=subtensor_address
-        )
+        substrate = interface.get_substrate(subtensor_network=subtensor_network, subtensor_address=subtensor_address)
     else:
         substrate = None
     keypair = chain_utils.load_hotkey_keypair(wallet_name=wallet_name, hotkey_name=hotkey_name)
@@ -94,4 +93,5 @@ def load_config() -> Config:
         refresh_nodes=refresh_nodes,
         capacity_to_score_multiplier=capacity_to_score_multiplier,
         gpu_server_address=gpu_server_address,
+        debug=dev_env,
     )
