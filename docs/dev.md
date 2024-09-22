@@ -25,8 +25,13 @@ docker compose --env-file .vali.env -f docker-compose.yml -f docker-compose.util
 
 
 ## For dev without docker:
+
+Optional if you need a venv
 ```bash
 python -m venv .venv || python3 -m venv .venv
+```
+
+
 source .venv/bin/activate
 find . -name "requirements.txt" -exec pip install -r {} \;
 pip install --no-cache-dir git+https://github.com/rayonlabs/fiber.git

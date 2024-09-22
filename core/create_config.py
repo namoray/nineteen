@@ -72,11 +72,7 @@ def generate_miner_config(dev: bool = False) -> dict[str, Any]:
 
 
 def generate_validator_config() -> dict[str, Any]:
-    dev = (
-        "true"
-        if validate_input("Prod environment? (y/n): (default: y)", yes_no_validator).lower().startswith("y")
-        else "false"
-    )
+    dev = "true" if validate_input("Prod environment? (y/n): (default: y)", yes_no_validator).lower().startswith("y") else "false"
     load_dotenv(f".{'dev' if dev else 'prod'}.env")
     # Check if POSTGRES_PASSWORD already exists in the environment
     existing_password = os.getenv("POSTGRES_PASSWORD")
@@ -91,10 +87,9 @@ def generate_validator_config() -> dict[str, Any]:
     config["HOTKEY_NAME"] = input("Enter hotkey name (default: default): ") or "default"
     config["SUBTENSOR_NETWORK"] = input("Enter subtensor network (default: finney): ") or "finney"
     config["NETUID"] = 176 if config["SUBTENSOR_NETWORK"] == "test" else 19
-    
 
     config["GPU_SERVER_ADDRESS"] = validate_input(
-        "Enter GPU server address: ", lambda x: x=="" or re.match(r"^https?://.+", x) is not None
+        "Enter GPU server address: ", lambda x: x == "" or re.match(r"^https?://.+", x) is not None
     )
 
     if dev:
@@ -117,6 +112,7 @@ def generate_validator_config() -> dict[str, Any]:
     config["CAPACITY_TO_SCORE_MULTIPLIER"] = 1
 
     config["ENV_FILE"] = ".vali.env"
+    config["DAPI_ADMIN_PASSWORD"] = generate_secure_password()
 
     return config
 
