@@ -27,7 +27,6 @@ async def get_and_store_nodes(config: Config) -> list[Node]:
 
     nodes = await fetch_nodes_from_substrate(config)
 
-
     await store_nodes(config, nodes)
     await update_our_validator_node(config)
 
@@ -71,8 +70,10 @@ async def _handshake(config: Config, node: Node, async_client: httpx.AsyncClient
     )
 
     try:
-        symmetric_key, symmetric_key_uid = await handshake.perform_handshake(async_client, server_address, config.keypair)
-    except (httpx.HTTPStatusError, httpx.RequestError, httpx.ConnectError) as e:
+        symmetric_key, symmetric_key_uid = await handshake.perform_handshake(
+            async_client, server_address, config.keypair, node.hotkey
+        )
+    except (httpx.HTTPStatusError, httpx.RequestError, httpx.ConnectError, Exception) as e:
         # logger.warning(f"Failed to connect to {server_address}: {e}")
         if hasattr(e, "response"):
             logger.debug(f"response content: {e.response.text}")  # type: ignore

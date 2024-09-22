@@ -12,9 +12,9 @@ from validator.control_node.src.control_config import Config
 from validator.models import Contender
 from core.tasks import Task
 from core import tasks_config as tcfg
-from validator.utils import contender_utils as putils
-from validator.utils import generic_constants as gcst
-from validator.utils import redis_constants as rcst
+from validator.utils.contender import contender_utils as putils
+from validator.utils.generic import generic_constants as gcst
+from validator.utils.redis import redis_constants as rcst
 from core import constants as ccst
 from core.log import get_logger
 

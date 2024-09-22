@@ -5,13 +5,15 @@ from validator.models import Contender
 from validator.query_node.src.query_config import Config
 from core.tasks import Task
 from core import tasks_config as tcfg
-from validator.utils import contender_utils as putils, generic_utils as gutils, redis_constants as rcst
+from validator.utils.generic import generic_utils as gutils
+from validator.utils.contender import contender_utils as putils
+from validator.utils.redis import redis_constants as rcst
 from core.log import get_logger
-from validator.utils import redis_dataclasses as rdc
+from validator.utils.redis import redis_dataclasses as rdc
 from validator.query_node.src.query import nonstream, streaming
 from validator.db.src.sql.contenders import get_contenders_for_task
 from validator.db.src.sql.nodes import get_node
-from validator.utils import generic_constants as gcst
+from validator.utils.generic import generic_constants as gcst
 
 logger = get_logger(__name__)
 

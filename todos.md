@@ -11,8 +11,8 @@
 - Add in DUIS
 - DAPI
 
-
-- Change text synthetics to pull from a larger text orientated dataset
+- FIx pm2 autoupdater from bootstrap
+- Streaming smoothness
 
 ## Fiber stuff:
 - Fix the ssl errors from substrate interface which have onyl just started appearing :(
@@ -21,10 +21,11 @@
 ## Workers stuff:
 - image server upgrades
 
-## testS:
-- get em working son
 
 ## Shortly after Vision 5.0 release
 - Specialist miners. Miners will be in 3 categories for launch: Small LLM's, Medium LLM's, Image generation - and can only run one type of miner on a uid
 - Speed scoring to be based off medians - and potentially using the distribution of miners instead of a fixed distribution [Do this after to minimise chanegs to 5.0 first]
-- 
+
+
+## testS:
+- get em working son

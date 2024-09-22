@@ -4,9 +4,7 @@ import sys
 from typing import Any
 
 from core.models import utility_models
-from validator.utils import (
-    synthetic_constants as scst,
-)
+from validator.utils.synthetic import synthetic_constants as scst
 from core.tasks import Task
 from core import tasks_config
 from core.models import payload_models
@@ -18,7 +16,7 @@ import datasets
 import diskcache
 from functools import lru_cache
 from core.log import get_logger
-from validator.utils import synthetic_utils as sutils
+from validator.utils.synthetic import synthetic_utils as sutils
 import binascii
 
 logger = get_logger(__name__)

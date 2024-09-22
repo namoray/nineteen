@@ -12,8 +12,8 @@ from fiber.validator import client
 from core import tasks_config as tcfg
 from fiber.logging_utils import get_logger
 from validator.query_node.src import utils
-from validator.utils import redis_constants as rcst
-from validator.utils import generic_utils
+from validator.utils.redis import redis_constants as rcst
+from validator.utils.generic import generic_utils
 
 logger = get_logger(__name__)
 

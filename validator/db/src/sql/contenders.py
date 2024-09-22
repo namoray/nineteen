@@ -4,7 +4,7 @@ from core.log import get_logger
 from asyncpg import Connection
 from validator.db.src.database import PSQLDB
 from validator.models import Contender, PeriodScore, calculate_period_score
-from validator.utils import database_constants as dcst
+from validator.utils.database import database_constants as dcst
 
 logger = get_logger(__name__)
 

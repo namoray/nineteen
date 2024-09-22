@@ -14,7 +14,7 @@ from fiber.miner.dependencies import get_config
 from miner.config import WorkerConfig
 from miner.dependencies import get_worker_config
 
-from validator.utils.generic_utils import async_chain
+from validator.utils.generic.generic_utils import async_chain
 
 logger = get_logger(__name__)
 

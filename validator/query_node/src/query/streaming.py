@@ -11,11 +11,12 @@ from validator.models import Contender
 from fiber.validator import client
 from fiber.chain.models import Node
 from core import tasks_config as tcfg
-from validator.utils import generic_utils, redis_constants as rcst
-from validator.utils import generic_constants as gcst
+from validator.utils.generic import generic_constants as gcst, generic_utils
+from validator.utils.redis import redis_constants as rcst
+
 from fiber.logging_utils import get_logger
 
-from validator.utils.query_utils import load_sse_jsons
+from validator.utils.query.query_utils import load_sse_jsons
 
 logger = get_logger(__name__)
 

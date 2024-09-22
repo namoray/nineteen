@@ -2,11 +2,11 @@ import random
 from typing import Any
 
 from core import tasks_config
-from validator.utils import (
+from validator.utils.redis import (
     redis_utils as rutils,
     redis_constants as rcst,
-    synthetic_constants as scst,
 )
+from validator.utils.synthetic import synthetic_constants as scst
 from redis.asyncio import Redis
 
 import base64

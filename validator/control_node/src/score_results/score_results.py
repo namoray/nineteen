@@ -34,9 +34,10 @@ logger = get_logger(__name__)
 
 
 async def _test_external_server_connection(config: Config) -> bool:
+    assert config.gpu_server_address is not None
     async with httpx.AsyncClient(timeout=10) as client:
         try:
-            response = await client.get(config.gpu_server_address)
+            response = await client.get(config.gpu_server_address.rstrip("/"))
             response.raise_for_status()
             logger.info("connected to the external scoring server.")
             return True
@@ -63,6 +64,7 @@ async def _wait_for_external_server(config: Config):
 async def _send_result_for_scoring(
     config: Config, check_result_payload: dict, consecutive_errors: int
 ) -> tuple[Dict[str, Any] | None, int]:
+    assert config.gpu_server_address is not None
     async with httpx.AsyncClient(timeout=180) as client:
         try:
             response = await client.post(config.gpu_server_address.rstrip("/") + "/check-result", json=check_result_payload)
