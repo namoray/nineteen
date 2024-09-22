@@ -5,7 +5,6 @@ import re
 import argparse
 from typing import Callable, Any
 import random
-from dotenv import load_dotenv
 
 
 def generate_secure_password(length: int = 16) -> str:
@@ -71,9 +70,7 @@ def generate_miner_config(dev: bool = False) -> dict[str, Any]:
     return config
 
 
-def generate_validator_config() -> dict[str, Any]:
-    dev = "true" if validate_input("Prod environment? (y/n): (default: y)", yes_no_validator).lower().startswith("y") else "false"
-    load_dotenv(f".{'dev' if dev else 'prod'}.env")
+def generate_validator_config(dev: bool = False) -> dict[str, Any]:
     # Check if POSTGRES_PASSWORD already exists in the environment
     existing_password = os.getenv("POSTGRES_PASSWORD")
 
