@@ -8,7 +8,11 @@ import asyncio
 from typing import List
 
 
-from validator.db.src.sql.contenders import migrate_contenders_to_contender_history, insert_contenders, update_contenders_period_scores
+from validator.db.src.sql.contenders import (
+    migrate_contenders_to_contender_history,
+    insert_contenders,
+    update_contenders_period_scores,
+)
 from validator.models import Contender
 from fiber.chain.models import Node
 from core import tasks_config as tcfg
@@ -26,6 +30,11 @@ def _get_validator_stake_proportion(nodes: list[Node], hotkey_ss58_address: str)
     sum_stake = sum(node.stake for node in valid_nodes)
     target_node = next((node for node in valid_nodes if node.hotkey == hotkey_ss58_address), None)
     if target_node is not None:
+        if target_node.stake < 1_000:
+            logger.warning(
+                f"Validator {hotkey_ss58_address} has less than 1000 stake - I will round it up to 1000 - probably this is testnet"
+            )
+            return 1000 / sum_stake
         return target_node.stake / sum_stake
 
     logger.error(f"Unable to find validator {hotkey_ss58_address} in nodes.")
