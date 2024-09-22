@@ -106,7 +106,7 @@ async def _send_result_for_scoring(
 async def _process_and_store_score(
     config: Config,
     task: str,
-    results: Dict[str, Any],
+    result: Dict[str, Any],
     payload: Dict[str, Any],
     node_hotkey: str,
     task_result: Dict[str, Any],
@@ -121,9 +121,9 @@ async def _process_and_store_score(
     if task_config is None:
         logger.error(f"Task {task} is not enabled")
         return
-    volume = work_and_speed_functions.calculate_work(task_config=task_config, result=results, steps=payload.get("steps"))
+    volume = work_and_speed_functions.calculate_work(task_config=task_config, result=result, steps=payload.get("steps"))
     speed_scoring_factor = work_and_speed_functions.calculate_speed_modifier(
-        task_config=task_config, result=results, payload=payload
+        task_config=task_config, result=result, payload=payload
     )
 
     for node_id, quality_score in node_scores.items():
@@ -135,10 +135,10 @@ async def _process_and_store_score(
             validator_hotkey=config.keypair.ss58_address,
             node_hotkey=node_hotkey,
             synthetic_query=synthetic_query,
-            response_time=results["response_time"],
+            response_time=result["response_time"],
             volume=volume,
             speed_scoring_factor=speed_scoring_factor,
-            created_at=...,
+            created_at=result["created_at"],
         )
 
         async with await config.psql_db.connection() as connection:
@@ -182,7 +182,7 @@ async def _score_task(config: Config, task: Task, max_tasks_to_score: int):
             break
 
         raw_checking_data, node_hotkey = data_and_hotkey
-        results, synthetic_query, payload_dict_str = (
+        query_result, synthetic_query, payload_dict_str = (
             raw_checking_data["query_result"],  # type: ignore
             raw_checking_data["synthetic_query"],  # type: ignore
             raw_checking_data["payload"],  # type: ignore
@@ -194,7 +194,7 @@ async def _score_task(config: Config, task: Task, max_tasks_to_score: int):
             continue
         server_config = task_config.orchestrator_server_config
 
-        check_result_payload = {"payload": payload, "result": results, "server_config": server_config.model_dump()}
+        check_result_payload = {"payload": payload, "result": query_result, "server_config": server_config.model_dump()}
 
         task_result, consecutive_errors = await _send_result_for_scoring(config, check_result_payload, consecutive_errors)
         if task_result is None:
@@ -207,7 +207,7 @@ async def _score_task(config: Config, task: Task, max_tasks_to_score: int):
         await _process_and_store_score(
             config=config,
             task=task.value,
-            results=results,
+            result=query_result,
             payload=payload,
             node_hotkey=node_hotkey,
             task_result=task_result,
