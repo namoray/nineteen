@@ -50,6 +50,8 @@ Securely move them onto your machine as usual. Either with the btcli or with a s
 ```bash
 python core/create_config.py --miner
 ```
+(^ Add --dev flag if you are a developer on nineteen)
+
 
 ## Post IP's to chain
 Example command:
