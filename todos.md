@@ -1,15 +1,20 @@
 # Features to be included in the Vision 5.0 release:
 
-
 - Post to sn19.ai + with the created_at time pointing to the time of the query, not time of insertion
-- Add in DUIS
+
+- Change text synthetics to pull from a larger text orientated dataset
+
+- Consolidate docker compose files (that might help with the above)
 - Redis password
 - Redis commander password
-- Consolidate docker compose files (that might help with the above)
-- api keys for entry node
+
+- Add in DUIS
 - DAPI
+
+
 - Change text synthetics to pull from a larger text orientated dataset
 - Change autoupdate to use pm2
+- api keys for entry node
 
 ## Fiber stuff:
 - Header for nonce & encrypted nonce? or sign nonce with private key?

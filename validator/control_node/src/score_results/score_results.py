@@ -20,7 +20,12 @@ from core.tasks import Task
 from validator.models import RewardData
 from validator.utils import work_and_speed_functions
 from validator.db.src import functions as db_functions
-from validator.db.src.sql.rewards_and_scores import delete_contender_history_older_than, delete_reward_data_older_than, select_tasks_and_number_of_results, sql_insert_reward_data
+from validator.db.src.sql.rewards_and_scores import (
+    delete_contender_history_older_than,
+    delete_reward_data_older_than,
+    select_tasks_and_number_of_results,
+    sql_insert_reward_data,
+)
 from validator.control_node.src.control_config import Config
 
 from core import constants as ccst
@@ -28,7 +33,7 @@ from core import constants as ccst
 logger = get_logger(__name__)
 
 
-async def test_external_server_connection(config: Config) -> bool:
+async def _test_external_server_connection(config: Config) -> bool:
     async with httpx.AsyncClient(timeout=10) as client:
         try:
             response = await client.get(config.gpu_server_address)
@@ -43,11 +48,11 @@ async def test_external_server_connection(config: Config) -> bool:
             return False
 
 
-async def wait_for_external_server(config: Config):
+async def _wait_for_external_server(config: Config):
     max_sleep = 30
     sleep_duration = 5
     while True:
-        if await test_external_server_connection(config):
+        if await _test_external_server_connection(config):
             break
         logger.warning("Failed to connect to the external server. Retrying in 5 seconds...")
 
@@ -55,10 +60,9 @@ async def wait_for_external_server(config: Config):
         sleep_duration += 0.5
 
 
-async def send_result_for_scoring(
+async def _send_result_for_scoring(
     config: Config, check_result_payload: dict, consecutive_errors: int
 ) -> tuple[Dict[str, Any] | None, int]:
-
     async with httpx.AsyncClient(timeout=180) as client:
         try:
             response = await client.post(config.gpu_server_address.rstrip("/") + "/check-result", json=check_result_payload)
@@ -96,7 +100,7 @@ async def send_result_for_scoring(
             return None, consecutive_errors + 1
 
 
-async def process_and_store_score(
+async def _process_and_store_score(
     config: Config,
     task: str,
     results: Dict[str, Any],
@@ -115,7 +119,9 @@ async def process_and_store_score(
         logger.error(f"Task {task} is not enabled")
         return
     volume = work_and_speed_functions.calculate_work(task_config=task_config, result=results, steps=payload.get("steps"))
-    speed_scoring_factor = work_and_speed_functions.calculate_speed_modifier(task_config=task_config, result=results, payload=payload)
+    speed_scoring_factor = work_and_speed_functions.calculate_speed_modifier(
+        task_config=task_config, result=results, payload=payload
+    )
 
     for node_id, quality_score in node_scores.items():
         reward_data = RewardData(
@@ -138,10 +144,13 @@ async def process_and_store_score(
             await delete_contender_history_older_than(connection, date_to_delete)
 
         logger.info(f"Successfully scored and stored data for task: {task}")
-    
 
 
 async def score_results(config: Config):
+    if config.gpu_server_address is None:
+        logger.error("GPU_SERVER_ADDRESS is not set - skipping all scoring!")
+        return
+    await _wait_for_external_server(config)
     while True:
         async with await config.psql_db.connection() as connection:
             tasks_and_results = await select_tasks_and_number_of_results(connection)
@@ -155,10 +164,10 @@ async def score_results(config: Config):
 
         task_to_score = Task(random.choices(list(tasks_and_results.keys()), weights=list(tasks_and_results.values()), k=1)[0])
 
-        await score_task(config, task_to_score, max_tasks_to_score=200)
+        await _score_task(config, task_to_score, max_tasks_to_score=200)
 
 
-async def score_task(config: Config, task: Task, max_tasks_to_score: int):
+async def _score_task(config: Config, task: Task, max_tasks_to_score: int):
     consecutive_errors = 0
     for _ in range(max_tasks_to_score):
         data_and_hotkey = await db_functions.select_and_delete_task_result(config.psql_db, task)
@@ -181,9 +190,7 @@ async def score_task(config: Config, task: Task, max_tasks_to_score: int):
 
         check_result_payload = {"payload": payload, "result": results, "server_config": server_config.model_dump()}
 
-        task_result, consecutive_errors = await send_result_for_scoring(
-            config, check_result_payload, consecutive_errors
-        )
+        task_result, consecutive_errors = await _send_result_for_scoring(config, check_result_payload, consecutive_errors)
         if task_result is None:
             logger.error(f"Failed to score task {task}; I'm on {consecutive_errors} consecutive errors now")
             sleep_time = min(60 * (2 ** (consecutive_errors - 1)), 300)  # Max sleep time of 5 minutes
@@ -191,7 +198,7 @@ async def score_task(config: Config, task: Task, max_tasks_to_score: int):
             continue
         else:
             logger.info(f"Successfully scored task {task} with task result: {task_result}")
-        await process_and_store_score(
+        await _process_and_store_score(
             config=config,
             task=task.value,
             results=results,
