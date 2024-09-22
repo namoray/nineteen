@@ -12,8 +12,8 @@ from fiber.validator import client
 from core import tasks_config as tcfg
 from fiber.logging_utils import get_logger
 from validator.query_node.src import utils
-from validator.utils import redis_constants as rcst
-from validator.utils import generic_utils
+from validator.utils.redis import redis_constants as rcst
+from validator.utils.generic import generic_utils
 
 logger = get_logger(__name__)
 
@@ -89,6 +89,7 @@ async def query_nonstream(
                 node, replace_with_docker_localhost=config.replace_with_docker_localhost, replace_with_localhost=config.replace_with_localhost
             ),
             validator_ss58_address=config.ss58_address,
+            miner_ss58_address=node.hotkey,
             fernet=node.fernet,
             keypair=config.keypair,
             symmetric_key_uuid=node.symmetric_key_uuid,

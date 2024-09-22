@@ -6,11 +6,9 @@ from pydantic import BaseModel
 from core import tasks_config as tcfg
 from redis.asyncio import Redis
 from validator.control_node.src.control_config import Config
-from validator.utils import (
-    synthetic_utils as sutils,
-    redis_constants as rcst,
-    synthetic_constants as scst,
-)
+from validator.utils.redis import redis_constants as rcst
+from validator.utils.synthetic import synthetic_constants as scst
+from validator.utils.synthetic import synthetic_utils as sutils
 from validator.control_node.src.synthetics import synthetic_generation_funcs
 from core.log import get_logger
 

@@ -4,7 +4,7 @@ from typing import Any
 import asyncpg
 from asyncpg import Pool
 
-from validator.utils import database_utils as dutils
+from validator.utils.database import database_utils as dutils
 from core.log import get_logger
 
 logger = get_logger(__name__)

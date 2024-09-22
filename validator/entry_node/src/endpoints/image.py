@@ -10,13 +10,14 @@ from core.tasks import Task
 from core.tasks_config import get_enabled_task_config
 from validator.entry_node.src.core.configuration import Config
 from validator.entry_node.src.core.dependencies import get_config
-from validator.utils import redis_constants as rcst, generic_constants as gcst
+from validator.utils.redis import redis_constants as rcst
+from validator.utils.generic import generic_constants as gcst
 from validator.entry_node.src.models import request_models
 import asyncio
 
 from redis.asyncio.client import PubSub
 
-from validator.utils.generic_dataclasses import GenericResponse
+from validator.utils.generic.generic_dataclasses import GenericResponse
 
 logger = get_logger(__name__)
 

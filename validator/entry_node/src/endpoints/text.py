@@ -8,10 +8,11 @@ from core.log import get_logger
 from fastapi.routing import APIRouter
 from validator.entry_node.src.core.configuration import Config
 from validator.entry_node.src.core.dependencies import get_config
-from validator.utils import redis_constants as rcst, generic_constants as gcst
+from validator.utils.redis import redis_constants as rcst
+from validator.utils.generic import generic_constants as gcst
 from validator.entry_node.src.models import request_models
 import asyncio
-from validator.utils.query_utils import load_sse_jsons
+from validator.utils.query.query_utils import load_sse_jsons
 from redis.asyncio.client import PubSub
 
 logger = get_logger(__name__)

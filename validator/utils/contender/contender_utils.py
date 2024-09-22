@@ -4,12 +4,11 @@ from core.tasks import Task
 from validator.db.src.sql.contenders import fetch_all_contenders, fetch_contender
 from validator.db.src.database import PSQLDB
 from validator.models import Contender
-from validator.utils import redis_constants as rcst
-from validator.utils import redis_utils as rutils, redis_dataclasses as rdc
+from validator.utils.redis import redis_constants as rcst, redis_utils as rutils, redis_dataclasses as rdc
 from redis.asyncio import Redis
 from core.log import get_logger
 import uuid
-from validator.utils import generic_constants as gcst
+from validator.utils.generic import generic_constants as gcst
 
 logger = get_logger(__name__)
 

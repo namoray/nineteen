@@ -3,9 +3,9 @@ import unittest
 from redis.asyncio import Redis
 from core.tasks import Task
 from validator.db.src.database import PSQLDB
-from validator.utils import redis_constants as rcst
-from validator.utils import synthetic_utils as sutils
-from validator.control_node.src.synthetic_data.refresh_synthetic_data import update_tasks_synthetic_data
+from validator.utils.redis import redis_constants as rcst
+from validator.utils.synthetic import synthetic_utils as sutils
+from validator.control_node.src.synthetics.refresh_synthetic_data import update_tasks_synthetic_data
 
 
 class TestSyntheticDataStorageFunctional(unittest.IsolatedAsyncioTestCase):

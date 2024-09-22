@@ -26,7 +26,7 @@ def validate_input(prompt: str, validator: Callable[[str], bool]) -> str:
 
 
 def yes_no_validator(value: str) -> bool:
-    return value.lower() in ["y", "n", "yes", "no"]
+    return value.lower() in ["y", "n", "yes", "no"] or not value
 
 
 def non_empty_bool(value: str) -> bool:
@@ -71,7 +71,8 @@ def generate_miner_config(dev: bool = False) -> dict[str, Any]:
     return config
 
 
-def generate_validator_config(dev: bool = False) -> dict[str, Any]:
+def generate_validator_config() -> dict[str, Any]:
+    dev = "true" if validate_input("Prod environment? (y/n): (default: y)", yes_no_validator).lower().startswith("y") else "false"
     load_dotenv(f".{'dev' if dev else 'prod'}.env")
     # Check if POSTGRES_PASSWORD already exists in the environment
     existing_password = os.getenv("POSTGRES_PASSWORD")
@@ -86,24 +87,23 @@ def generate_validator_config(dev: bool = False) -> dict[str, Any]:
     config["HOTKEY_NAME"] = input("Enter hotkey name (default: default): ") or "default"
     config["SUBTENSOR_NETWORK"] = input("Enter subtensor network (default: finney): ") or "finney"
     config["NETUID"] = 176 if config["SUBTENSOR_NETWORK"] == "test" else 19
-    
 
     config["GPU_SERVER_ADDRESS"] = validate_input(
-        "Enter GPU server address: ", lambda x: re.match(r"^https?://.+", x) is not None
+        "Enter GPU server address: ", lambda x: x == "" or re.match(r"^https?://.+", x) is not None
     )
 
     if dev:
         config["ENV"] = "dev"
         config["REFRESH_NODES"] = (
-            "true" if validate_input("Refresh nodes? (y/n): ", yes_no_validator).lower().startswith("y") else "false"
+            "true" if validate_input("Refresh nodes? (y/n): (default: y)", yes_no_validator).lower().startswith("y") else "false"
         )
         config["CAPACITY_TO_SCORE_MULTIPLIER"] = float(validate_input("Enter capacity to score multiplier: ", float_validator))
         config["LOCALHOST"] = (
-            "true" if validate_input("Use localhost? (y/n): ", yes_no_validator).lower().startswith("y") else "false"
+            "true" if validate_input("Use localhost? (y/n): (default: y)", yes_no_validator).lower().startswith("y") else "false"
         )
         config["REPLACE_WITH_DOCKER_LOCALHOST"] = (
             "true"
-            if validate_input("Replace with Docker localhost? (y/n): ", yes_no_validator).lower().startswith("y")
+            if validate_input("Replace with Docker localhost? (y/n): (default: y)", yes_no_validator).lower().startswith("y")
             else "false"
         )
     else:
@@ -112,6 +112,7 @@ def generate_validator_config(dev: bool = False) -> dict[str, Any]:
     config["CAPACITY_TO_SCORE_MULTIPLIER"] = 1
 
     config["ENV_FILE"] = ".vali.env"
+    config["DAPI_ADMIN_PASSWORD"] = generate_secure_password()
 
     return config
 

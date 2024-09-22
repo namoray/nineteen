@@ -27,10 +27,9 @@ class Config:
     keypair: Keypair
     psql_db: PSQLDB
     redis_db: Redis
-    test_env: bool
     subtensor_network: str
     subtensor_address: str | None
-    gpu_server_address: str
+    gpu_server_address: str  | None
     netuid: int
     seconds_between_syncs: int
     replace_with_localhost: bool
@@ -45,8 +44,11 @@ def load_config() -> Config:
     subtensor_network = os.getenv("SUBTENSOR_NETWORK", "finney")
     subtensor_address = os.getenv("SUBTENSOR_ADDRESS")
     gpu_server_address = os.getenv("GPU_SERVER_ADDRESS")
+    dev_env = os.getenv("ENV", "prod").lower() != "prod"
     if gpu_server_address is None:
-        raise ValueError("GPU_SERVER_ADDRESS must be set")
+        if dev_env:
+            logger.error("GPU_SERVER_ADDRESS IT NOT SET - Please make sure env is Dev if you want to run without a GPU server")
+            raise ValueError("GPU_SERVER_ADDRESS must be set if env is not prod")
 
     wallet_name = os.getenv("WALLET_NAME", "default")
     hotkey_name = os.getenv("HOTKEY_NAME", "default")
@@ -83,7 +85,6 @@ def load_config() -> Config:
         keypair=keypair,
         psql_db=PSQLDB(),
         redis_db=Redis(host=redis_host),
-        test_env=os.getenv("ENV", "test") == "test",
         subtensor_network=subtensor_network,
         subtensor_address=subtensor_address,
         netuid=netuid,

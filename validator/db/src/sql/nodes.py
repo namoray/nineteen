@@ -4,7 +4,7 @@ from fiber.chain.models import Node
 from core.log import get_logger
 
 from asyncpg import Connection
-from validator.utils import database_constants as dcst
+from validator.utils.database import database_constants as dcst
 from fiber import utils as futils
 from cryptography.fernet import Fernet
 
