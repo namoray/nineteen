@@ -94,7 +94,7 @@ async def _get_contenders_from_nodes(config: Config, nodes: list[Node]) -> List[
         node_id = node.node_id
         netuid = node.netuid
         for task, declared_capacity in raw_node_capacities.items():
-            logger.info(f"Task: {task}\n Capacity: {declared_capacity}")
+            logger.info(f"Node hotkey: {node_hotkey} - Task: {task} - Capacity: {declared_capacity}")
             if task not in Task._value2member_map_:
                 logger.debug(f"Task {task} is not a valid task")
                 continue
