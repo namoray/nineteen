@@ -138,6 +138,7 @@ async def _process_and_store_score(
             response_time=results["response_time"],
             volume=volume,
             speed_scoring_factor=speed_scoring_factor,
+            created_at=...,
         )
 
         async with await config.psql_db.connection() as connection:

@@ -1,7 +1,5 @@
 # Features to be included in the Vision 5.0 release:
 
-- Post to sn19.ai + with the created_at time pointing to the time of the query, not time of insertion
-
 - Change text synthetics to pull from a larger text orientated dataset
 
 - Consolidate docker compose files (that might help with the above)
@@ -20,6 +18,11 @@
 
 ## Workers stuff:
 - image server upgrades
+
+
+### Might need bugfix
+- Post to sn19.ai + with the created_at time pointing to the time of the query, not time of insertion
+
 
 
 ## Shortly after Vision 5.0 release

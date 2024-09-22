@@ -1,7 +1,9 @@
+from datetime import datetime
 import enum
 from typing import Optional, Any
 
 from pydantic import BaseModel
+from pydantic.fields import Field
 
 
 class Role(str, enum.Enum):
@@ -28,6 +30,7 @@ class QueryResult(BaseModel):
     task: str
     status_code: Optional[int]
     success: bool
+    created_at: datetime = Field(default_factory=datetime.now)
 
 
 class ImageHashes(BaseModel):
