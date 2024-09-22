@@ -63,10 +63,10 @@ async def post_to_nineteen_ai(
                 data=json.dumps(data_to_post),
                 headers=headers,
             )
-            logger.debug(f"Resp status code from tauvision: {resp.status_code} for post type {data_type_to_post}")
+            logger.info(f"Resp status code from {BASE_URL}: {resp.status_code} for post type {data_type_to_post}")
             return resp
         except Exception as e:
-            logger.error(f"Error when posting to tauvision to store data for {data_type_to_post}: {repr(e)}")
+            logger.error(f"Error when posting to {BASE_URL} to store data for {data_type_to_post}: {repr(e)}")
 
 
 class RewardDataPostBody(RewardData):
