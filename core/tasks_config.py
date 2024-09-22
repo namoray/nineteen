@@ -300,7 +300,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         ),
         synthetic_generation_config=SyntheticGenerationConfig(
             func="generate_inpaint_synthetic",
-            kwargs={"model": Task.inpaint.value},
+            kwargs={},
         ),
         endpoint=Endpoints.inpaint.value,
         volume_to_requests_conversion=10,
