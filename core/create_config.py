@@ -89,7 +89,7 @@ def generate_validator_config(dev: bool = False) -> dict[str, Any]:
     
 
     config["GPU_SERVER_ADDRESS"] = validate_input(
-        "Enter GPU server address: ", lambda x: re.match(r"^https?://.+", x) is not None
+        "Enter GPU server address: ", lambda x: x=="" or re.match(r"^https?://.+", x) is not None
     )
 
     if dev:
