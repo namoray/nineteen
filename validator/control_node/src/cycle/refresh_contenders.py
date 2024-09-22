@@ -52,14 +52,18 @@ async def _fetch_node_capacity(config: Config, node: Node) -> dict[str, float] |
         replace_with_localhost=config.replace_with_localhost,
     )
     assert node.symmetric_key_uuid is not None
-    response = await client.make_non_streamed_get(
-        httpx_client=config.httpx_client,
-        server_address=server_address,
-        validator_ss58_address=config.keypair.ss58_address,
-        symmetric_key_uuid=node.symmetric_key_uuid,
-        endpoint="/capacity",
-        timeout=3,
-    )
+    try:
+        response = await client.make_non_streamed_get(
+            httpx_client=config.httpx_client,
+            server_address=server_address,
+            validator_ss58_address=config.keypair.ss58_address,
+            symmetric_key_uuid=node.symmetric_key_uuid,
+            endpoint="/capacity",
+            timeout=3,
+        )
+    except Exception as e:
+        logger.error(f"Failed to fetch capacity from node {node.node_id}: {e}")
+        return None
 
     if response.status_code != 200:
         logger.warning(f"Failed to fetch capacity from node {node.node_id}")

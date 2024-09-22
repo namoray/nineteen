@@ -1,6 +1,6 @@
 # Features to be included in the Vision 5.0 release:
 
-- Change text synthetics to pull from a larger text orientated dataset
+
 
 - Consolidate docker compose files (that might help with the above)
 - Redis password
@@ -10,15 +10,18 @@
 - DAPI
 
 - FIx pm2 autoupdater from bootstrap
-- Streaming smoothness
+
 
 ## Fiber stuff:
-- Fix the ssl errors from substrate interface which have onyl just started appearing :(
+- Fix the ssl errors from substrate interface which have only just started appearing :(
 - T&C's
 
 ## Workers stuff:
 - image server upgrades
 
+## QOL
+- Change text synthetics to pull from a larger text orientated dataset
+- Streaming smoothness
 
 ### Might need bugfix
 - Post to sn19.ai + with the created_at time pointing to the time of the query, not time of insertion
