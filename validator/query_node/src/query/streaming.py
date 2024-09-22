@@ -192,6 +192,7 @@ async def query_node_stream(config: Config, contender: Contender, node: Node, pa
         server_address=address,
         keypair=config.keypair,
         validator_ss58_address=config.ss58_address,
+        miner_ss58_address=node.hotkey,
         fernet=node.fernet,
         symmetric_key_uuid=node.symmetric_key_uuid,
         payload=payload,
