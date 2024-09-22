@@ -49,7 +49,7 @@ def load_config() -> Config:
     if not gpu_server_address:
         if not dev_env:
             logger.error("GPU_SERVER_ADDRESS IT NOT SET - Please make sure env is Dev if you want to run without a GPU server")
-            raise ValueError("GPU_SERVER_ADDRESS must be set if env is not prod")
+            raise ValueError("GPU_SERVER_ADDRESS must be set if env is prod")
         gpu_server_address = None
 
     wallet_name = os.getenv("WALLET_NAME", "default")
