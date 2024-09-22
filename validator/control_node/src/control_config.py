@@ -29,7 +29,7 @@ class Config:
     redis_db: Redis
     subtensor_network: str
     subtensor_address: str | None
-    gpu_server_address: str  | None
+    gpu_server_address: str | None
     netuid: int
     seconds_between_syncs: int
     replace_with_localhost: bool
@@ -37,18 +37,20 @@ class Config:
     refresh_nodes: bool
     capacity_to_score_multiplier: float
     httpx_client: httpx.AsyncClient = httpx.AsyncClient()
-    debug: bool = os.getenv("ENV", "prod").lower() == "dev"
+    testnet: bool = os.getenv("SUBTENSOR_NETWORK", "finney").lower() == "test"
+    debug: bool = os.getenv("ENV", "prod").lower() != "prod"
 
 
 def load_config() -> Config:
     subtensor_network = os.getenv("SUBTENSOR_NETWORK", "finney")
     subtensor_address = os.getenv("SUBTENSOR_ADDRESS")
-    gpu_server_address = os.getenv("GPU_SERVER_ADDRESS")
+    gpu_server_address = os.getenv("GPU_SERVER_ADDRESS", None)
     dev_env = os.getenv("ENV", "prod").lower() != "prod"
-    if gpu_server_address is None:
-        if dev_env:
+    if not gpu_server_address:
+        if not dev_env:
             logger.error("GPU_SERVER_ADDRESS IT NOT SET - Please make sure env is Dev if you want to run without a GPU server")
             raise ValueError("GPU_SERVER_ADDRESS must be set if env is not prod")
+        gpu_server_address = None
 
     wallet_name = os.getenv("WALLET_NAME", "default")
     hotkey_name = os.getenv("HOTKEY_NAME", "default")
@@ -69,9 +71,7 @@ def load_config() -> Config:
 
     refresh_nodes: bool = os.getenv("REFRESH_NODES", "true").lower() == "true"
     if refresh_nodes:
-        substrate = interface.get_substrate(
-            subtensor_network=subtensor_network, subtensor_address=subtensor_address
-        )
+        substrate = interface.get_substrate(subtensor_network=subtensor_network, subtensor_address=subtensor_address)
     else:
         substrate = None
     keypair = chain_utils.load_hotkey_keypair(wallet_name=wallet_name, hotkey_name=hotkey_name)
@@ -94,4 +94,5 @@ def load_config() -> Config:
         refresh_nodes=refresh_nodes,
         capacity_to_score_multiplier=capacity_to_score_multiplier,
         gpu_server_address=gpu_server_address,
+        debug=dev_env,
     )
