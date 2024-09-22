@@ -172,6 +172,7 @@ if [[ NO_LAUNCH -eq 1 ]]; then
   :
 else
   if [[ WITH_AUTOUPDATES -eq 1 ]]; then
+    source $HOME/.venv/bin/activate
     sudo -E ./validator_autoupdater.sh
   else
     docker compose --env-file .vali.env -f docker-compose.yml up -d

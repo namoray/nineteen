@@ -13,11 +13,8 @@
 
 
 - Change text synthetics to pull from a larger text orientated dataset
-- Change autoupdate to use pm2
-- api keys for entry node
 
 ## Fiber stuff:
-- Header for nonce & encrypted nonce? or sign nonce with private key?
 - Fix the ssl errors from substrate interface which have onyl just started appearing :(
 - T&C's
 
