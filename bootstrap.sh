@@ -177,7 +177,6 @@ else
     sudo -E ./validator_autoupdater.sh
   else
     docker compose --env-file .vali.env -f docker-compose.yml up -d --build
-    echo "@reboot $(which docker-compose) --env-file $(pwd)/.vali.env -f $(pwd)/docker-compose.yml up -d" | sudo tee -a /etc/crontab
   fi
 fi
 
