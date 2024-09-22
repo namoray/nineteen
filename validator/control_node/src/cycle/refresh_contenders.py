@@ -30,11 +30,11 @@ def _get_validator_stake_proportion(nodes: list[Node], hotkey_ss58_address: str)
     sum_stake = sum(node.stake for node in valid_nodes)
     target_node = next((node for node in valid_nodes if node.hotkey == hotkey_ss58_address), None)
     if target_node is not None:
-        if target_node.stake < 1_000:
+        if target_node.stake / sum_stake < 0.005:
             logger.warning(
-                f"Validator {hotkey_ss58_address} has less than 1000 stake - I will round it up to 1000 - probably this is testnet"
+                f"Validator {hotkey_ss58_address} has less than 0.5% of the total stake - I will round it up to 0.5% - probably this is testnet"
             )
-            return 1000 / sum_stake
+            return 0.005
         return target_node.stake / sum_stake
 
     logger.error(f"Unable to find validator {hotkey_ss58_address} in nodes.")
