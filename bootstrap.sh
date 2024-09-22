@@ -110,7 +110,7 @@ fi
 
 # docker
 ################################################################################
-echo_ checking for docker
+echo_ "checking for docker"
 if ! [[ $(which docker) ]]; then
   echo_ docker was not found, installing...
   apt-get update
@@ -129,9 +129,9 @@ if ! [[ $(which docker) ]]; then
   systemctl enable --now docker
 fi
 
-echo_ checking for docker-compose
+echo_ "checking for docker-compose"
 if ! [[ $(which docker-compose) ]]; then
-  echo_ docker-compose was not found, installing...
+  echo_ "docker-compose was not found, installing..."
   apt-get update
   apt-get install -y docker-compose-plugin
 fi
@@ -141,28 +141,26 @@ usermod -aG docker $SUDO_USER || true
 
 # pm2 & jq
 ################################################################################
-echo_ checking for pm2 & jq
+echo_ "checking for pm2 & jq"
 apt-get update -qq && apt-get upgrade -y -qq
 apt-get install -y -qq nodejs npm
 npm i -g -q pm2
 apt-get install -y -qq jq
 
 
-
-
 # Nano for config
 ################################################################################
-echo_ checking for nano
+echo_ "checking for nano"
 if ! [[ $(which nano) ]]; then
-  echo_ nano was not found, installing...
+  echo_ "nano was not found, installing..."
   apt-get install -y -qq nano
 fi
 
 # Task for taskfile
 ################################################################################
-echo_ checking for task
+echo_ "checking for task"
 if ! [[ $(which task) ]]; then
-  echo_ task was not found, installing...
+  echo_ "task was not found, installing..."
   sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d -b ~/.local/bin
   echo_ "task installed successfully"
 fi
