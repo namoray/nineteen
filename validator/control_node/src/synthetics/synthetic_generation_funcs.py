@@ -238,9 +238,7 @@ async def generate_image_to_image_synthetic(
     )
 
 
-async def generate_inpaint_synthetic(
-        model: str,
-    ) -> payload_models.InpaintPayload:
+async def generate_inpaint_synthetic() -> payload_models.InpaintPayload:
     cache = image_cache_factory()
     prompt = await _get_markov_sentence(max_words=20)
     negative_prompt = await _get_markov_sentence(max_words=20)
