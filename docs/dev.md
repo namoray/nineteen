@@ -4,7 +4,7 @@
 
 Same as always
 ```bash
-docker-compose --env-file .vali.env -f docker-compose.yml  up -d
+docker compose --env-file .vali.env -f docker-compose.yml  up -d
 ```
 use run this
 ```bash
@@ -15,12 +15,12 @@ sed -i 's/ENV=[^ ]*/ENV=dev/' .vali.env
 
 ** UTILS FOR DEV **
 ```bash
-docker-compose --env-file .vali.env -f docker-compose.yml -f docker-compose.utils.yml up -d
+docker compose --env-file .vali.env -f docker-compose.yml -f docker-compose.utils.yml up -d
 ```
 
 ** UTILS FOR PROD **
 ```bash
-docker-compose --env-file .vali.env -f docker-compose.yml -f docker-compose.utils.yml up -d
+docker compose --env-file .vali.env -f docker-compose.yml -f docker-compose.utils.yml up -d
 ```
 
 
