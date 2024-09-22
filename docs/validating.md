@@ -74,6 +74,11 @@ python core/create_config.py
 
 If you're running the autoupdater, then you should be running!
 
+Check your autoupdater to see the docker containers building (might take a few minutes on first build)
+```bash
+pm2 logs validator_autoupdater
+```
+
 ## Start the services if you don't have autoupdates
 
 ```bash
