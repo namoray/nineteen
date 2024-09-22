@@ -262,9 +262,7 @@ async def generate_inpaint_synthetic(
     )
 
 
-async def generate_avatar_synthetic(
-        model: str,
-    ) -> payload_models.AvatarPayload:
+async def generate_avatar_synthetic() -> payload_models.AvatarPayload:
     prompt = await _get_markov_sentence(max_words=20)
     negative_prompt = await _get_markov_sentence(max_words=20)
     seed = random.randint(1, scst.MAX_SEED)
