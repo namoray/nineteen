@@ -25,25 +25,25 @@ from fiber.validator import client
 logger = get_logger(__name__)
 
 
-def _get_validator_stake_proportion(nodes: list[Node], hotkey_ss58_address: str, config: Config) -> float:
+def _get_validator_stake_proportion(nodes: list[Node], config: Config) -> float:
     valid_nodes = [node for node in nodes if node is not None and node.stake is not None]
     sum_stake = sum(node.stake for node in valid_nodes)
-    target_node = next((node for node in valid_nodes if node.hotkey == hotkey_ss58_address), None)
+    target_node = next((node for node in valid_nodes if node.hotkey == config.keypair.ss58_address), None)
     if target_node is not None:
         if not config.testnet and target_node.stake / sum_stake < 0.002:
             logger.warning(
-                f"Validator {hotkey_ss58_address} has less than 0.2% of the total stake - I will round it up to 0.2% - probably this is testnet"
+                f"Validator {config.keypair.ss58_address} has less than 0.2% of the total stake - I will round it up to 0.2% - probably this is testnet"
             )
             return 0.002
         elif config.testnet and target_node.stake / sum_stake < 0.1:
             logger.warning(
-                f"Validator {hotkey_ss58_address} has less than 10% of the total stake - I will round it up to 10% - probably this is testnet"
+                f"Validator {config.keypair.ss58_address} has less than 10% of the total stake - I will round it up to 10% - probably this is testnet"
             )
             return 0.1
         return target_node.stake / sum_stake
 
-    logger.error(f"Unable to find validator {hotkey_ss58_address} in nodes.")
-    raise ValueError(f"Unable to find validator {hotkey_ss58_address} in nodes.")
+    logger.error(f"Unable to find validator {config.keypair.ss58_address} in nodes.")
+    raise ValueError(f"Unable to find validator {config.keypair.ss58_address} in nodes.")
 
 
 def _get_capacity_to_score(capacity: float, capacity_to_score_multiplier: float) -> float:
@@ -94,7 +94,7 @@ async def _fetch_node_capacities(config: Config, nodes: list[Node]) -> list[dict
 
 
 async def _get_contenders_from_nodes(config: Config, nodes: list[Node]) -> List[Contender]:
-    validator_stake_proportion = _get_validator_stake_proportion(nodes, config.keypair.ss58_address)
+    validator_stake_proportion = _get_validator_stake_proportion(nodes, config)
     raw_capacities = await _fetch_node_capacities(config, nodes)
     logger.debug(f"Got capacities: {raw_capacities}")
     logger.info(f"Got capacities for {len([i for i in raw_capacities if i is not None])} nodes")
