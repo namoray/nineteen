@@ -149,7 +149,7 @@ async def _process_and_store_score(
 
         logger.info(f"Successfully scored and stored data for task: {task}")
 
-        await post_to_nineteen_ai(data_to_post=reward_data, keypair=config.keypair, data_type_to_post=DataTypeToPost.REWARD_DATA)
+        await post_to_nineteen_ai(data_to_post=reward_data.model_dump(mode="json"), keypair=config.keypair, data_type_to_post=DataTypeToPost.REWARD_DATA)
 
 
 async def score_results(config: Config):
