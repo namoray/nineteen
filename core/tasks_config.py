@@ -307,7 +307,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         is_stream=False,
         weight=0.0,
         timeout=15,
-        enabled=True,
+        enabled=False,
     ),
 }
 
