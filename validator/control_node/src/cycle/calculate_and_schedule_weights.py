@@ -86,6 +86,7 @@ async def main():
     if not success:
         logger.error("Failed to set weights using db values :(")
 
+    # To prevent validators getting deregistered - but up to them to use this and they should prioritise the values they have above
     logger.warning(
         "\n\n!!!! Setting weights using the metagraph only since we have no data on the miners in the db. Please cancel if you do not want to do this !!! \n\n"
     )
