@@ -1,7 +1,5 @@
 # Features to be included in the Vision 5.0 release:
 
-## Fiber stuff:
-- T&C's  [ 10 min]
 
 ### Might need bugfix
 - Post to sn19.ai + with the created_at time pointing to the time of the query, not time of insertion
