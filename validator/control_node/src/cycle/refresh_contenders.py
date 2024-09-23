@@ -5,6 +5,7 @@ Migrates old contenders and adds the new contenders to the db
 """
 
 import asyncio
+import random
 from typing import List
 
 
@@ -47,8 +48,16 @@ def _get_validator_stake_proportion(nodes: list[Node], config: Config) -> float:
 
 
 def _get_capacity_to_score(capacity: float, capacity_to_score_multiplier: float) -> float:
-    # TODO: Add in some randomness after testnet
-    return capacity * capacity_to_score_multiplier
+    if random.random() < 0.5:
+        multiplier = 0.05
+    elif random.random() < 0.8:
+        multiplier = 0.1
+    elif random.random() < 0.95:
+        multiplier = 0.15
+    else:
+        multiplier = 0.8
+
+    return capacity * multiplier * capacity_to_score_multiplier
 
 
 async def _store_and_migrate_old_contenders(config: Config, new_contenders: List[Contender]):

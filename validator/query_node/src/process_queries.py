@@ -137,7 +137,17 @@ async def process_task(config: Config, message: rdc.QueryQueueMessage):
     if contenders_to_query is None:
         raise ValueError("No contenders to query! :(")
 
-    if stream:
-        return await _handle_stream_query(config, message, contenders_to_query)
-    else:
-        return await _handle_nonstream_query(config=config, message=message, contenders_to_query=contenders_to_query)
+    try:
+        if stream:
+            return await _handle_stream_query(config, message, contenders_to_query)
+        else:
+            return await _handle_nonstream_query(config=config, message=message, contenders_to_query=contenders_to_query)
+    except Exception as e:
+        logger.error(f"Error processing task {task.value}: {e}")
+        await _handle_error(
+            config=config,
+            synthetic_query=message.query_type == gcst.SYNTHETIC,
+            job_id=message.job_id,
+            status_code=500,
+            error_message=f"Error processing task {task.value}: {e}",
+        )
