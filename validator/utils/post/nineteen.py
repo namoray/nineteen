@@ -4,7 +4,7 @@ import time
 from typing import Any, Dict, List, Optional, Union
 import httpx
 from pydantic import BaseModel
-from core.log import get_logger
+from fiber.logging_utils import get_logger
 from fiber import Keypair
 
 from validator.models import RewardData

@@ -6,7 +6,7 @@ from fiber.miner.security.encryption import decrypt_general_payload
 import httpx
 from core.models import payload_models
 from fastapi.routing import APIRouter
-from core.log import get_logger
+from fiber.logging_utils import get_logger
 
 from miner.logic.chat import chat_stream
 from fiber.miner.core.configuration import Config

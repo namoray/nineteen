@@ -5,7 +5,7 @@ from validator.db.src.database import PSQLDB
 from validator.models import Contender
 from validator.control_node.src.weights import calculations
 from core.tasks import Task
-from core.logging import get_logger
+from fiber.logging_utilsging import get_logger
 
 logger = get_logger(__name__)
 

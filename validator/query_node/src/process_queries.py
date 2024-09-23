@@ -8,7 +8,7 @@ from core import tasks_config as tcfg
 from validator.utils.generic import generic_utils as gutils
 from validator.utils.contender import contender_utils as putils
 from validator.utils.redis import redis_constants as rcst
-from core.log import get_logger
+from fiber.logging_utils import get_logger
 from validator.utils.redis import redis_dataclasses as rdc
 from validator.query_node.src.query import nonstream, streaming
 from validator.db.src.sql.contenders import get_contenders_for_task

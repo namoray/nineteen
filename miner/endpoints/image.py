@@ -12,7 +12,7 @@ from miner.dependencies import get_worker_config
 from miner.logic.image import get_image_from_server
 from fiber.miner.core.configuration import Config
 from fiber.miner.dependencies import get_config as get_fiber_config
-from core.log import get_logger
+from fiber.logging_utils import get_logger
 
 logger = get_logger(__name__)
 

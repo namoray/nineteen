@@ -4,7 +4,7 @@ load_dotenv(os.getenv("ENV_FILE", ".vali.env"))
 
 import asyncio
 
-from core.log import get_logger
+from fiber.logging_utils import get_logger
 
 from validator.control_node.src.score_results import score_results
 from validator.control_node.src.control_config import load_config

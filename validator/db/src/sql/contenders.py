@@ -1,5 +1,5 @@
 from core.tasks import Task
-from core.log import get_logger
+from fiber.logging_utils import get_logger
 
 from asyncpg import Connection
 from validator.db.src.database import PSQLDB

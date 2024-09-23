@@ -23,7 +23,7 @@ from core import constants as ccst
 from validator.db.src.sql.nodes import (
     get_nodes,
 )
-from core.log import get_logger
+from fiber.logging_utils import get_logger
 
 from validator.models import Contender
 

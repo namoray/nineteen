@@ -16,7 +16,7 @@ from validator.utils.contender import contender_utils as putils
 from validator.utils.generic import generic_constants as gcst
 from validator.utils.redis import redis_constants as rcst
 from core import constants as ccst
-from core.log import get_logger
+from fiber.logging_utils import get_logger
 
 logger = get_logger(__name__)
 

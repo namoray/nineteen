@@ -14,7 +14,7 @@ from core import tasks_config as tcfg
 from validator.utils.generic import generic_constants as gcst, generic_utils
 from validator.utils.redis import redis_constants as rcst
 
-from core.log import get_logger
+from fiber.logging_utils import get_logger
 
 from validator.utils.query.query_utils import load_sse_jsons
 

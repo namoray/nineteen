@@ -10,7 +10,7 @@ from validator.utils.redis import redis_constants as rcst
 from validator.utils.synthetic import synthetic_constants as scst
 from validator.utils.synthetic import synthetic_utils as sutils
 from validator.control_node.src.synthetics import synthetic_generation_funcs
-from core.log import get_logger
+from fiber.logging_utils import get_logger
 
 logger = get_logger(__name__)
 
