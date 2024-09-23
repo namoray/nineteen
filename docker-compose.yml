@@ -85,7 +85,7 @@ services:
     networks:
       - postgres_network
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     container_name: 0_postgresql
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
