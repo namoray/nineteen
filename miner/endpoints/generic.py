@@ -1,6 +1,6 @@
 from fastapi.routing import APIRouter
 from core.tasks_config import TASK_TO_CONFIG
-from fiber.logging_utils import get_logger
+from core.log import get_logger
 
 
 logger = get_logger(__name__)

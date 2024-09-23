@@ -1,5 +1,5 @@
-from dataclasses import dataclass
 import os
+from dataclasses import dataclass
 from redis.asyncio import Redis
 
 from core import constants as ccst
@@ -15,10 +15,8 @@ import httpx
 
 from substrateinterface import SubstrateInterface, Keypair
 
-from dotenv import load_dotenv
 
 logger = get_logger(__name__)
-load_dotenv(os.getenv("ENV_FILE", ".vali.env"))
 
 
 @dataclass

@@ -2,6 +2,11 @@
 Calculates and schedules weights every SCORING_PERIOD
 """
 
+from dotenv import load_dotenv
+import os
+
+load_dotenv(os.getenv("ENV_FILE", ".vali.env"))
+
 import asyncio
 
 from validator.control_node.src.control_config import Config
@@ -67,12 +72,15 @@ async def get_and_set_weights(config: Config) -> None:
     else:
         logger.error("Failed to set weights :(")
 
+
 async def main():
     logger.info("Starting weight calculation...")
     config = load_config()
+    logger.debug(f"Config: {config}")
     await config.psql_db.connect()
 
     await get_and_set_weights(config)
+
 
 if __name__ == "__main__":
     asyncio.run(main())

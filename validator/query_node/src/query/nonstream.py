@@ -10,7 +10,7 @@ from validator.models import Contender
 from fiber.chain.models import Node
 from fiber.validator import client
 from core import tasks_config as tcfg
-from fiber.logging_utils import get_logger
+from core.log import get_logger
 from validator.query_node.src import utils
 from validator.utils.redis import redis_constants as rcst
 from validator.utils.generic import generic_utils

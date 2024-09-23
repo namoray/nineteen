@@ -1,6 +1,6 @@
 import json
 import httpx
-from fiber.logging_utils import get_logger
+from core.log import get_logger
 
 from core.models import payload_models
 from core import tasks_config as tcfg

@@ -17,6 +17,7 @@ Hey everyone - my lil todo!
 ## QOL
 - Change text synthetics to pull from a larger text orientated dataset [1hr]
 - Streaming smoothness [45 min, can be a fast follow after launch]
+- m
 
 ### Might need bugfix
 - Post to sn19.ai + with the created_at time pointing to the time of the query, not time of insertion
