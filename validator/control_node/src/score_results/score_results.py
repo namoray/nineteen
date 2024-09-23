@@ -149,7 +149,7 @@ async def _process_and_store_score(
 
         logger.info(f"Successfully scored and stored data for task: {task}")
 
-        reward_data_to_post = RewardDataPostBody(**reward_data, testnet=config.testnet)
+        reward_data_to_post = RewardDataPostBody(**reward_data.model_dump(), testnet=config.testnet)
 
         await post_to_nineteen_ai(
             data_to_post=reward_data_to_post.model_dump(mode="json"),
