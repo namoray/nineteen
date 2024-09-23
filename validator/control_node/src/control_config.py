@@ -35,12 +35,12 @@ class Config:
     refresh_nodes: bool
     capacity_to_score_multiplier: float
     httpx_client: httpx.AsyncClient = httpx.AsyncClient()
-    testnet: bool = os.getenv("SUBTENSOR_NETWORK", "finney").lower() == "test"
+    testnet: bool = os.getenv("SUBTENSOR_NETWORK", "").lower() == "test"
     debug: bool = os.getenv("ENV", "prod").lower() != "prod"
 
 
 def load_config() -> Config:
-    subtensor_network = os.getenv("SUBTENSOR_NETWORK", "finney")
+    subtensor_network = os.getenv("SUBTENSOR_NETWORK")
     subtensor_address = os.getenv("SUBTENSOR_ADDRESS")
     gpu_server_address = os.getenv("GPU_SERVER_ADDRESS", None)
     dev_env = os.getenv("ENV", "prod").lower() != "prod"
