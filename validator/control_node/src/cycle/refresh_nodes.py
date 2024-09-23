@@ -96,5 +96,9 @@ async def perform_handshakes(nodes: list[Node], config: Config) -> list[Node]:
     async with await config.psql_db.connection() as connection:
         await insert_symmetric_keys_for_nodes(connection, nodes)
 
-    logger.info(f"✅ performed handshakes with {len(nodes)} nodes!")
+    nodes_where_handshake_worked = len(
+        [node for node in nodes if node.fernet is not None and node.symmetric_key_uuid is not None]
+    )
+
+    logger.info(f"✅ performed handshakes successfully with {nodes_where_handshake_worked} nodes!")
     return nodes
