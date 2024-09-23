@@ -7,7 +7,7 @@ load_dotenv(os.getenv("ENV_FILE", ".vali.env"))
 import asyncio
 from redis.asyncio import Redis
 
-from core.log import get_logger
+from fiber.logging_utils import get_logger
 import json
 from validator.query_node.src.query_config import Config
 from validator.utils.redis import redis_constants as rcst, redis_dataclasses as rdc

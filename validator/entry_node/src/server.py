@@ -6,7 +6,7 @@ from validator.entry_node.src.endpoints.image import router as image_router
 from validator.entry_node.src.endpoints.generic import router as generic_router
 from fastapi.middleware.cors import CORSMiddleware
 from validator.entry_node.src.core import configuration
-from core.log import get_logger
+from fiber.logging_utils import get_logger
 from scalar_fastapi import get_scalar_api_reference
 logger = get_logger(__name__)
 

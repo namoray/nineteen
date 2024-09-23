@@ -4,7 +4,7 @@ tasks:
 
   set_weights:
     cmds:
-      - docker compose --env-file .vali.env -f docker-compose.yml run --entrypoint "python src/cycle/calculate_and_schedule_weights.py" control_node
+      - docker compose --env-file .vali.env -f docker-compose.yml run -e LOCALHOST=false --entrypoint "python src/cycle/calculate_and_schedule_weights.py" control_node
   control_node_dev:
     cmds:
       - ENV_FILE=.vali.env python -m validator.control_node.src.main
@@ -20,8 +20,8 @@ tasks:
   dev_setup:
     cmds:
       - echo "LOCALHOST=true" >> .vali.env
-      - docker compose --env-file .vali.env -f docker-compose.yml -f docker-compose.utils.yml up -d --build
-        $(docker compose config --services | grep -vE 'query_node|control_node|entry_node')
+      - docker compose --env-file .vali.env -f docker-compose.yml -f docker-compose.dev.yml up -d --build
+      - docker stop control_node query_node entry_node
       # Now use control_node_dev etc
 
   m1_dev:
@@ -34,9 +34,9 @@ tasks:
 
   update_docker_fiber_version:
     cmds:
-      - docker run --rm nineteen-control_node sh -c "pip install git+https://github.com/rayonlabs/fiber.git --upgrade"
-      - docker run --rm nineteen-entry_node sh -c "pip install git+https://github.com/rayonlabs/fiber.git --upgrade"
-      - docker run --rm nineteen-query_node sh -c "pip install git+https://github.com/rayonlabs/fiber.git --upgrade"
+      - docker run --rm nineteen-control_node sh -c "pip install git+https://github.com/rayonlabs/fiber.git@0.0.2 --upgrade"
+      - docker run --rm nineteen-entry_node sh -c "pip install git+https://github.com/rayonlabs/fiber.git@0.0.2 --upgrade"
+      - docker run --rm nineteen-query_node sh -c "pip install git+https://github.com/rayonlabs/fiber.git@0.0.2 --upgrade"
 
   createm:
     cmds:

@@ -15,7 +15,7 @@ import markovify
 import datasets
 import diskcache
 from functools import lru_cache
-from core.log import get_logger
+from fiber.logging_utils import get_logger
 from validator.utils.synthetic import synthetic_utils as sutils
 import binascii
 

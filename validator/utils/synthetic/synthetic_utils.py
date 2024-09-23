@@ -17,7 +17,7 @@ import diskcache
 from PIL import Image
 import uuid
 import numpy as np
-from core.log import get_logger
+from fiber.logging_utils import get_logger
 
 
 logger = get_logger(__name__)

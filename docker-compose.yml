@@ -84,8 +84,6 @@ services:
       retries: 5
     networks:
       - postgres_network
-    ports:
-      - "5432:5432"
     container_name: 0_postgresql
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
@@ -108,12 +106,11 @@ services:
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgresql:5432/${POSTGRES_DB}?sslmode=disable
     container_name: 0_dbmate
 
+
   redis:
     image: redis/redis-stack:latest
     networks:
       - redis_network
-    ports:
-      - "6379:6379"
     container_name: 0_redis
     deploy:
       restart_policy:

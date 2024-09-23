@@ -4,7 +4,7 @@ import uuid
 from fastapi import Depends, HTTPException
 from fastapi.responses import JSONResponse, StreamingResponse
 from redis.asyncio import Redis
-from core.log import get_logger
+from fiber.logging_utils import get_logger
 from fastapi.routing import APIRouter
 from validator.entry_node.src.core.configuration import Config
 from validator.entry_node.src.core.dependencies import get_config

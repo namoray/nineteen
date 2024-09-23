@@ -6,7 +6,7 @@ from validator.db.src.database import PSQLDB
 from validator.models import Contender
 from validator.utils.redis import redis_constants as rcst, redis_utils as rutils, redis_dataclasses as rdc
 from redis.asyncio import Redis
-from core.log import get_logger
+from fiber.logging_utils import get_logger
 import uuid
 from validator.utils.generic import generic_constants as gcst
 

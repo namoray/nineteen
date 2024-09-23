@@ -1,9 +1,9 @@
-from dataclasses import dataclass
 import os
+from dataclasses import dataclass
 from redis.asyncio import Redis
 
 from core import constants as ccst
-from core.log import get_logger
+from fiber.logging_utils import get_logger
 
 from fiber.chain import interface
 from fiber.chain import chain_utils
@@ -15,10 +15,8 @@ import httpx
 
 from substrateinterface import SubstrateInterface, Keypair
 
-from dotenv import load_dotenv
 
 logger = get_logger(__name__)
-load_dotenv(os.getenv("ENV_FILE", ".vali.env"))
 
 
 @dataclass
@@ -88,7 +86,7 @@ def load_config() -> Config:
         subtensor_network=subtensor_network,
         subtensor_address=subtensor_address,
         netuid=netuid,
-        seconds_between_syncs=int(os.getenv("SECONDS_BETWEEN_SYNCS", str(ccst.SCORING_PERIOD_TIME))),
+        seconds_between_syncs=ccst.SCORING_PERIOD_TIME,  # TODO: Make this configurable globally
         replace_with_docker_localhost=replace_with_docker_localhost,
         replace_with_localhost=localhost,
         refresh_nodes=refresh_nodes,

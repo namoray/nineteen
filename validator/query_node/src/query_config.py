@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from fiber import Keypair
 import httpx
-from core.log import get_logger
+from fiber.logging_utils import get_logger
 from validator.db.src.database import PSQLDB
 from redis.asyncio import Redis
 

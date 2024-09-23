@@ -1,5 +1,5 @@
 from typing import Any
-from core.log import get_logger
+from fiber.logging_utils import get_logger
 from fastapi.routing import APIRouter
 from validator.entry_node.src.models.text_models import llm_models
 
