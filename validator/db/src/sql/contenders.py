@@ -108,16 +108,8 @@ async def get_contenders_for_task(connection: Connection, task: Task, top_x: int
                 c.{dcst.RAW_CAPACITY}, c.{dcst.CAPACITY_TO_SCORE}, c.{dcst.CONSUMED_CAPACITY},
                 c.{dcst.TOTAL_REQUESTS_MADE}, c.{dcst.REQUESTS_429}, c.{dcst.REQUESTS_500}, 
                 c.{dcst.CAPACITY}, c.{dcst.PERIOD_SCORE}, c.{dcst.NETUID},
-                CASE 
-                    WHEN c.{dcst.CAPACITY} = 0 THEN 0
-                    ELSE 1.0 - (c.{dcst.CONSUMED_CAPACITY}::float / c.{dcst.CAPACITY}::float)
-                END AS capacity_unqueried_percentage,
                 ROW_NUMBER() OVER (
-                    ORDER BY 
-                        CASE 
-                            WHEN c.{dcst.CAPACITY} = 0 THEN 1
-                            ELSE c.{dcst.CONSUMED_CAPACITY}::float / c.{dcst.CAPACITY}::float
-                        END ASC
+                    ORDER BY c.{dcst.TOTAL_REQUESTS_MADE} ASC
                 ) AS rank
             FROM {dcst.CONTENDERS_TABLE} c
             JOIN {dcst.NODES_TABLE} n ON c.{dcst.NODE_ID} = n.{dcst.NODE_ID} AND c.{dcst.NETUID} = n.{dcst.NETUID}
@@ -128,7 +120,6 @@ async def get_contenders_for_task(connection: Connection, task: Task, top_x: int
         SELECT *
         FROM ranked_contenders
         WHERE rank <= $2
-          AND random() < capacity_unqueried_percentage
         ORDER BY rank
         """,
         task.value,
@@ -149,7 +140,7 @@ async def get_contenders_for_task(connection: Connection, task: Task, top_x: int
             WHERE c.{dcst.TASK} = $1 
             AND c.{dcst.CAPACITY} > 0 
             AND n.{dcst.SYMMETRIC_KEY_UUID} IS NOT NULL
-            ORDER BY c.{dcst.CONSUMED_CAPACITY}::float / c.{dcst.CAPACITY}::float ASC
+            ORDER BY c.{dcst.TOTAL_REQUESTS_MADE} ASC
             LIMIT $2
             OFFSET $3
             """,
