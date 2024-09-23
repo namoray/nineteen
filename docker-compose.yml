@@ -113,7 +113,7 @@ services:
     networks:
       - redis_network
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     container_name: 0_redis
     deploy:
       restart_policy:
