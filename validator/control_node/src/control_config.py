@@ -86,7 +86,7 @@ def load_config() -> Config:
         subtensor_network=subtensor_network,
         subtensor_address=subtensor_address,
         netuid=netuid,
-        seconds_between_syncs=int(os.getenv("SECONDS_BETWEEN_SYNCS", str(ccst.SCORING_PERIOD_TIME))),
+        seconds_between_syncs=ccst.SCORING_PERIOD_TIME,  # TODO: Make this configurable globally
         replace_with_docker_localhost=replace_with_docker_localhost,
         replace_with_localhost=localhost,
         refresh_nodes=refresh_nodes,
