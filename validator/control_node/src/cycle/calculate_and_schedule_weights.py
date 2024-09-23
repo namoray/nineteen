@@ -47,22 +47,29 @@ async def get_and_set_weights(config: Config) -> None:
         logger.info("No weights to set. Skipping weight setting.")
         return
     node_ids, node_weights = result
-    logger.info("Weights calculated, about to set...")
-    logger.info(f"Node ids: {node_ids}")
-    logger.info(f"Node weights: {node_weights}")
-
     if len(node_ids) == 0:
         logger.info("No nodes to set weights for. Skipping weight setting.")
         return
-    logger.info(f"Setting weights for {len(node_ids)} nodes...")
+
+    logger.info("Weights calculated, about to set...")
+
+    all_nodes: list[Node] = fetch_nodes.get_nodes_for_netuid(config.substrate, config.netuid)
+    all_node_ids = [node.node_id for node in all_nodes]
+    all_node_weights = [0 for node in all_nodes]
+    for node_id, node_weight in zip(node_ids, node_weights):
+        all_node_weights[node_id] = node_weight
+
+    logger.info(f"Node ids: {all_node_ids}")
+    logger.info(f"Node weights: {all_node_weights}")
+    logger.info(f"Number of non zero node weights: {sum(1 for weight in all_node_weights if weight != 0)}")
 
     try:
         success = await asyncio.to_thread(
             weights.set_node_weights,
             substrate=config.substrate,
             keypair=config.keypair,
-            node_ids=node_ids,
-            node_weights=node_weights,
+            node_ids=all_node_ids,
+            node_weights=all_node_weights,
             netuid=config.netuid,
             version_key=ccst.VERSION_KEY,
             validator_node_id=int(validator_node_id),
