@@ -56,19 +56,23 @@ async def get_and_set_weights(config: Config) -> None:
         return
     logger.info(f"Setting weights for {len(node_ids)} nodes...")
 
-    success = await asyncio.to_thread(
-        weights.set_node_weights,
-        substrate=config.substrate,
-        keypair=config.keypair,
-        node_ids=node_ids,
-        node_weights=node_weights,
-        netuid=config.netuid,
-        version_key=ccst.VERSION_KEY,
-        validator_node_id=int(validator_node_id),
-        wait_for_inclusion=True,
-        wait_for_finalization=True,
-        max_attempts=3,
-    )
+    try:
+        success = await asyncio.to_thread(
+            weights.set_node_weights,
+            substrate=config.substrate,
+            keypair=config.keypair,
+            node_ids=node_ids,
+            node_weights=node_weights,
+            netuid=config.netuid,
+            version_key=ccst.VERSION_KEY,
+            validator_node_id=int(validator_node_id),
+            wait_for_inclusion=True,
+            wait_for_finalization=True,
+            max_attempts=3,
+        )
+    except Exception as e:
+        logger.error(f"Failed to set weights: {e}")
+        return False
 
     if success:
         logger.info("Weights set successfully.")
