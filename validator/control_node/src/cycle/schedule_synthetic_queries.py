@@ -120,12 +120,17 @@ async def schedule_synthetics_until_done(config: Config):
     for schedule in task_schedules:
         await _update_redis_remaining_requests(config.redis_db, schedule.task, schedule.total_requests)
 
+    i = 0
     while task_schedules:
+        i += 1 
         schedule = heapq.heappop(task_schedules)
         time_to_sleep = schedule.next_schedule_time - time.time()
 
         if time_to_sleep > 0:
-            logger.debug(f"Sleeping for {time_to_sleep} seconds while waiting for task {schedule.task} to be scheduled...")
+            if i % 10 == 3:
+                logger.info(f"Sleeping for {time_to_sleep} seconds while waiting for task {schedule.task} to be scheduled...")
+            else:
+                logger.debug(f"Sleeping for {time_to_sleep} seconds while waiting for task {schedule.task} to be scheduled...")
             sleep_chunk = 2  # Sleep in 2-second chunks to make debugging easier
             while time_to_sleep > 0:
                 await asyncio.sleep(min(sleep_chunk, time_to_sleep))
