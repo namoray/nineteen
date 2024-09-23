@@ -172,7 +172,8 @@ async def update_contender_429_count(psql_db: PSQLDB, contender: Contender) -> N
         await connection.execute(
             f"""
             UPDATE {dcst.CONTENDERS_TABLE}
-            SET {dcst.REQUESTS_429} = {dcst.REQUESTS_429} + 1
+            SET {dcst.REQUESTS_429} = {dcst.REQUESTS_429} + 1,
+                {dcst.TOTAL_REQUESTS_MADE} = {dcst.TOTAL_REQUESTS_MADE} + 1
             WHERE {dcst.CONTENDER_ID} = $1
             """,
             contender.id,
@@ -184,7 +185,8 @@ async def update_contender_500_count(psql_db: PSQLDB, contender: Contender) -> N
         await connection.execute(
             f"""
             UPDATE {dcst.CONTENDERS_TABLE}
-            SET {dcst.REQUESTS_500} = {dcst.REQUESTS_500} + 1
+            SET {dcst.REQUESTS_500} = {dcst.REQUESTS_500} + 1,
+                {dcst.TOTAL_REQUESTS_MADE} = {dcst.TOTAL_REQUESTS_MADE} + 1
             WHERE {dcst.CONTENDER_ID} = $1
             """,
             contender.id,
