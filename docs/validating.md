@@ -96,6 +96,18 @@ task set_weights
 
 If you don't have any values in the db it will use the metagraph. It warns you and gives you time to stop this, if that is not something you want to do
 
+## Trouble shooting
+
+**Problem**:
+
+Error: pq: password authentication failed for user "user"
+
+**Solution**:
+
+```bash
+sudo rm -rf postgres_data
+docker compose --env-file .vali.env -f docker-compose.yml  up -d --build
+```
 # Orchestrator setup
 
 ## Starting the Orchestrator server
