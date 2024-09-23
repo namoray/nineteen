@@ -19,8 +19,7 @@ tasks:
 
   dev_setup:
     cmds:
-      - echo "LOCALHOST=true" >> .vali.env
-      - docker compose --env-file .vali.env -f docker-compose.yml -f docker-compose.dev.yml up -d --build
+      - docker compose --env-file .vali.env -f docker-compose.yml -f docker-compose.dev.yml --profile entry_node_profile up -d --build
       - docker stop control_node query_node entry_node
       # Now use control_node_dev etc
 
@@ -34,9 +33,9 @@ tasks:
 
   update_docker_fiber_version:
     cmds:
-      - docker run --rm nineteen-control_node sh -c "pip install git+https://github.com/rayonlabs/fiber.git@0.0.2 --upgrade"
-      - docker run --rm nineteen-entry_node sh -c "pip install git+https://github.com/rayonlabs/fiber.git@0.0.2 --upgrade"
-      - docker run --rm nineteen-query_node sh -c "pip install git+https://github.com/rayonlabs/fiber.git@0.0.2 --upgrade"
+      - docker run --rm nineteen-control_node sh -c "pip install git+https://github.com/rayonlabs/fiber.git@0.0.3 --upgrade"
+      - docker run --rm nineteen-entry_node sh -c "pip install git+https://github.com/rayonlabs/fiber.git@0.0.3 --upgrade"
+      - docker run --rm nineteen-query_node sh -c "pip install git+https://github.com/rayonlabs/fiber.git@0.0.3 --upgrade"
 
   createm:
     cmds:

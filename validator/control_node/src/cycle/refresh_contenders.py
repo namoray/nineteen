@@ -48,12 +48,13 @@ def _get_validator_stake_proportion(nodes: list[Node], config: Config) -> float:
 
 
 def _get_capacity_to_score(capacity: float, capacity_to_score_multiplier: float) -> float:
+
     if random.random() < 0.5:
-        multiplier = 0.05
+        multiplier = 0.04
     elif random.random() < 0.8:
-        multiplier = 0.1
+        multiplier = 0.08
     elif random.random() < 0.95:
-        multiplier = 0.15
+        multiplier = 0.12
     else:
         multiplier = 0.8
 
