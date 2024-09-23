@@ -29,7 +29,7 @@ from validator.db.src.sql.rewards_and_scores import (
 from validator.control_node.src.control_config import Config
 
 from core import constants as ccst
-from validator.utils.post.nineteen import DataTypeToPost, post_to_nineteen_ai
+from validator.utils.post.nineteen import DataTypeToPost, RewardDataPostBody, post_to_nineteen_ai
 
 logger = get_logger(__name__)
 
@@ -149,7 +149,13 @@ async def _process_and_store_score(
 
         logger.info(f"Successfully scored and stored data for task: {task}")
 
-        await post_to_nineteen_ai(data_to_post=reward_data.model_dump(mode="json"), keypair=config.keypair, data_type_to_post=DataTypeToPost.REWARD_DATA)
+        reward_data_to_post = RewardDataPostBody(**reward_data, testnet=config.testnet)
+
+        await post_to_nineteen_ai(
+            data_to_post=reward_data_to_post.model_dump(mode="json"),
+            keypair=config.keypair,
+            data_type_to_post=DataTypeToPost.REWARD_DATA,
+        )
 
 
 async def score_results(config: Config):
