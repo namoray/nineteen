@@ -95,10 +95,10 @@ async def query_nonstream(
 ) -> bool:
     node_id = contender.node_id
 
-    time_before_query = time.time()
     assert node.fernet is not None
     assert node.symmetric_key_uuid is not None
     task_config = tcfg.get_enabled_task_config(contender.task)
+    time_before_query = time.time()
     if task_config is None:
         logger.error(f"Task config not found for task: {contender.task}")
         return False

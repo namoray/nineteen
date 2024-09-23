@@ -1,4 +1,5 @@
 import json
+import time
 from redis.asyncio import Redis
 from core.models.payload_models import ImageResponse
 from validator.models import Contender
@@ -38,6 +39,7 @@ async def _handle_stream_query(config: Config, message: rdc.QueryQueueMessage, c
             logger.error(f"Node {contender.node_id} not found in database for netuid {config.netuid}")
             continue
         logger.debug(f"Querying node {contender.node_id} for task {contender.task} with payload: {message.query_payload}")
+        start_time = time.time()
         generator = await streaming.query_node_stream(
             config=config, contender=contender, payload=message.query_payload, node=node
         )
@@ -54,6 +56,7 @@ async def _handle_stream_query(config: Config, message: rdc.QueryQueueMessage, c
             contender=contender,
             node=node,
             payload=message.query_payload,
+            start_time=start_time,
         )
         if not success:
             continue

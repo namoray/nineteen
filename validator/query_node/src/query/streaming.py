@@ -87,6 +87,7 @@ async def consume_generator(
     contender: Contender,
     node: Node,
     payload: dict,
+    start_time: float,
     debug: bool = False,
 ) -> bool:
     assert job_id
@@ -104,7 +105,7 @@ async def consume_generator(
         await utils.adjust_contender_from_result(config, query_result, contender, synthetic_query, payload=payload)
         return False
 
-    start_time, text_jsons, status_code, first_message = time.time(), [], 200, True
+    text_jsons, status_code, first_message =  [], 200, True
     try:
         async for text in async_chain(first_chunk, generator):
             if isinstance(text, bytes):
