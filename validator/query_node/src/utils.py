@@ -45,9 +45,9 @@ async def adjust_contender_from_result(
         logger.debug(f"Adjusted node {contender.node_id} for task {query_result.task}.")
 
     elif query_result.status_code == 429:
-        logger.debug(f"❌ Adjusting node {contender.node_id} for task {query_result.task}.")
+        logger.debug(f"❌ 💔 429 error;  Adjusting node {contender.node_id} for task {query_result.task}.")
         await update_contender_429_count(config.psql_db, contender)
     else:
-        logger.debug(f"❌ Adjusting node {contender.node_id} for task {query_result.task}.")
+        logger.debug(f"❌ 💔 500 error; Adjusting node {contender.node_id} for task {query_result.task}.")
         await update_contender_500_count(config.psql_db, contender)
     return query_result
