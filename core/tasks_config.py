@@ -65,7 +65,7 @@ class FullTaskConfig(BaseModel):
 TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
     Task.chat_llama_3_1_8b: FullTaskConfig(
         task=Task.chat_llama_3_1_8b,
-        max_capacity=1_500_000,
+        max_capacity=576_000,
         scoring_config=TaskScoringConfig(
             task=Task.chat_llama_3_1_8b, overhead=0.4, mean=0.3, variance=4, task_type=TaskType.TEXT
         ),
@@ -88,7 +88,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         endpoint=Endpoints.chat_completions.value,
         volume_to_requests_conversion=300,
         is_stream=True,
-        weight=0.1,
+        weight=0.2,
         timeout=2,
         enabled=True,
     ),
@@ -117,7 +117,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         endpoint=Endpoints.chat_completions.value,
         volume_to_requests_conversion=300,
         is_stream=True,
-        weight=0.1,
+        weight=0.2,
         timeout=2,
         enabled=True,
     ),
@@ -147,7 +147,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
     ),
     Task.proteus_image_to_image: FullTaskConfig(
         task=Task.proteus_image_to_image,
-        max_capacity=2_000,
+        max_capacity=3_600,
         scoring_config=TaskScoringConfig(
             task=Task.proteus_image_to_image, mean=0.6, variance=9, overhead=0.6, task_type=TaskType.IMAGE
         ),
@@ -165,7 +165,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         endpoint=Endpoints.image_to_image.value,
         volume_to_requests_conversion=10,
         is_stream=False,
-        weight=0.1,
+        weight=0.05,
         timeout=20,
         enabled=True,
     ),
@@ -189,13 +189,13 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         endpoint=Endpoints.text_to_image.value,
         volume_to_requests_conversion=10,
         is_stream=False,
-        weight=0.1,
+        weight=0.15,
         timeout=20,
         enabled=True,
     ),
     Task.flux_schnell_image_to_image: FullTaskConfig(
         task=Task.flux_schnell_image_to_image,
-        max_capacity=2_000,
+        max_capacity=3_600,
         scoring_config=TaskScoringConfig(
             task=Task.flux_schnell_image_to_image, mean=0.20, variance=13, overhead=0.6, task_type=TaskType.IMAGE
         ),
@@ -213,13 +213,13 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         endpoint=Endpoints.image_to_image.value,
         volume_to_requests_conversion=10,
         is_stream=False,
-        weight=0.1,
+        weight=0.05,
         timeout=15,
         enabled=True,
     ),
     Task.avatar: FullTaskConfig(
         task=Task.avatar,
-        max_capacity=2_000,
+        max_capacity=1_120,
         scoring_config=TaskScoringConfig(task=Task.avatar, mean=0.24, variance=10, overhead=0.45, task_type=TaskType.IMAGE),
         orchestrator_server_config=OrchestratorServerConfig(
             server_needed=ServerType.IMAGE,
@@ -235,13 +235,13 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         endpoint=Endpoints.avatar.value,
         volume_to_requests_conversion=10,
         is_stream=False,
-        weight=0.1,
+        weight=0.15,
         timeout=15,
         enabled=True,
     ),
     Task.dreamshaper_text_to_image: FullTaskConfig(
         task=Task.dreamshaper_text_to_image,
-        max_capacity=3_600,
+        max_capacity=3_000,
         scoring_config=TaskScoringConfig(
             task=Task.dreamshaper_text_to_image, mean=0.12, variance=18, overhead=0.3, task_type=TaskType.IMAGE
         ),
@@ -259,13 +259,13 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         endpoint=Endpoints.text_to_image.value,
         volume_to_requests_conversion=10,
         is_stream=False,
-        weight=0.1,
+        weight=0.05,
         timeout=5,
         enabled=True,
     ),
     Task.dreamshaper_image_to_image: FullTaskConfig(
         task=Task.dreamshaper_image_to_image,
-        max_capacity=2_000,
+        max_capacity=3_000,
         scoring_config=TaskScoringConfig(
             task=Task.dreamshaper_image_to_image, mean=0.13, variance=13, overhead=0.6, task_type=TaskType.IMAGE
         ),
@@ -283,13 +283,13 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         endpoint=Endpoints.image_to_image.value,
         volume_to_requests_conversion=10,
         is_stream=False,
-        weight=0.1,
+        weight=0.05,
         timeout=15,
         enabled=True,
     ),
     Task.inpaint: FullTaskConfig(
         task=Task.inpaint,
-        max_capacity=2_000,
+        max_capacity=0,
         scoring_config=TaskScoringConfig(task=Task.inpaint, mean=0.12, variance=18, overhead=0.4, task_type=TaskType.IMAGE),
         orchestrator_server_config=OrchestratorServerConfig(
             server_needed=ServerType.IMAGE,
@@ -307,7 +307,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         is_stream=False,
         weight=0.0,
         timeout=15,
-        enabled=True,
+        enabled=False,
     ),
 }
 
