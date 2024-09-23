@@ -83,9 +83,10 @@ async def get_and_set_weights(config: Config) -> None:
 
     if success:
         logger.info("Weights set successfully.")
+        return True
     else:
         logger.error("Failed to set weights :(")
-
+        return False
 
 async def main():
     logger.info("Starting weight calculation...")
