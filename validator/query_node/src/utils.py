@@ -27,7 +27,7 @@ async def adjust_contender_from_result(
     """
 
     if query_result.status_code == 200 and query_result.success:
-        logger.debug(f"✅ Adjusting contender {contender.node_id} for task {query_result.task}")
+        logger.debug(f"✅ Adjusting node {contender.node_id} for task {query_result.task}")
         task_config = tcfg.get_enabled_task_config(query_result.task)
         if task_config is None:
             logger.error(f"Task {query_result.task} is not enabled")
@@ -45,9 +45,9 @@ async def adjust_contender_from_result(
         logger.debug(f"Adjusted node {contender.node_id} for task {query_result.task}.")
 
     elif query_result.status_code == 429:
-        logger.debug(f"❌ Adjusting contender {contender.node_id} for task {query_result.task}.")
+        logger.debug(f"❌ Adjusting node {contender.node_id} for task {query_result.task}.")
         await update_contender_429_count(config.psql_db, contender)
     else:
-        logger.debug(f"❌ Adjusting contender {contender.node_id} for task {query_result.task}.")
+        logger.debug(f"❌ Adjusting node {contender.node_id} for task {query_result.task}.")
         await update_contender_500_count(config.psql_db, contender)
     return query_result
