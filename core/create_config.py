@@ -86,6 +86,7 @@ def generate_validator_config(dev: bool = False) -> dict[str, Any]:
     config["SUBTENSOR_NETWORK"] = input("Enter subtensor network (default: finney): ") or "finney"
     config["SUBTENSOR_ADDRESS"] = input("Enter subtensor address (default: None): ") or None
     config["NETUID"] = 176 if config["SUBTENSOR_NETWORK"] == "test" else 19
+    config["ORGANIC_SERVER_PORT"] = input("Enter ORGANIC_SERVER_PORT (default: None): ") or None
 
     config["GPU_SERVER_ADDRESS"] = validate_input(
         "Enter GPU server address: ", lambda x: x == "" or re.match(r"^https?://.+", x) is not None

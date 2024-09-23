@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+import os
 from fastapi import FastAPI
 import uvicorn
 from validator.entry_node.src.endpoints.text import router as chat_router
@@ -77,6 +78,12 @@ app.add_middleware(
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=8091)
+    port = os.getenv("ORGANIC_SERVER_PORT")
+    if port is None:
+        logger.error("ORGANIC_SERVER_PORT is not set")
+        exit(1)
+    else:
+        port = int(port)
+        uvicorn.run(app, host="0.0.0.0", port=port)
 
     # uvicorn validator.entry_node.src.server:app --reload --host 0.0.0.0 --port 8091 --env-file .vali.env
