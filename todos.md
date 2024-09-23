@@ -2,7 +2,6 @@
 
 ## Fiber stuff:
 - T&C's  [ 10 min]
-- Redis and postgres no ports for prod compose I think
 
 ### Might need bugfix
 - Post to sn19.ai + with the created_at time pointing to the time of the query, not time of insertion
