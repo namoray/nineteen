@@ -69,6 +69,7 @@ async def main(config: Config) -> None:
         tasks = []
     else:
         tasks = [schedule_synthetics(config)]
+        asyncio.create_task(calculate_and_schedule_weights.get_and_set_weights(config))
     while True:
         await asyncio.gather(*tasks)
         contenders = await get_nodes_and_contenders(config)
