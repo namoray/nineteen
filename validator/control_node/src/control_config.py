@@ -41,7 +41,7 @@ class Config:
 
 def load_config() -> Config:
     subtensor_network = os.getenv("SUBTENSOR_NETWORK")
-    subtensor_address = os.getenv("SUBTENSOR_ADDRESS")
+    subtensor_address = os.getenv("SUBTENSOR_ADDRESS") or None
     gpu_server_address = os.getenv("GPU_SERVER_ADDRESS", None)
     dev_env = os.getenv("ENV", "prod").lower() != "prod"
     if not gpu_server_address:
