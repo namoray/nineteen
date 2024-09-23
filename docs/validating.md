@@ -87,6 +87,15 @@ docker compose --env-file .vali.env -f docker-compose.yml up -d --build
 
 See [helpful commands](./helpful-commands.md) for more information on the docker commands
 
+## If you ever need to set weights manually to stop dereg etc
+
+Run 
+```bash
+task set_weights
+```
+
+If you don't have any values in the db it will use the metagraph. It warns you and gives you time to stop this, if that is not something you want to do
+
 # Orchestrator setup
 
 ## Starting the Orchestrator server
