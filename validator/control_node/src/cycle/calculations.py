@@ -29,7 +29,7 @@ async def _get_period_scores(psql_db: PSQLDB, task: str, node_hotkey: str) -> li
 
 async def _calculate_combined_quality_score(psql_db: PSQLDB, task: str, node_hotkey: str) -> float:
     reward_datas: list[RewardData] = await _get_reward_datas(psql_db, task, node_hotkey)
-    combined_quality_scores = [reward_data.quality_score ** 1.5 * reward_data.speed_scoring_factor for reward_data in reward_datas]
+    combined_quality_scores = [reward_data.quality_score**1.5 * reward_data.speed_scoring_factor for reward_data in reward_datas]
     if not combined_quality_scores:
         return 0
     return sum(combined_quality_scores) / len(combined_quality_scores)
@@ -59,7 +59,6 @@ def _normalise_period_scores(period_scores: list[PeriodScore]) -> float:
         if score.period_score is not None:
             total_score += score.period_score * combined_weight
             total_weight += combined_weight
-        
 
     if total_weight == 0:
         return 0
@@ -86,7 +85,7 @@ async def _calculate_effective_volumes_for_task(psql_db: PSQLDB, contenders: lis
         hotkey_to_effective_volumes[contender.node_hotkey] = effective_volume
         combined_quality_scores[contender.node_hotkey] = combined_quality_score
         normalised_period_scores[contender.node_hotkey] = normalised_period_score
-    
+
     logger.debug(f"Combined quality scores: {combined_quality_scores}")
     logger.debug(f"Normalised period scores: {normalised_period_scores}")
     logger.debug(f"Effective volumes: {hotkey_to_effective_volumes}")
@@ -104,6 +103,15 @@ def _apply_non_linear_transformation(scores: dict[str, float]) -> dict[str, floa
     return {hotkey: score**4 for hotkey, score in scores.items()}
 
 
+async def _calculate_normalised_scores_for_task(psql_db: PSQLDB, task: str, contenders: list[Contender]) -> dict[str, float]:
+    effective_volumes = await _calculate_effective_volumes_for_task(psql_db, contenders, task.value)
+    normalised_scores_before_non_linear = _normalize_scores_for_task(effective_volumes)
+    logger.info(f"Normalised scores before non-linear transformation: {normalised_scores_before_non_linear}\n")
+    effective_volumes_after_non_linear_transformation = _apply_non_linear_transformation(normalised_scores_before_non_linear)
+    normalised_scores_for_task = _normalize_scores_for_task(effective_volumes_after_non_linear_transformation)
+    return normalised_scores_for_task
+
+
 async def calculate_scores_for_settings_weights(
     psql_db: PSQLDB,
     contenders: list[Contender],
@@ -117,11 +125,7 @@ async def calculate_scores_for_settings_weights(
         task_weight = config.weight
         logger.debug(f"Processing task: {task}, weight: {task_weight}\n")
 
-        effective_volumes = await _calculate_effective_volumes_for_task(psql_db, contenders, task.value)
-        normalised_scores_before_non_linear = _normalize_scores_for_task(effective_volumes)
-        logger.info(f"Normalised scores before non-linear transformation: {normalised_scores_before_non_linear}\n")
-        effective_volumes_after_non_linear_transformation = _apply_non_linear_transformation(normalised_scores_before_non_linear)
-        normalised_scores_for_task = _normalize_scores_for_task(effective_volumes_after_non_linear_transformation)
+        normalised_scores_for_task = await _calculate_normalised_scores_for_task(psql_db, task, contenders)
 
         for hotkey, score in normalised_scores_for_task.items():
             total_hotkey_scores[hotkey] = total_hotkey_scores.get(hotkey, 0) + score * task_weight
