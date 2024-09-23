@@ -72,6 +72,8 @@ services:
     container_name: entry_node
     env_file:
       - .vali.env
+    profiles:
+      - entry_node_profile
 
   postgresql:
     image: postgres:latest
