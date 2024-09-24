@@ -64,11 +64,11 @@ def _get_initial_schedule_time(current_time: float, interval: float) -> float:
 async def _initialize_task_schedules(task_groups: Dict[Task, List[Contender]], config: Config) -> List[TaskScheduleInfo]:
     scoring_period_time = ccst.SCORING_PERIOD_TIME * config.scoring_period_time_multiplier
     schedules = []
-    current_time = time.time()
     for task, contenders in task_groups.items():
         total_requests = _calculate_task_requests(task, contenders, config)
         if total_requests > 0:
-            interval = scoring_period_time / (total_requests + 2)
+            interval = scoring_period_time / (total_requests + 1)
+            current_time = time.time()
             first_schedule_time = _get_initial_schedule_time(current_time, interval)
             schedule = TaskScheduleInfo(
                 task=task,
@@ -132,9 +132,10 @@ async def schedule_synthetics_until_done(config: Config):
             if i % 10 == 3:
                 logger.info(f"Sleeping for {time_to_sleep} seconds while waiting for task {schedule.task} to be scheduled...")
             else:
+                estimated_time = (schedule.remaining_requests - 1) * schedule.interval + time_to_sleep
                 logger.debug(
                     f"Sleeping for {time_to_sleep} seconds while waiting for task {schedule.task} to be scheduled;"
-                    f"{schedule.remaining_requests} requests remaining - estimated to take {schedule.remaining_requests * schedule.interval} more seconds"
+                    f"{schedule.remaining_requests} requests remaining - estimated to take {estimated_time} more seconds"
                 )
             sleep_chunk = 2  # Sleep in 2-second chunks to make debugging easier
             while time_to_sleep > 0:
