@@ -176,3 +176,4 @@ async def schedule_synthetics_until_done(config: Config):
         f"schedules left: {[s.task for s in schedules_left]}"
     )
     logger.info("All tasks completed")
+    await asyncio.sleep(10)
