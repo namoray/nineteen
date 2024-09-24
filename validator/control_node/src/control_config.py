@@ -82,7 +82,7 @@ def load_config() -> Config:
     httpx_limits = httpx.Limits(max_connections=500, max_keepalive_connections=100)
     httpx_client = httpx.AsyncClient(limits=httpx_limits)
 
-    scoring_period_time_multiplier = float(os.getenv("SCORING_PERIOD_TIME_MULTIPLIER", "1.0"))
+    scoring_period_time_multiplier = float(os.getenv("SCORING_PERIOD_TIME_MULTIPLIER", 1.0))
 
     return Config(
         substrate=substrate,  # type: ignore

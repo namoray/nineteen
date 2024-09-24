@@ -16,11 +16,14 @@ def generate_secure_password(length: int = 16) -> str:
     return "".join(password)
 
 
-def validate_input(prompt: str, validator: Callable[[str], bool]) -> str:
+def validate_input(prompt: str, validator: Callable[[str], bool], default: str | None = None) -> str:
     while True:
         value = input(prompt)
-        if validator(value):
-            return value
+        if value:
+            if validator(value):
+                return value
+        elif default:
+            return default
         print("Invalid input. Please try again.")
 
 
@@ -113,6 +116,9 @@ def generate_validator_config(dev: bool = False) -> dict[str, Any]:
             "true"
             if validate_input("Replace with Docker localhost? (y/n): (default: y)", yes_no_validator).lower().startswith("y")
             else "false"
+        )
+        config["SCORING_PERIOD_TIME_MULTIPLIER"] = float(
+            validate_input("Enter scoring period time multiplier: ", float_validator, "1.0")
         )
     else:
         config["ENV"] = "prod"
