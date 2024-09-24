@@ -108,6 +108,8 @@ async def _clear_old_synthetic_queries(redis_db: Redis):
 
 
 async def schedule_synthetics_until_done(config: Config):
+    logger.info(f"Scheduling synthetics; this will take {ccst.SCORING_PERIOD_TIME // 60} minutes ish...")
+
     contenders = await _load_contenders(config.psql_db)
     task_groups = await _group_contenders_by_task(contenders)
     task_schedules = await _initialize_task_schedules(task_groups)
@@ -127,7 +129,7 @@ async def schedule_synthetics_until_done(config: Config):
             if i % 10 == 3:
                 logger.info(f"Sleeping for {time_to_sleep} seconds while waiting for task {schedule.task} to be scheduled...")
             else:
-                logger.debug(f"Sleeping for {time_to_sleep} seconds while waiting for task {schedule.task} to be scheduled...")
+                logger.debug(f"Sleeping for {time_to_sleep} seconds while waiting for task {schedule.task} to be scheduled; {schedule.remaining_requests} requests remaining...")
             sleep_chunk = 2  # Sleep in 2-second chunks to make debugging easier
             while time_to_sleep > 0:
                 await asyncio.sleep(min(sleep_chunk, time_to_sleep))

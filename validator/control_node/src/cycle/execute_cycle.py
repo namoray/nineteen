@@ -13,12 +13,12 @@ A cycle consists of
 import asyncio
 from validator.control_node.src.control_config import Config
 from validator.control_node.src.cycle import (
-    calculate_and_schedule_weights,
     refresh_nodes,
     refresh_contenders,
     schedule_synthetic_queries,
-    # calculate_and_schedule_weights,
 )
+from validator.control_node.src.cycle.schedule_synthetic_queries import schedule_synthetics_until_done
+from validator.control_node.src.cycle.calculate_and_schedule_weights import get_and_set_weights
 from core import constants as ccst
 from validator.db.src.sql.nodes import (
     get_nodes,
@@ -52,15 +52,10 @@ async def get_nodes_and_contenders(config: Config) -> list[Contender] | None:
     return contenders
 
 
-async def schedule_synthetics(config: Config) -> None:
-    logger.info(f"Scheduling synthetics; this will take {ccst.SCORING_PERIOD_TIME // 60} minutes ish...")
-
-    await schedule_synthetic_queries.schedule_synthetics_until_done(config)
-
-
 async def main(config: Config) -> None:
     time_to_sleep_if_no_contenders = 20
     contenders = await get_nodes_and_contenders(config)
+
     if contenders is None or len(contenders) == 0:
         logger.info(
             f"No contenders to query, skipping synthetic scheduling and sleeping for {time_to_sleep_if_no_contenders} seconds to wait."
@@ -68,8 +63,8 @@ async def main(config: Config) -> None:
         await asyncio.sleep(time_to_sleep_if_no_contenders)  # Sleep for 5 minutes to wait for contenders to become available
         tasks = []
     else:
-        tasks = [schedule_synthetics(config)]
-        asyncio.create_task(calculate_and_schedule_weights.get_and_set_weights(config))
+        tasks = [get_and_set_weights(config), schedule_synthetics_until_done(config)]
+
     while True:
         await asyncio.gather(*tasks)
         contenders = await get_nodes_and_contenders(config)
@@ -80,4 +75,4 @@ async def main(config: Config) -> None:
             await asyncio.sleep(time_to_sleep_if_no_contenders)  # Sleep for 5 minutes to wait for contenders to become available
             tasks = []
         else:
-            tasks = [calculate_and_schedule_weights.get_and_set_weights(config), schedule_synthetics(config)]
+            tasks = [get_and_set_weights(config), schedule_synthetics_until_done(config)]
