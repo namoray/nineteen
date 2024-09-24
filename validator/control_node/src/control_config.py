@@ -29,7 +29,6 @@ class Config:
     subtensor_address: str | None
     gpu_server_address: str | None
     netuid: int
-    seconds_between_syncs: int
     replace_with_localhost: bool
     replace_with_docker_localhost: bool
     refresh_nodes: bool
