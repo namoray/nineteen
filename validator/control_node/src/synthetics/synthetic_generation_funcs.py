@@ -163,17 +163,17 @@ async def generate_text_to_image_synthetic(
         height = 1024
         width = 1024
         cfg_scale = 4.0
-        steps = 10
+        steps = 8
     elif model == Task.dreamshaper_text_to_image.value:
         height = 1024
         width = 1024
         cfg_scale = 3.0
-        steps = 10
+        steps = 8
     elif model == Task.flux_schnell_text_to_image.value:
         height = 1024
         width = 1024
         cfg_scale = 3.0
-        steps = 10
+        steps = 5
     else:
         raise ValueError(f"Model {model} not supported")
 
@@ -209,13 +209,13 @@ async def generate_image_to_image_synthetic(
         height = 1024
         width = 1024
         cfg_scale = 2.0
-        steps = 10
+        steps = 8
         image_strength = 0.5
     elif model == Task.proteus_image_to_image.value:
         height = 1024
         width = 1024
         cfg_scale = 2.0
-        steps = 10
+        steps = 8
         image_strength = 0.5
     else:
         raise ValueError(f"Engine {model} not supported")

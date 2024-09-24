@@ -15,28 +15,28 @@ logger = get_logger(__name__)
 PERIOD_SCORE_TIME_DECAYING_FACTOR = 0.5
 
 
-async def _get_reward_datas(psql_db: PSQLDB, contender: Contender) -> list[RewardData]:
+async def _get_reward_datas(psql_db: PSQLDB, task: str, node_hotkey: str) -> list[RewardData]:
     async with await psql_db.connection() as connection:
-        reward_datas = await db_functions.fetch_recent_most_rewards_for_uid(connection, contender.task, contender.node_hotkey)
+        reward_datas = await db_functions.fetch_recent_most_rewards_for_uid(connection, task, node_hotkey)
     return reward_datas
 
 
-async def _get_period_scores(psql_db: PSQLDB, contender: Contender) -> list[PeriodScore]:
+async def _get_period_scores(psql_db: PSQLDB, task: str, node_hotkey: str) -> list[PeriodScore]:
     async with await psql_db.connection() as connection:
-        period_scores = await fetch_hotkey_scores_for_task(connection, contender.task, contender.node_hotkey)
+        period_scores = await fetch_hotkey_scores_for_task(connection, task, node_hotkey)
     return period_scores
 
 
-async def _calculate_combined_quality_score(psql_db: PSQLDB, contender: Contender) -> float:
-    reward_datas: list[RewardData] = await _get_reward_datas(psql_db, contender=contender)
-    combined_quality_scores = [reward_data.quality_score ** 1.5 * reward_data.speed_scoring_factor for reward_data in reward_datas]
+async def _calculate_combined_quality_score(psql_db: PSQLDB, task: str, node_hotkey: str) -> float:
+    reward_datas: list[RewardData] = await _get_reward_datas(psql_db, task, node_hotkey)
+    combined_quality_scores = [reward_data.quality_score**1.5 * reward_data.speed_scoring_factor for reward_data in reward_datas]
     if not combined_quality_scores:
         return 0
     return sum(combined_quality_scores) / len(combined_quality_scores)
 
 
-async def _calculate_normalised_period_score(psql_db: PSQLDB, contender: Contender) -> float:
-    period_scores = await _get_period_scores(psql_db, contender)
+async def _calculate_normalised_period_score(psql_db: PSQLDB, task: str, node_hotkey: str) -> float:
+    period_scores = await _get_period_scores(psql_db, task, node_hotkey)
     all_period_scores = [ps for ps in period_scores if ps.period_score is not None]
     normalised_period_scores = _normalise_period_scores(all_period_scores)
     return normalised_period_scores
@@ -59,7 +59,6 @@ def _normalise_period_scores(period_scores: list[PeriodScore]) -> float:
         if score.period_score is not None:
             total_score += score.period_score * combined_weight
             total_weight += combined_weight
-        
 
     if total_weight == 0:
         return 0
@@ -78,18 +77,18 @@ async def _calculate_effective_volumes_for_task(psql_db: PSQLDB, contenders: lis
     combined_quality_scores = {}
     normalised_period_scores = {}
     for contender in [i for i in contenders if i.task == task]:
-        combined_quality_score = await _calculate_combined_quality_score(psql_db, contender)
-        normalised_period_score = await _calculate_normalised_period_score(psql_db, contender)
+        combined_quality_score = await _calculate_combined_quality_score(psql_db, task, contender.node_hotkey)
+        normalised_period_score = await _calculate_normalised_period_score(psql_db, task, contender.node_hotkey)
         effective_volume = _calculate_hotkey_effective_volume_for_task(
             combined_quality_score, normalised_period_score, contender.capacity
         )
         hotkey_to_effective_volumes[contender.node_hotkey] = effective_volume
         combined_quality_scores[contender.node_hotkey] = combined_quality_score
         normalised_period_scores[contender.node_hotkey] = normalised_period_score
-    
-    logger.debug(f"Combined quality scores: {combined_quality_scores}")
-    logger.debug(f"Normalised period scores: {normalised_period_scores}")
-    logger.debug(f"Effective volumes: {hotkey_to_effective_volumes}")
+
+    # logger.debug(f"Combined quality scores: {combined_quality_scores}")
+    # logger.debug(f"Normalised period scores: {normalised_period_scores}")
+    # logger.debug(f"Effective volumes: {hotkey_to_effective_volumes}")
     return hotkey_to_effective_volumes
 
 
@@ -102,6 +101,15 @@ def _normalize_scores_for_task(effective_volumes: dict[str, float]) -> dict[str,
 
 def _apply_non_linear_transformation(scores: dict[str, float]) -> dict[str, float]:
     return {hotkey: score**4 for hotkey, score in scores.items()}
+
+
+async def _calculate_normalised_scores_for_task(psql_db: PSQLDB, task: str, contenders: list[Contender]) -> dict[str, float]:
+    effective_volumes = await _calculate_effective_volumes_for_task(psql_db, contenders, task.value)
+    normalised_scores_before_non_linear = _normalize_scores_for_task(effective_volumes)
+    # logger.info(f"Normalised scores before non-linear transformation: {normalised_scores_before_non_linear}\n")
+    effective_volumes_after_non_linear_transformation = _apply_non_linear_transformation(normalised_scores_before_non_linear)
+    normalised_scores_for_task = _normalize_scores_for_task(effective_volumes_after_non_linear_transformation)
+    return normalised_scores_for_task
 
 
 async def calculate_scores_for_settings_weights(
@@ -117,11 +125,7 @@ async def calculate_scores_for_settings_weights(
         task_weight = config.weight
         logger.debug(f"Processing task: {task}, weight: {task_weight}\n")
 
-        effective_volumes = await _calculate_effective_volumes_for_task(psql_db, contenders, task.value)
-        normalised_scores_before_non_linear = _normalize_scores_for_task(effective_volumes)
-        logger.info(f"Normalised scores before non-linear transformation: {normalised_scores_before_non_linear}\n")
-        effective_volumes_after_non_linear_transformation = _apply_non_linear_transformation(normalised_scores_before_non_linear)
-        normalised_scores_for_task = _normalize_scores_for_task(effective_volumes_after_non_linear_transformation)
+        normalised_scores_for_task = await _calculate_normalised_scores_for_task(psql_db, task, contenders)
 
         for hotkey, score in normalised_scores_for_task.items():
             total_hotkey_scores[hotkey] = total_hotkey_scores.get(hotkey, 0) + score * task_weight

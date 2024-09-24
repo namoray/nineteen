@@ -56,8 +56,10 @@ def _calculate_task_requests(task: Task, contenders: List[Contender]) -> int:
     total_capacity = sum(c.capacity_to_score for c in contenders)
     return int(total_capacity / config.volume_to_requests_conversion)
 
+
 def _get_initial_schedule_time(current_time: float, interval: float) -> float:
     return current_time + random.random() * interval
+
 
 async def _initialize_task_schedules(task_groups: Dict[Task, List[Contender]]) -> List[TaskScheduleInfo]:
     schedules = []
@@ -65,7 +67,7 @@ async def _initialize_task_schedules(task_groups: Dict[Task, List[Contender]]) -
     for task, contenders in task_groups.items():
         total_requests = _calculate_task_requests(task, contenders)
         if total_requests > 0:
-            interval = ccst.SCORING_PERIOD_TIME / (total_requests + 1) 
+            interval = ccst.SCORING_PERIOD_TIME / (total_requests + 1)
             first_schedule_time = _get_initial_schedule_time(current_time, interval)
             schedule = TaskScheduleInfo(
                 task=task,
@@ -93,19 +95,15 @@ async def _schedule_synthetic_query(redis_db: Redis, task: Task, max_len: int):
     await putils.add_synthetic_query_to_queue(redis_db, task, max_len)
 
 
-
 async def _clear_old_synthetic_queries(redis_db: Redis):
     all_items = await redis_db.lrange(rcst.QUERY_QUEUE_KEY, 0, -1)  # type: ignore
-    
-    non_synthetic_items = [
-        item for item in all_items 
-        if json.loads(item).get("query_type") != gcst.SYNTHETIC
-    ]
+
+    non_synthetic_items = [item for item in all_items if json.loads(item).get("query_type") != gcst.SYNTHETIC]
     await redis_db.delete(rcst.QUERY_QUEUE_KEY)
 
     if non_synthetic_items:
         await redis_db.rpush(rcst.QUERY_QUEUE_KEY, *non_synthetic_items)  # type: ignore
-    
+
     logger.info(f"Cleared {len(all_items) - len(non_synthetic_items)} synthetic queries from the queue")
 
 
@@ -115,14 +113,13 @@ async def schedule_synthetics_until_done(config: Config):
     task_schedules = await _initialize_task_schedules(task_groups)
     await _clear_old_synthetic_queries(config.redis_db)
 
-    logger.debug(f"Contenders: {contenders}, schedules: {task_schedules}, ")
 
     for schedule in task_schedules:
         await _update_redis_remaining_requests(config.redis_db, schedule.task, schedule.total_requests)
 
     i = 0
     while task_schedules:
-        i += 1 
+        i += 1
         schedule = heapq.heappop(task_schedules)
         time_to_sleep = schedule.next_schedule_time - time.time()
 
@@ -137,16 +134,18 @@ async def schedule_synthetics_until_done(config: Config):
                 time_to_sleep -= sleep_chunk
 
         latest_remaining_requests = await _get_redis_remaining_requests(config.redis_db, schedule.task)
+        if latest_remaining_requests <= 0:
+            logger.info(f"No more requests remaining for task {schedule.task}")
+            continue
         requests_to_skip = schedule.remaining_requests - latest_remaining_requests
 
         if requests_to_skip > 0:
             logger.info(f"Skipping {requests_to_skip} requests for task {schedule.task}")
+
             schedule.next_schedule_time += schedule.interval * requests_to_skip
             schedule.remaining_requests = latest_remaining_requests
             heapq.heappush(task_schedules, schedule)
-            continue
-
-        if latest_remaining_requests > 0:
+        else:
             await _schedule_synthetic_query(config.redis_db, schedule.task, max_len=100)
 
             remaining_requests = latest_remaining_requests - 1
@@ -156,7 +155,5 @@ async def schedule_synthetics_until_done(config: Config):
 
         if schedule.remaining_requests > 0:
             heapq.heappush(task_schedules, schedule)
-        else:
-            logger.info(f"No more requests remaining for task {schedule.task}")
 
     logger.info("All tasks completed")

@@ -48,7 +48,6 @@ def _get_validator_stake_proportion(nodes: list[Node], config: Config) -> float:
 
 
 def _get_capacity_to_score(capacity: float, capacity_to_score_multiplier: float) -> float:
-
     if random.random() < 0.5:
         multiplier = 0.04
     elif random.random() < 0.8:
@@ -102,27 +101,33 @@ async def _fetch_node_capacities(config: Config, nodes: list[Node]) -> list[dict
             return None
         return await _fetch_node_capacity(config, node)
 
-    capacity_tasks = [_fetch_or_none(node) for node in nodes]
-    capacities = await asyncio.gather(*capacity_tasks)
+    capacity_tasks = []
+    capacities = []
+    for node in nodes:
+        capacity_tasks.append(_fetch_or_none(node))
+        if len(capacity_tasks) > 50:
+            capacities.extend(await asyncio.gather(*capacity_tasks))
+            capacity_tasks = []
+
+    if capacity_tasks:
+        capacities.extend(await asyncio.gather(*capacity_tasks))
+
     return capacities
 
 
 async def _get_contenders_from_nodes(config: Config, nodes: list[Node]) -> List[Contender]:
     validator_stake_proportion = _get_validator_stake_proportion(nodes, config)
     raw_capacities = await _fetch_node_capacities(config, nodes)
-    logger.debug(f"Got capacities: {raw_capacities}")
     logger.info(f"Got capacities for {len([i for i in raw_capacities if i is not None])} nodes")
 
     contenders = []
     for node, raw_node_capacities in zip(nodes, raw_capacities):
         if raw_node_capacities is None:
             continue
-        logger.debug(f"Node: {node}\n capacities: {raw_node_capacities}")
         node_hotkey = node.hotkey
         node_id = node.node_id
         netuid = node.netuid
         for task, declared_capacity in raw_node_capacities.items():
-            logger.info(f"Node hotkey: {node_hotkey} - Task: {task} - Capacity: {declared_capacity}")
             if task not in Task._value2member_map_:
                 logger.debug(f"Task {task} is not a valid task")
                 continue
@@ -155,7 +160,7 @@ async def _get_contenders_from_nodes(config: Config, nodes: list[Node]) -> List[
 
 
 async def get_and_store_contenders(config: Config, nodes: list[Node]) -> list[Contender]:
-    logger.info(f"Got {len(nodes)} nodes")
+    logger.info(f"Got {len(nodes)} nodes to get contenders from...")
     contenders = await _get_contenders_from_nodes(config, nodes)
     await _store_and_migrate_old_contenders(config, contenders)
     return contenders

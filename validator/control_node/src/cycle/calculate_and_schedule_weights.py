@@ -55,7 +55,7 @@ async def get_and_set_weights(config: Config) -> None:
 
     all_nodes: list[Node] = fetch_nodes.get_nodes_for_netuid(config.substrate, config.netuid)
     all_node_ids = [node.node_id for node in all_nodes]
-    all_node_weights = [0 for node in all_nodes]
+    all_node_weights = [0.0 for _ in all_nodes]
     for node_id, node_weight in zip(node_ids, node_weights):
         all_node_weights[node_id] = node_weight
 
@@ -74,7 +74,7 @@ async def get_and_set_weights(config: Config) -> None:
             version_key=ccst.VERSION_KEY,
             validator_node_id=int(validator_node_id),
             wait_for_inclusion=True,
-            wait_for_finalization=True,
+            wait_for_finalization=False,
             max_attempts=3,
         )
     except Exception as e:
@@ -83,9 +83,10 @@ async def get_and_set_weights(config: Config) -> None:
 
     if success:
         logger.info("Weights set successfully.")
+        return True
     else:
         logger.error("Failed to set weights :(")
-
+        return False
 
 async def main():
     logger.info("Starting weight calculation...")
@@ -119,7 +120,7 @@ async def main():
         version_key=ccst.VERSION_KEY,
         validator_node_id=int(validator_node_id),
         wait_for_inclusion=True,
-        wait_for_finalization=True,
+        wait_for_finalization=False,
         max_attempts=3,
     )
 

@@ -34,7 +34,7 @@ class Config:
     replace_with_docker_localhost: bool
     refresh_nodes: bool
     capacity_to_score_multiplier: float
-    httpx_client: httpx.AsyncClient = httpx.AsyncClient()
+    httpx_client: httpx.AsyncClient
     testnet: bool = os.getenv("SUBTENSOR_NETWORK", "").lower() == "test"
     debug: bool = os.getenv("ENV", "prod").lower() != "prod"
 
@@ -78,6 +78,9 @@ def load_config() -> Config:
     capacity_to_score_multiplier = float(os.getenv("CAPACITY_TO_SCORE_MULTIPLIER", default_capacity_to_score_multiplier))
     logger.info(f"Capacity to score multiplier: {capacity_to_score_multiplier}")
 
+    httpx_limits = httpx.Limits(max_connections=500, max_keepalive_connections=100)
+    httpx_client = httpx.AsyncClient(limits=httpx_limits)
+
     return Config(
         substrate=substrate,  # type: ignore
         keypair=keypair,
@@ -91,6 +94,7 @@ def load_config() -> Config:
         replace_with_localhost=localhost,
         refresh_nodes=refresh_nodes,
         capacity_to_score_multiplier=capacity_to_score_multiplier,
+        httpx_client=httpx_client,
         gpu_server_address=gpu_server_address,
         debug=dev_env,
     )
