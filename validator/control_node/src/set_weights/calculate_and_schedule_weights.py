@@ -117,7 +117,7 @@ async def _set_metagraph_weights(config: Config) -> None:
 
 #
 
-
+# To improve: use activity cutoff & The epoch length to set weights at the perfect times
 async def set_weights_periodically(config: Config) -> None:
     substrate = get_substrate(subtensor_address=config.substrate.url)
     substrate, uid = query_substrate(
@@ -130,7 +130,7 @@ async def set_weights_periodically(config: Config) -> None:
         substrate, last_updated_value = query_substrate(
             substrate, "SubtensorModule", "LastUpdate", [config.netuid], return_value=False
         )
-        updated: float = last_updated_value[uid].value - current_block
+        updated: float = current_block - last_updated_value[uid].value 
         logger.info(f"Last updated: {updated} for my uid: {uid}")
         if updated < 150:
             logger.info(f"Last updated: {updated} - sleeping for a bit as we set recently...")
