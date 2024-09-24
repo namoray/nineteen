@@ -126,13 +126,14 @@ async def set_weights_periodically(config: Config) -> None:
 
     consecutive_failures = 0
     while True:
+        substrate, current_block = query_substrate(substrate, "System", "Number", [], return_value=True)
         substrate, last_updated_value = query_substrate(
             substrate, "SubtensorModule", "LastUpdate", [config.netuid], return_value=False
         )
-        last_updated: float = last_updated_value[uid].value
-        logger.info(f"Last updated: {last_updated} for my uid: {uid}")
-        if last_updated < 150:
-            logger.info(f"Last updated: {last_updated} - sleeping for a bit as we set recently...")
+        updated: float = last_updated_value[uid].value - current_block
+        logger.info(f"Last updated: {updated} for my uid: {uid}")
+        if updated < 150:
+            logger.info(f"Last updated: {updated} - sleeping for a bit as we set recently...")
             await asyncio.sleep(12 * 25)  # sleep for 25 blocks
             continue
 
@@ -147,7 +148,7 @@ async def set_weights_periodically(config: Config) -> None:
         logger.info(f"Failed to set weights {consecutive_failures} times in a row - sleeping for a bit...")
         await asyncio.sleep(12 * 25)  # Try again in 25 blocks
 
-        if consecutive_failures == 1 or last_updated < 3000:
+        if consecutive_failures == 1 or updated < 3000:
             continue
 
         if config.set_metagraph_weights_with_high_updated_to_not_dereg:
