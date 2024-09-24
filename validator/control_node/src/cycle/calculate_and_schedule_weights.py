@@ -74,7 +74,7 @@ async def get_and_set_weights(config: Config) -> None:
             version_key=ccst.VERSION_KEY,
             validator_node_id=int(validator_node_id),
             wait_for_inclusion=True,
-            wait_for_finalization=True,
+            wait_for_finalization=False,
             max_attempts=3,
         )
     except Exception as e:
@@ -120,7 +120,7 @@ async def main():
         version_key=ccst.VERSION_KEY,
         validator_node_id=int(validator_node_id),
         wait_for_inclusion=True,
-        wait_for_finalization=True,
+        wait_for_finalization=False,
         max_attempts=3,
     )
 
