@@ -55,9 +55,14 @@ chmod 644 $HOME/.bashrc
 
 mkdir -p $HOME/.local/bin
 if ! [[ $(echo $PATH | grep "$HOME/.local/bin") ]]; then
-  echo '' >> $HOME/.bashrc
-  echo 'export PATH=$HOME/.local/bin:$PATH' >> $HOME/.bashrc
+  # add ~/.local/bin to the path
+  export PATH="$HOME/.local/bin:$PATH "
+
+  # and ensure it's there in future
+  echo "" >> $HOME/.bashrc
+  echo "export PATH=$HOME/.local/bin:$PATH" >> $HOME/.bashrc
 fi
+
 chown -R $SUDO_USER:$SUDO_USER $HOME/.local
 
 

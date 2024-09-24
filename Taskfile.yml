@@ -5,6 +5,11 @@ tasks:
   set_weights:
     cmds:
       - docker compose --env-file .vali.env -f docker-compose.yml run -e LOCALHOST=false --entrypoint "python src/cycle/calculate_and_schedule_weights.py" control_node
+
+  show_stats:
+    cmds:
+      - docker compose --env-file .vali.env -f docker-compose.yml run -e LOCALHOST=false --entrypoint "python src/collect_statistics.py" control_node
+
   control_node_dev:
     cmds:
       - LOCALHOST=true ENV_FILE=.vali.env python -m validator.control_node.src.main
