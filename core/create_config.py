@@ -103,6 +103,16 @@ def generate_validator_config(dev: bool = False) -> dict[str, Any]:
         "Enter GPU server address: ", lambda x: x == "" or re.match(r"^https?://.+", x) is not None
     )
 
+    config["SET_METAGRAPH_WEIGHTS_WITH_HIGH_UPDATED_TO_NOT_DEREG"] = (
+        "true"
+        if validate_input(
+            "Set metagraph weights when updated gets really high to not dereg? (y/n): (default: n)", yes_no_validator, default="n"
+        )
+        .lower()
+        .startswith("y")
+        else "false"
+    )
+
     if dev:
         config["ENV"] = "dev"
         config["REFRESH_NODES"] = (
