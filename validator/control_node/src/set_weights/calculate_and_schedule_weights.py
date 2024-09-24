@@ -106,8 +106,8 @@ async def set_weights_periodically(config: Config) -> None:
         substrate, last_updated_value = query_substrate(
             substrate, "SubtensorModule", "LastUpdate", [config.netuid], return_value=False
         )
-        last_updated = last_updated_value[uid].value
-        if last_updated_value < 250:
+        last_updated: float  = last_updated_value[uid].value
+        if last_updated < 250:
             logger.info(f"Last updated: {last_updated} - sleeping for a bit as we set recently...")
             await asyncio.sleep(12 * 25)  # sleep for 25 blocks
             continue
