@@ -12,8 +12,7 @@ load_dotenv(os.getenv("ENV_FILE", ".vali.env"))
 
 import asyncio
 
-from validator.control_node.src.control_config import Config
-from validator.control_node.src.main import load_config
+from validator.control_node.src.control_config import Config, load_config
 from validator.db.src.sql.contenders import fetch_all_contenders
 from validator.control_node.src.cycle import calculations
 from fiber.chain import weights
@@ -117,6 +116,7 @@ async def _set_metagraph_weights(config: Config) -> None:
 
 #
 
+
 # To improve: use activity cutoff & The epoch length to set weights at the perfect times
 async def set_weights_periodically(config: Config) -> None:
     substrate = get_substrate(subtensor_address=config.substrate.url)
@@ -130,7 +130,7 @@ async def set_weights_periodically(config: Config) -> None:
         substrate, last_updated_value = query_substrate(
             substrate, "SubtensorModule", "LastUpdate", [config.netuid], return_value=False
         )
-        updated: float = current_block - last_updated_value[uid].value 
+        updated: float = current_block - last_updated_value[uid].value
         logger.info(f"Last updated: {updated} for my uid: {uid}")
         if updated < 150:
             logger.info(f"Last updated: {updated} - sleeping for a bit as we set recently...")
