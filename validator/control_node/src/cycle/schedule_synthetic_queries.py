@@ -175,5 +175,5 @@ async def schedule_synthetics_until_done(config: Config):
         f"Some info:\n iterations: {i}\n time elapsed: {time.time() - start_time} - max time: {scoring_period_time}\n"
         f"schedules left: {[s.task for s in schedules_left]}"
     )
-    logger.info("All tasks completed")
+    logger.info("All tasks completed. Waiting for 10 seconds to take a breath...")
     await asyncio.sleep(10)
