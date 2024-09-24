@@ -49,25 +49,26 @@ async def _group_contenders_by_task(contenders: List[Contender]) -> Dict[Task, L
     return task_groups
 
 
-def _calculate_task_requests(task: Task, contenders: List[Contender]) -> int:
-    config = tcfg.get_enabled_task_config(task)
-    if config is None:
+def _calculate_task_requests(task: Task, contenders: List[Contender], config: Config) -> int:
+    task_config = tcfg.get_enabled_task_config(task)
+    if task_config is None:
         return 0
-    total_capacity = sum(c.capacity_to_score for c in contenders)
-    return int(total_capacity / config.volume_to_requests_conversion)
+    total_capacity = sum(c.capacity_to_score for c in contenders) * config.scoring_period_time_multiplier
+    return int(total_capacity / task_config.volume_to_requests_conversion)
 
 
 def _get_initial_schedule_time(current_time: float, interval: float) -> float:
     return current_time + random.random() * interval
 
 
-async def _initialize_task_schedules(task_groups: Dict[Task, List[Contender]]) -> List[TaskScheduleInfo]:
+async def _initialize_task_schedules(task_groups: Dict[Task, List[Contender]], config: Config) -> List[TaskScheduleInfo]:
+    scoring_period_time = ccst.SCORING_PERIOD_TIME * config.scoring_period_time_multiplier
     schedules = []
     current_time = time.time()
     for task, contenders in task_groups.items():
-        total_requests = _calculate_task_requests(task, contenders)
+        total_requests = _calculate_task_requests(task, contenders, config)
         if total_requests > 0:
-            interval = ccst.SCORING_PERIOD_TIME / (total_requests + 1)
+            interval = scoring_period_time / (total_requests + 1)
             first_schedule_time = _get_initial_schedule_time(current_time, interval)
             schedule = TaskScheduleInfo(
                 task=task,
@@ -108,11 +109,12 @@ async def _clear_old_synthetic_queries(redis_db: Redis):
 
 
 async def schedule_synthetics_until_done(config: Config):
-    logger.info(f"Scheduling synthetics; this will take {ccst.SCORING_PERIOD_TIME // 60} minutes ish...")
+    scoring_period_time = ccst.SCORING_PERIOD_TIME * config.scoring_period_time_multiplier
+    logger.info(f"Scheduling synthetics; this will take {scoring_period_time // 60} minutes ish...")
 
     contenders = await _load_contenders(config.psql_db)
     task_groups = await _group_contenders_by_task(contenders)
-    task_schedules = await _initialize_task_schedules(task_groups)
+    task_schedules = await _initialize_task_schedules(task_groups, config)
     await _clear_old_synthetic_queries(config.redis_db)
 
     for schedule in task_schedules:
