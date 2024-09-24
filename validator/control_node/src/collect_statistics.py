@@ -1,3 +1,4 @@
+import asyncio
 from validator.control_node.src.control_config import Config, load_config
 from asyncpg import Connection
 
@@ -82,15 +83,18 @@ async def main():
         )
         last_updated_value = await _get_last_updated_value(config)
 
-        logger.info(
-            f"Some statistics about the validator running:"
-            f"\nNumber of nodes: {number_of_nodes}"
-            f"\nNumber of contenders: {number_of_contenders}"
-            f"\nNumber of rows in contender history: {number_of_rows_in_contender_history}"
-            f"\nNumber of rows in reward table: {number_of_rows_in_reward_table}"
-            f"\nNumber of unique hotkeys in the contestants table: {number_of_unique_hotkeys_in_the_contestants_table}"
-            f"\nNumber of unique hotkeys in the reward table: {number_of_unique_hotkeys_in_the_reward_table}"
-            f"\nNumber of unique hotkeys in the contestants history table: {number_of_unique_hotkeys_in_the_contestants_history_table}"
-            f"\nNumber of requests sent out in the current period: {number_of_requests_sent_out_in_the_current_period}"
-            f"\nLast updated value: {last_updated_value}"
-        )
+    logger.info(
+        f"Some statistics about the validator running:"
+        f"\nNumber of nodes: {number_of_nodes}"
+        f"\nNumber of contenders: {number_of_contenders}"
+        f"\nNumber of rows in contender history: {number_of_rows_in_contender_history}"
+        f"\nNumber of rows in reward table: {number_of_rows_in_reward_table}"
+        f"\nNumber of unique hotkeys in the contestants table: {number_of_unique_hotkeys_in_the_contestants_table}"
+        f"\nNumber of unique hotkeys in the reward table: {number_of_unique_hotkeys_in_the_reward_table}"
+        f"\nNumber of unique hotkeys in the contestants history table: {number_of_unique_hotkeys_in_the_contestants_history_table}"
+        f"\nNumber of requests sent out in the current period: {number_of_requests_sent_out_in_the_current_period}"
+        f"\nLast updated value: {last_updated_value}"
+    )
+
+if __name__ == "__main__":
+    asyncio.run(main())
