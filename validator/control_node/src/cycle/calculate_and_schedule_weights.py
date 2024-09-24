@@ -63,6 +63,7 @@ async def get_and_set_weights(config: Config) -> None:
     logger.info(f"Node weights: {all_node_weights}")
     logger.info(f"Number of non zero node weights: {sum(1 for weight in all_node_weights if weight != 0)}")
 
+    exit()
     try:
         success = await asyncio.to_thread(
             weights.set_node_weights,
