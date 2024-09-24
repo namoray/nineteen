@@ -106,7 +106,7 @@ def _apply_non_linear_transformation(scores: dict[str, float]) -> dict[str, floa
 async def _calculate_normalised_scores_for_task(psql_db: PSQLDB, task: str, contenders: list[Contender]) -> dict[str, float]:
     effective_volumes = await _calculate_effective_volumes_for_task(psql_db, contenders, task.value)
     normalised_scores_before_non_linear = _normalize_scores_for_task(effective_volumes)
-    logger.info(f"Normalised scores before non-linear transformation: {normalised_scores_before_non_linear}\n")
+    # logger.info(f"Normalised scores before non-linear transformation: {normalised_scores_before_non_linear}\n")
     effective_volumes_after_non_linear_transformation = _apply_non_linear_transformation(normalised_scores_before_non_linear)
     normalised_scores_for_task = _normalize_scores_for_task(effective_volumes_after_non_linear_transformation)
     return normalised_scores_for_task
