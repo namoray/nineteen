@@ -24,23 +24,23 @@ async def _get_number_of_rows_in_contender_history(connection: Connection, netui
     return await connection.fetchval(query, netuid)
 
 
-async def _get_number_of_rows_in_reward_table(connection: Connection, netuid: int):
-    query = f"SELECT COUNT(*) FROM {dcst.TABLE_REWARD_DATA} WHERE {dcst.NETUID} = $1"
-    return await connection.fetchval(query, netuid)
+async def _get_number_of_rows_in_reward_table(connection: Connection):
+    query = f"SELECT COUNT(*) FROM {dcst.TABLE_REWARD_DATA}"
+    return await connection.fetchval(query)
 
 
 async def _get_number_of_unique_hotkeys_in_the_contestants_table(connection: Connection, netuid: int):
-    query = f"SELECT COUNT(DISTINCT {dcst.HOTKEY}) FROM {dcst.CONTENDERS_TABLE} WHERE {dcst.NETUID} = $1"
+    query = f"SELECT COUNT(DISTINCT {dcst.NODE_HOTKEY}) FROM {dcst.CONTENDERS_TABLE} WHERE {dcst.NETUID} = $1"
     return await connection.fetchval(query, netuid)
 
 
-async def _get_number_of_unique_hotkeys_in_the_reward_table(connection: Connection, netuid: int):
-    query = f"SELECT COUNT(DISTINCT {dcst.HOTKEY}) FROM {dcst.TABLE_REWARD_DATA} WHERE {dcst.NETUID} = $1"
-    return await connection.fetchval(query, netuid)
+async def _get_number_of_unique_hotkeys_in_the_reward_table(connection: Connection):
+    query = f"SELECT COUNT(DISTINCT {dcst.NODE_HOTKEY}) FROM {dcst.TABLE_REWARD_DATA}"
+    return await connection.fetchval(query)
 
 
 async def _get_number_of_unique_hotkeys_in_the_contestants_history_table(connection: Connection, netuid: int):
-    query = f"SELECT COUNT(DISTINCT {dcst.HOTKEY}) FROM {dcst.CONTENDERS_HISTORY_TABLE} WHERE {dcst.NETUID} = $1"
+    query = f"SELECT COUNT(DISTINCT {dcst.NODE_HOTKEY}) FROM {dcst.CONTENDERS_HISTORY_TABLE} WHERE {dcst.NETUID} = $1"
     return await connection.fetchval(query, netuid)
 
 
@@ -67,19 +67,19 @@ async def main():
     await config.psql_db.connect()
 
     async with await config.psql_db.connection() as connection:
-        number_of_nodes = await _get_number_of_nodes(connection)
-        number_of_contenders = await _get_number_of_contenders(connection)
-        number_of_rows_in_contender_history = await _get_number_of_rows_in_contender_history(connection)
+        number_of_nodes = await _get_number_of_nodes(connection, config.netuid)
+        number_of_contenders = await _get_number_of_contenders(connection, config.netuid)
+        number_of_rows_in_contender_history = await _get_number_of_rows_in_contender_history(connection, config.netuid)
         number_of_rows_in_reward_table = await _get_number_of_rows_in_reward_table(connection)
         number_of_unique_hotkeys_in_the_contestants_table = await _get_number_of_unique_hotkeys_in_the_contestants_table(
-            connection
+            connection, config.netuid
         )
         number_of_unique_hotkeys_in_the_reward_table = await _get_number_of_unique_hotkeys_in_the_reward_table(connection)
         number_of_unique_hotkeys_in_the_contestants_history_table = (
-            await _get_number_of_unique_hotkeys_in_the_contestants_history_table(connection)
+            await _get_number_of_unique_hotkeys_in_the_contestants_history_table(connection, config.netuid)
         )
         number_of_requests_sent_out_in_the_current_period = await _get_number_of_requests_sent_out_in_the_current_period(
-            connection
+            connection, config.netuid
         )
         last_updated_value = await _get_last_updated_value(config)
 
