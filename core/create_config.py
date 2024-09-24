@@ -43,8 +43,6 @@ def float_validator(value: str) -> bool:
     except ValueError:
         return False
 
-def websocket_validator(value: str) -> bool:
-    return re.match(r"^wss?://", value) is not None
 
 def websocket_validator(value: str | None) -> bool:
     if not value:
