@@ -92,6 +92,29 @@ async def _get_and_set_weights(config: Config) -> None:
         return False
 
 
+async def _set_metagraph_weights(config: Config) -> None:
+    nodes: list[Node] = fetch_nodes.get_nodes_for_netuid(config.substrate, config.netuid)
+    node_ids = [node.node_id for node in nodes]
+    node_weights = [node.incentive for node in nodes]
+    validator_node_id = await get_vali_node_id(config.psql_db, config.netuid)
+    if validator_node_id is None:
+        raise ValueError("Validator node id not found")
+
+    await asyncio.to_thread(
+        weights.set_node_weights,
+        substrate=config.substrate,
+        keypair=config.keypair,
+        node_ids=node_ids,
+        node_weights=node_weights,
+        netuid=config.netuid,
+        version_key=ccst.VERSION_KEY,
+        validator_node_id=int(validator_node_id),
+        wait_for_inclusion=True,
+        wait_for_finalization=False,
+        max_attempts=3,
+    )
+
+
 #
 
 
@@ -106,8 +129,8 @@ async def set_weights_periodically(config: Config) -> None:
         substrate, last_updated_value = query_substrate(
             substrate, "SubtensorModule", "LastUpdate", [config.netuid], return_value=False
         )
-        last_updated: float  = last_updated_value[uid].value
-        if last_updated < 250:
+        last_updated: float = last_updated_value[uid].value
+        if last_updated < 150:
             logger.info(f"Last updated: {last_updated} - sleeping for a bit as we set recently...")
             await asyncio.sleep(12 * 25)  # sleep for 25 blocks
             continue
@@ -137,27 +160,7 @@ async def set_weights_periodically(config: Config) -> None:
         await asyncio.sleep(12 * 25)
 
 
-async def _set_metagraph_weights(config: Config) -> None:
-    nodes: list[Node] = fetch_nodes.get_nodes_for_netuid(config.substrate, config.netuid)
-    node_ids = [node.node_id for node in nodes]
-    node_weights = [node.incentive for node in nodes]
-    validator_node_id = await get_vali_node_id(config.psql_db, config.netuid)
-    if validator_node_id is None:
-        raise ValueError("Validator node id not found")
-
-    await asyncio.to_thread(
-        weights.set_node_weights,
-        substrate=config.substrate,
-        keypair=config.keypair,
-        node_ids=node_ids,
-        node_weights=node_weights,
-        netuid=config.netuid,
-        version_key=ccst.VERSION_KEY,
-        validator_node_id=int(validator_node_id),
-        wait_for_inclusion=True,
-        wait_for_finalization=False,
-        max_attempts=3,
-    )
+#
 
 
 async def main():

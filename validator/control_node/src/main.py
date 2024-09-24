@@ -24,9 +24,9 @@ async def main() -> None:
 
     # NOTE: We could make separate threads if you wanted to be fancy
     await asyncio.gather(
-        score_results.main(config),
-        refresh_synthetic_data.main(config),
-        execute_cycle.main(config),
+        # score_results.main(config),
+        # refresh_synthetic_data.main(config),
+        # execute_cycle.main(config),
         calculate_and_schedule_weights.set_weights_periodically(config),
     )
 
