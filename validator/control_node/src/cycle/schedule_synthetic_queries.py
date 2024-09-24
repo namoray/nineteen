@@ -129,6 +129,8 @@ async def schedule_synthetics_until_done(config: Config):
         time_to_sleep = schedule.next_schedule_time - time.time()
 
         if time_to_sleep > 0:
+            if time.time() - start_time + time_to_sleep > scoring_period_time:
+                break
             if i % 10 == 3:
                 logger.info(f"Sleeping for {time_to_sleep} seconds while waiting for task {schedule.task} to be scheduled...")
             else:
@@ -166,12 +168,11 @@ async def schedule_synthetics_until_done(config: Config):
             heapq.heappush(task_schedules, schedule)
 
         if time.time() - start_time > scoring_period_time:
-            schedules_left = [heapq.heappop(task_schedules) for _ in range(len(task_schedules))]
-            logger.info(
-                f"Scoring period time of {scoring_period_time} seconds reached; Stoppping."
-                f"Some info:\n iterations: {i}\n time elapsed: {time.time() - start_time}\n"
-                f"schedules left: {[s.task for s in schedules_left]}"
-            )
             break
 
+    schedules_left = [heapq.heappop(task_schedules) for _ in range(len(task_schedules))]
+    logger.info(
+        f"Some info:\n iterations: {i}\n time elapsed: {time.time() - start_time} - max time: {scoring_period_time}\n"
+        f"schedules left: {[s.task for s in schedules_left]}"
+    )
     logger.info("All tasks completed")
