@@ -16,11 +16,14 @@ def generate_secure_password(length: int = 16) -> str:
     return "".join(password)
 
 
-def validate_input(prompt: str, validator: Callable[[str], bool]) -> str:
+def validate_input(prompt: str, validator: Callable[[str], bool], default: str | None = None) -> str:
     while True:
         value = input(prompt)
-        if validator(value):
-            return value
+        if value:
+            if validator(value):
+                return value
+        elif default:
+            return default
         print("Invalid input. Please try again.")
 
 
@@ -100,6 +103,16 @@ def generate_validator_config(dev: bool = False) -> dict[str, Any]:
         "Enter GPU server address: ", lambda x: x == "" or re.match(r"^https?://.+", x) is not None
     )
 
+    config["SET_METAGRAPH_WEIGHTS_WITH_HIGH_UPDATED_TO_NOT_DEREG"] = (
+        "true"
+        if validate_input(
+            "Set metagraph weights when updated gets really high to not dereg? (y/n): (default: n)", yes_no_validator, default="n"
+        )
+        .lower()
+        .startswith("y")
+        else "false"
+    )
+
     if dev:
         config["ENV"] = "dev"
         config["REFRESH_NODES"] = (
@@ -113,6 +126,9 @@ def generate_validator_config(dev: bool = False) -> dict[str, Any]:
             "true"
             if validate_input("Replace with Docker localhost? (y/n): (default: y)", yes_no_validator).lower().startswith("y")
             else "false"
+        )
+        config["SCORING_PERIOD_TIME_MULTIPLIER"] = float(
+            validate_input("Enter scoring period time multiplier: ", float_validator, "1.0")
         )
     else:
         config["ENV"] = "prod"

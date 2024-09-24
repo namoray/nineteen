@@ -2,7 +2,6 @@ import os
 from dataclasses import dataclass
 from redis.asyncio import Redis
 
-from core import constants as ccst
 from fiber.logging_utils import get_logger
 
 from fiber.chain import interface
@@ -29,12 +28,13 @@ class Config:
     subtensor_address: str | None
     gpu_server_address: str | None
     netuid: int
-    seconds_between_syncs: int
     replace_with_localhost: bool
     replace_with_docker_localhost: bool
     refresh_nodes: bool
     capacity_to_score_multiplier: float
     httpx_client: httpx.AsyncClient
+    scoring_period_time_multiplier: float
+    set_metagraph_weights_with_high_updated_to_not_dereg: bool
     testnet: bool = os.getenv("SUBTENSOR_NETWORK", "").lower() == "test"
     debug: bool = os.getenv("ENV", "prod").lower() != "prod"
 
@@ -81,6 +81,12 @@ def load_config() -> Config:
     httpx_limits = httpx.Limits(max_connections=500, max_keepalive_connections=100)
     httpx_client = httpx.AsyncClient(limits=httpx_limits)
 
+    scoring_period_time_multiplier = float(os.getenv("SCORING_PERIOD_TIME_MULTIPLIER", 1.0))
+
+    set_metagraph_weights_with_high_updated_to_not_dereg = bool(
+        os.getenv("SET_METAGRAPH_WEIGHTS_WITH_HIGH_UPDATED_TO_NOT_DEREG", "false").lower() == "true"
+    )
+
     return Config(
         substrate=substrate,  # type: ignore
         keypair=keypair,
@@ -89,7 +95,6 @@ def load_config() -> Config:
         subtensor_network=subtensor_network,
         subtensor_address=subtensor_address,
         netuid=netuid,
-        seconds_between_syncs=ccst.SCORING_PERIOD_TIME,  # TODO: Make this configurable globally
         replace_with_docker_localhost=replace_with_docker_localhost,
         replace_with_localhost=localhost,
         refresh_nodes=refresh_nodes,
@@ -97,4 +102,6 @@ def load_config() -> Config:
         httpx_client=httpx_client,
         gpu_server_address=gpu_server_address,
         debug=dev_env,
+        scoring_period_time_multiplier=scoring_period_time_multiplier,
+        set_metagraph_weights_with_high_updated_to_not_dereg=set_metagraph_weights_with_high_updated_to_not_dereg,
     )

@@ -18,7 +18,7 @@ postgres_data/*
 todo.md
 
 *_keys.encrypted
-
+container_logs.txt
 .bittensor
 fiber
 *.safetensors

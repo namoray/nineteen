@@ -15,7 +15,6 @@ class TestRefreshNodes(unittest.IsolatedAsyncioTestCase):
             test_env=True,
             subtensor_network="test",
             netuid=1,
-            seconds_between_syncs=60,
             substrate=AsyncMock(),
             keypair=AsyncMock(),
         )
