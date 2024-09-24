@@ -68,7 +68,7 @@ async def _initialize_task_schedules(task_groups: Dict[Task, List[Contender]], c
     for task, contenders in task_groups.items():
         total_requests = _calculate_task_requests(task, contenders, config)
         if total_requests > 0:
-            interval = scoring_period_time / (total_requests + 1)
+            interval = scoring_period_time / (total_requests + 2)
             first_schedule_time = _get_initial_schedule_time(current_time, interval)
             schedule = TaskScheduleInfo(
                 task=task,
@@ -111,6 +111,8 @@ async def _clear_old_synthetic_queries(redis_db: Redis):
 async def schedule_synthetics_until_done(config: Config):
     scoring_period_time = ccst.SCORING_PERIOD_TIME * config.scoring_period_time_multiplier
     logger.info(f"Scheduling synthetics; this will take {scoring_period_time // 60} minutes ish...")
+
+    start_time = time.time()
 
     contenders = await _load_contenders(config.psql_db)
     task_groups = await _group_contenders_by_task(contenders)
@@ -161,5 +163,14 @@ async def schedule_synthetics_until_done(config: Config):
 
         if schedule.remaining_requests > 0:
             heapq.heappush(task_schedules, schedule)
+
+        if time.time() - start_time > scoring_period_time:
+            schedules_left = [heapq.heappop(task_schedules) for _ in range(len(task_schedules))]
+            logger.info(
+                f"Scoring period time of {scoring_period_time} seconds reached; Stoppping."
+                f"Some info:\n iterations: {i}\n time elapsed: {time.time() - start_time}\n"
+                f"schedules left: {[s.task for s in schedules_left]}"
+            )
+            break
 
     logger.info("All tasks completed")

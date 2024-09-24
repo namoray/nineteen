@@ -17,7 +17,6 @@ from validator.control_node.src.cycle import (
     refresh_contenders,
 )
 from validator.control_node.src.cycle.schedule_synthetic_queries import schedule_synthetics_until_done
-from validator.control_node.src.cycle.calculate_and_schedule_weights import get_and_set_weights
 from validator.db.src.sql.nodes import (
     get_nodes,
 )
@@ -61,7 +60,7 @@ async def main(config: Config) -> None:
         await asyncio.sleep(time_to_sleep_if_no_contenders)  # Sleep for 5 minutes to wait for contenders to become available
         tasks = []
     else:
-        tasks = [get_and_set_weights(config), schedule_synthetics_until_done(config)]
+        tasks = [schedule_synthetics_until_done(config)]
 
     while True:
         await asyncio.gather(*tasks)
@@ -73,4 +72,4 @@ async def main(config: Config) -> None:
             await asyncio.sleep(time_to_sleep_if_no_contenders)  # Sleep for 5 minutes to wait for contenders to become available
             tasks = []
         else:
-            tasks = [get_and_set_weights(config), schedule_synthetics_until_done(config)]
+            tasks = [schedule_synthetics_until_done(config)]

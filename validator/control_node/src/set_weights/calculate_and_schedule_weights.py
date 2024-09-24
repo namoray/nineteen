@@ -38,7 +38,7 @@ async def _get_weights_to_set(config: Config) -> tuple[list[int], list[float]] |
     return node_ids, node_weights
 
 
-async def get_and_set_weights(config: Config) -> None:
+async def _get_and_set_weights(config: Config) -> None:
     validator_node_id = await get_vali_node_id(config.psql_db, config.netuid)
     if validator_node_id is None:
         raise ValueError("Validator node id not found")
@@ -94,7 +94,7 @@ async def main():
     logger.debug(f"Config: {config}")
     await config.psql_db.connect()
 
-    success = await get_and_set_weights(config)
+    success = await _get_and_set_weights(config)
     if not success:
         logger.error("Failed to set weights using db values :(")
 

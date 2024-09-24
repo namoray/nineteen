@@ -2,7 +2,6 @@ import os
 from dataclasses import dataclass
 from redis.asyncio import Redis
 
-from core import constants as ccst
 from fiber.logging_utils import get_logger
 
 from fiber.chain import interface
