@@ -113,7 +113,6 @@ async def schedule_synthetics_until_done(config: Config):
     task_schedules = await _initialize_task_schedules(task_groups)
     await _clear_old_synthetic_queries(config.redis_db)
 
-    logger.debug(f"Contenders: {contenders}, schedules: {task_schedules}, ")
 
     for schedule in task_schedules:
         await _update_redis_remaining_requests(config.redis_db, schedule.task, schedule.total_requests)

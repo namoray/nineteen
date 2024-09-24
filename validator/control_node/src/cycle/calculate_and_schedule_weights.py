@@ -55,7 +55,7 @@ async def get_and_set_weights(config: Config) -> None:
 
     all_nodes: list[Node] = fetch_nodes.get_nodes_for_netuid(config.substrate, config.netuid)
     all_node_ids = [node.node_id for node in all_nodes]
-    all_node_weights = [0 for node in all_nodes]
+    all_node_weights = [0.0 for _ in all_nodes]
     for node_id, node_weight in zip(node_ids, node_weights):
         all_node_weights[node_id] = node_weight
 
