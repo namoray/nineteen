@@ -130,6 +130,7 @@ async def set_weights_periodically(config: Config) -> None:
             substrate, "SubtensorModule", "LastUpdate", [config.netuid], return_value=False
         )
         last_updated: float = last_updated_value[uid].value
+        logger.info(f"Last updated: {last_updated} for my uid: {uid}")
         if last_updated < 150:
             logger.info(f"Last updated: {last_updated} - sleeping for a bit as we set recently...")
             await asyncio.sleep(12 * 25)  # sleep for 25 blocks
@@ -138,6 +139,8 @@ async def set_weights_periodically(config: Config) -> None:
         success = await _get_and_set_weights(config)
         if success:
             consecutive_failures = 0
+            logger.info("Successfully set weights!!!!")
+            await asyncio.sleep(12 * 100)
             continue
 
         consecutive_failures += 1
