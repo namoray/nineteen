@@ -15,11 +15,9 @@ from validator.control_node.src.control_config import Config
 from validator.control_node.src.cycle import (
     refresh_nodes,
     refresh_contenders,
-    schedule_synthetic_queries,
 )
 from validator.control_node.src.cycle.schedule_synthetic_queries import schedule_synthetics_until_done
 from validator.control_node.src.cycle.calculate_and_schedule_weights import get_and_set_weights
-from core import constants as ccst
 from validator.db.src.sql.nodes import (
     get_nodes,
 )

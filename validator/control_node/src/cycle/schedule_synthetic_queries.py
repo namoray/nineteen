@@ -115,7 +115,6 @@ async def schedule_synthetics_until_done(config: Config):
     task_schedules = await _initialize_task_schedules(task_groups)
     await _clear_old_synthetic_queries(config.redis_db)
 
-
     for schedule in task_schedules:
         await _update_redis_remaining_requests(config.redis_db, schedule.task, schedule.total_requests)
 
@@ -129,7 +128,10 @@ async def schedule_synthetics_until_done(config: Config):
             if i % 10 == 3:
                 logger.info(f"Sleeping for {time_to_sleep} seconds while waiting for task {schedule.task} to be scheduled...")
             else:
-                logger.debug(f"Sleeping for {time_to_sleep} seconds while waiting for task {schedule.task} to be scheduled; {schedule.remaining_requests} requests remaining...")
+                logger.debug(
+                    f"Sleeping for {time_to_sleep} seconds while waiting for task {schedule.task} to be scheduled;"
+                    f"{schedule.remaining_requests} requests remaining - estimated to take {schedule.remaining_requests * schedule.remaining_requests //60} minutes more"
+                )
             sleep_chunk = 2  # Sleep in 2-second chunks to make debugging easier
             while time_to_sleep > 0:
                 await asyncio.sleep(min(sleep_chunk, time_to_sleep))
