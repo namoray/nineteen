@@ -86,9 +86,9 @@ async def _calculate_effective_volumes_for_task(psql_db: PSQLDB, contenders: lis
         combined_quality_scores[contender.node_hotkey] = combined_quality_score
         normalised_period_scores[contender.node_hotkey] = normalised_period_score
 
-    logger.debug(f"Combined quality scores: {combined_quality_scores}")
-    logger.debug(f"Normalised period scores: {normalised_period_scores}")
-    logger.debug(f"Effective volumes: {hotkey_to_effective_volumes}")
+    # logger.debug(f"Combined quality scores: {combined_quality_scores}")
+    # logger.debug(f"Normalised period scores: {normalised_period_scores}")
+    # logger.debug(f"Effective volumes: {hotkey_to_effective_volumes}")
     return hotkey_to_effective_volumes
 
 
