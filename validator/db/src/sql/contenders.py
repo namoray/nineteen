@@ -288,9 +288,6 @@ async def update_contenders_period_scores(connection: Connection, netuid: int) -
     )
     logger.info(f"Updated {len(updates)} contenders with new period scores")
 
-    contenders = await fetch_all_contenders(connection, netuid)
-    logger.debug(f"Found {contenders} contenders")
-
 
 async def get_and_decrement_synthetic_request_count(connection: Connection, contender_id: str) -> int | None:
     """
