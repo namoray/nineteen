@@ -1,5 +1,5 @@
 import datetime
-from validator.control_node.src.control_config import Config
+from fiber import SubstrateInterface
 from validator.db.src.database import PSQLDB
 from fiber.chain.models import Node
 from fiber.logging_utils import get_logger
@@ -232,8 +232,8 @@ async def get_vali_ss58_address(psql_db: PSQLDB, netuid: int) -> str | None:
     return node[dcst.HOTKEY]
 
 
-async def get_vali_node_id(config: Config) -> str | None:
+async def get_vali_node_id(substrate: SubstrateInterface, netuid: int, ss58_address: str) -> str | None:
     _, uid = query_substrate(
-        config.substrate, "SubtensorModule", "Uids", [config.netuid, config.keypair.ss58_address], return_value=True
+        substrate, "SubtensorModule", "Uids", [netuid, ss58_address], return_value=True
     )
     return uid

@@ -41,7 +41,7 @@ async def _get_weights_to_set(config: Config) -> tuple[list[int], list[float]] |
 
 
 async def _get_and_set_weights(config: Config) -> None:
-    validator_node_id = await get_vali_node_id(config)
+    validator_node_id = await get_vali_node_id(config.substrate, config.netuid, config.keypair.ss58_address)
     if validator_node_id is None:
         raise ValueError("Validator node id not found")
     result = await _get_weights_to_set(config)
@@ -95,7 +95,7 @@ async def _set_metagraph_weights(config: Config) -> None:
     nodes: list[Node] = fetch_nodes.get_nodes_for_netuid(config.substrate, config.netuid)
     node_ids = [node.node_id for node in nodes]
     node_weights = [node.incentive for node in nodes]
-    validator_node_id = await get_vali_node_id(config)
+    validator_node_id = await get_vali_node_id(config.substrate, config.netuid, config.keypair.ss58_address)
     if validator_node_id is None:
         raise ValueError("Validator node id not found")
 
