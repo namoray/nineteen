@@ -104,7 +104,7 @@ async def set_weights_periodically(config: Config) -> None:
     consecutive_failures = 0
     while True:
         substrate, last_updated_value = query_substrate(
-            substrate, "SubtensorModule", "LastUpdated", [config.netuid], return_value=False
+            substrate, "SubtensorModule", "LastUpdate", [config.netuid], return_value=False
         )
         last_updated = last_updated_value[uid].value
         if last_updated_value < 250:
