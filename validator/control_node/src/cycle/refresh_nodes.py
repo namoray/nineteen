@@ -80,7 +80,7 @@ async def _handshake(config: Config, node: Node, async_client: httpx.AsyncClient
         )
     except Exception as e:
         error_details = _format_exception(e)
-        logger.error(f"Failed to perform handshake with {server_address}. Details:\n{error_details}")
+        logger.debug(f"Failed to perform handshake with {server_address}. Details:\n{error_details}")
 
         if isinstance(e, (httpx.HTTPStatusError, httpx.RequestError, httpx.ConnectError)):
             if hasattr(e, "response"):

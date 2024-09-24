@@ -130,7 +130,7 @@ async def schedule_synthetics_until_done(config: Config):
             else:
                 logger.debug(
                     f"Sleeping for {time_to_sleep} seconds while waiting for task {schedule.task} to be scheduled;"
-                    f"{schedule.remaining_requests} requests remaining - estimated to take {schedule.remaining_requests * schedule.remaining_requests //60} minutes more"
+                    f"{schedule.remaining_requests} requests remaining - estimated to take {schedule.remaining_requests * schedule.interval //60} minutes more"
                 )
             sleep_chunk = 2  # Sleep in 2-second chunks to make debugging easier
             while time_to_sleep > 0:
