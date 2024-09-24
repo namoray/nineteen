@@ -41,7 +41,7 @@ async def _get_weights_to_set(config: Config) -> tuple[list[int], list[float]] |
 
 
 async def _get_and_set_weights(config: Config) -> None:
-    validator_node_id = await get_vali_node_id(config.psql_db, config.netuid)
+    validator_node_id = await get_vali_node_id(config)
     if validator_node_id is None:
         raise ValueError("Validator node id not found")
     result = await _get_weights_to_set(config)
@@ -95,7 +95,7 @@ async def _set_metagraph_weights(config: Config) -> None:
     nodes: list[Node] = fetch_nodes.get_nodes_for_netuid(config.substrate, config.netuid)
     node_ids = [node.node_id for node in nodes]
     node_weights = [node.incentive for node in nodes]
-    validator_node_id = await get_vali_node_id(config.psql_db, config.netuid)
+    validator_node_id = await get_vali_node_id(config)
     if validator_node_id is None:
         raise ValueError("Validator node id not found")
 
@@ -137,7 +137,12 @@ async def set_weights_periodically(config: Config) -> None:
             await asyncio.sleep(12 * 25)  # sleep for 25 blocks
             continue
 
-        success = await _get_and_set_weights(config)
+        try:
+            success = await _get_and_set_weights(config)
+        except Exception as e:
+            logger.error(f"Failed to set weights with error: {e}")
+            success = False
+
         if success:
             consecutive_failures = 0
             logger.info("Successfully set weights!!!!")
@@ -153,7 +158,11 @@ async def set_weights_periodically(config: Config) -> None:
 
         if config.set_metagraph_weights_with_high_updated_to_not_dereg:
             logger.warning("Setting metagraph weights as our updated value is getting too high, we will be deregistered!")
-            success = await _set_metagraph_weights(config)
+            try:
+                success = await _set_metagraph_weights(config)
+            except Exception as e:
+                logger.error(f"Failed to set metagraph weights: {e}")
+                success = False
 
             if success:
                 consecutive_failures = 0
