@@ -75,7 +75,7 @@ async def _get_and_set_weights(config: Config) -> None:
             netuid=config.netuid,
             version_key=ccst.VERSION_KEY,
             validator_node_id=int(validator_node_id),
-            wait_for_inclusion=True,
+            wait_for_inclusion=False,
             wait_for_finalization=False,
             max_attempts=3,
         )
@@ -108,7 +108,7 @@ async def _set_metagraph_weights(config: Config) -> None:
         netuid=config.netuid,
         version_key=ccst.VERSION_KEY,
         validator_node_id=int(validator_node_id),
-        wait_for_inclusion=True,
+        wait_for_inclusion=False,
         wait_for_finalization=False,
         max_attempts=3,
     )
@@ -118,7 +118,7 @@ async def _set_metagraph_weights(config: Config) -> None:
 
 
 # To improve: use activity cutoff & The epoch length to set weights at the perfect times
-async def set_weights_periodically(config: Config) -> None:
+async def set_weights_periodically(config: Config, just_once: bool = False) -> None:
     substrate = get_substrate(subtensor_address=config.substrate.url)
     substrate, uid = query_substrate(
         substrate, "SubtensorModule", "Uids", [config.netuid, config.keypair.ss58_address], return_value=True
@@ -145,24 +145,36 @@ async def set_weights_periodically(config: Config) -> None:
 
         if success:
             consecutive_failures = 0
-            logger.info("Successfully set weights!!!!")
-            await asyncio.sleep(12 * 100)
+            logger.info("Successfully set weights! Sleeping for 25 blocks before next check...")
+            if just_once:
+                return
+            await asyncio.sleep(12 * 25)
             continue
 
         consecutive_failures += 1
-        logger.info(f"Failed to set weights {consecutive_failures} times in a row - sleeping for a bit...")
-        await asyncio.sleep(12 * 25)  # Try again in 25 blocks
+        if just_once:
+            logger.info("Failed to set weights, will try again...")
+            await asyncio.sleep(12 * 1)
+        else:
+            logger.info(f"Failed to set weights {consecutive_failures} times in a row - sleeping for a bit...")
+            await asyncio.sleep(12 * 25)  # Try again in 25 blocks
 
         if consecutive_failures == 1 or updated < 3000:
             continue
 
-        if config.set_metagraph_weights_with_high_updated_to_not_dereg:
-            logger.warning("Setting metagraph weights as our updated value is getting too high, we will be deregistered!")
+        if just_once or config.set_metagraph_weights_with_high_updated_to_not_dereg:
+            logger.warning("Setting metagraph weights as our updated value is getting too high!")
+            if just_once:
+                logger.warning("Please exit if you do not want to do this!!!")
+                await asyncio.sleep(4)
             try:
                 success = await _set_metagraph_weights(config)
             except Exception as e:
                 logger.error(f"Failed to set metagraph weights: {e}")
                 success = False
+
+            if just_once:
+                return
 
             if success:
                 consecutive_failures = 0
@@ -178,16 +190,8 @@ async def main():
     logger.debug(f"Config: {config}")
     await config.psql_db.connect()
 
-    success = await _get_and_set_weights(config)
-    if not success:
-        logger.error("Failed to set weights using db values :(")
-
-    # To prevent validators getting deregistered - but up to them to use this and they should prioritise the values they have above
-    logger.warning(
-        "\n\n!!!! Setting weights using the metagraph only since we have no data on the miners in the db. Please cancel if you do not want to do this !!! \n\n"
-    )
-    await asyncio.sleep(10)
-    await _set_metagraph_weights(config)
+    just_once = os.getenv("JUST_ONCE", "false").lower() == "true"
+    await set_weights_periodically(config, just_once=just_once)
 
 
 if __name__ == "__main__":

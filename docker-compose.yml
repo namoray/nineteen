@@ -23,6 +23,28 @@ services:
       restart_policy:
         condition: on-failure
 
+  weight_setter:
+    build:
+      context: .
+      dockerfile: dockerfiles/control_node.dockerfile
+    depends_on:
+      dbmate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_started
+    networks:
+      - postgres_network
+      - redis_network
+    entrypoint: ["python", "-u", "/app/validator/control_node/src/set_weights/calculate_and_schedule_weights.py"]
+    volumes:
+      - ${HOME}/.bittensor/wallets:/root/.bittensor/wallets
+    env_file:
+      - .vali.env
+    container_name: weight_setter
+    deploy:
+      restart_policy:
+        condition: on-failure
+
   query_node:
     build:
       context: .
