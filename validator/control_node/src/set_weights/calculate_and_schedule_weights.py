@@ -75,7 +75,7 @@ async def _get_and_set_weights(config: Config) -> None:
             netuid=config.netuid,
             version_key=ccst.VERSION_KEY,
             validator_node_id=int(validator_node_id),
-            wait_for_inclusion=True,
+            wait_for_inclusion=False,
             wait_for_finalization=False,
             max_attempts=3,
         )
@@ -108,7 +108,7 @@ async def _set_metagraph_weights(config: Config) -> None:
         netuid=config.netuid,
         version_key=ccst.VERSION_KEY,
         validator_node_id=int(validator_node_id),
-        wait_for_inclusion=True,
+        wait_for_inclusion=False,
         wait_for_finalization=False,
         max_attempts=3,
     )
