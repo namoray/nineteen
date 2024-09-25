@@ -181,6 +181,9 @@ async def main():
     success = await _get_and_set_weights(config)
     if not success:
         logger.error("Failed to set weights using db values :(")
+    else:
+        logger.info("Successfully set weights!")
+        return
 
     # To prevent validators getting deregistered - but up to them to use this and they should prioritise the values they have above
     logger.warning(
