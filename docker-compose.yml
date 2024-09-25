@@ -44,7 +44,7 @@ services:
     deploy:
       restart_policy:
         condition: on-failure
-
+ 
   query_node:
     build:
       context: .
