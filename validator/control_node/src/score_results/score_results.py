@@ -145,6 +145,7 @@ async def _process_and_store_score(
             await sql_insert_reward_data(connection, reward_data)
             date_to_delete = datetime.now() - timedelta(days=7)
             await delete_reward_data_older_than(connection, date_to_delete)
+            date_to_delete = datetime.now() - timedelta(days=3)
             await delete_contender_history_older_than(connection, date_to_delete)
 
         logger.info(f"Successfully scored and stored data for task: {task}")

@@ -1,7 +1,6 @@
 from dotenv import load_dotenv
 import os
 
-from validator.control_node.src.set_weights import calculate_and_schedule_weights
 
 load_dotenv(os.getenv("ENV_FILE", ".vali.env"))
 
