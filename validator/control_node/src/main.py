@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 import os
 
-from validator.control_node.src.set_weights import calculate_and_schedule_weights
+
 
 
 load_dotenv(os.getenv("ENV_FILE", ".vali.env"))
@@ -28,7 +28,6 @@ async def main() -> None:
         score_results.main(config),
         refresh_synthetic_data.main(config),
         execute_cycle.main(config),
-        calculate_and_schedule_weights.set_weights_periodically(config),
     )
 
 

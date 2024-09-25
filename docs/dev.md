@@ -31,7 +31,7 @@ python -m venv .venv || python3 -m venv .venv
 ```bash
 source .venv/bin/activate
 find . -path "./venv" -prune -o -path "./.venv" -prune -o -name "requirements.txt" -exec pip install -r {} \;
-pip install --no-cache-dir git+https://github.com/rayonlabs/fiber.git@weight-set-changes
+pip install --no-cache-dir git+https://github.com/rayonlabs/fiber.git@0.1.0
 task dev_setup
 task control_node_dev  # For example
 ```
@@ -40,7 +40,7 @@ task control_node_dev  # For example
 **If you want to dev with fiber locally too**
 ```bash
 cd ..
-git clone https://github.com/rayonlabs/fiber.git@weight-set-changes
+git clone https://github.com/rayonlabs/fiber.git@0.1.0
 cd fiber
 git pull
 pip install -e .
