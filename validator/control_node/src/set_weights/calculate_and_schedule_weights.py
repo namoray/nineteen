@@ -75,7 +75,7 @@ async def _get_and_set_weights(config: Config) -> None:
             netuid=config.netuid,
             version_key=ccst.VERSION_KEY,
             validator_node_id=int(validator_node_id),
-            wait_for_inclusion=True,
+            wait_for_inclusion=False,
             wait_for_finalization=False,
             max_attempts=3,
         )
@@ -108,7 +108,7 @@ async def _set_metagraph_weights(config: Config) -> None:
         netuid=config.netuid,
         version_key=ccst.VERSION_KEY,
         validator_node_id=int(validator_node_id),
-        wait_for_inclusion=True,
+        wait_for_inclusion=False,
         wait_for_finalization=False,
         max_attempts=3,
     )
@@ -181,10 +181,13 @@ async def main():
     success = await _get_and_set_weights(config)
     if not success:
         logger.error("Failed to set weights using db values :(")
+    else:
+        logger.info("Successfully set weights!")
+        return
 
     # To prevent validators getting deregistered - but up to them to use this and they should prioritise the values they have above
     logger.warning(
-        "\n\n!!!! Setting weights using the metagraph only since we have no data on the miners in the db. Please cancel if you do not want to do this !!! \n\n"
+        "\n\n!!!! Setting weights using the metagraph only since it failed using the non metagraph :(. Please cancel if you do not want to do this !!! \n\n"
     )
     await asyncio.sleep(10)
     await _set_metagraph_weights(config)
