@@ -19,15 +19,16 @@ async def chat_stream(
     assert task_config.orchestrator_server_config.load_model_config is not None
 
     model_name = task_config.orchestrator_server_config.load_model_config["model"]
-    
 
     if task_config.task == Task.chat_llama_3_1_8b:
         address = worker_config.LLAMA_3_1_8B_TEXT_WORKER_URL
     elif task_config.task == Task.chat_llama_3_1_70b:
         address = worker_config.LLAMA_3_1_70B_TEXT_WORKER_URL
+    elif task_config.task == Task.chat_llama_3_2_3b:
+        address = worker_config.LLAMA_3_2_3B_TEXT_WORKER_URL
     else:
         raise ValueError(f"Invalid model: {decrypted_payload.model}")
-    
+
     decrypted_payload.model = model_name
 
     assert address is not None, f"Address for model: {decrypted_payload.model} is not set in env vars!"

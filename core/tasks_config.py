@@ -36,7 +36,7 @@ class OrchestratorServerConfig(BaseModel):
     server_needed: ServerType = Field(examples=[ServerType.LLM, ServerType.IMAGE])
     load_model_config: dict | None = Field(examples=[None])
     checking_function: str = Field(examples=["check_text_result", "check_image_result"])
-    task: str = Field(examples=["chat-llama-3-1-8b"])
+    task: str = Field(examples=["chat_llama_3_2_3b"])
     endpoint: str = Field(examples=["/generate_text"])
 
     class Config:
@@ -63,32 +63,32 @@ class FullTaskConfig(BaseModel):
 
 
 TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
-    Task.chat_llama_3_1_8b: FullTaskConfig(
-        task=Task.chat_llama_3_1_8b,
+    Task.chat_llama_3_2_3b: FullTaskConfig(
+        task=Task.chat_llama_3_2_3b,
         max_capacity=576_000,
         scoring_config=TaskScoringConfig(
-            task=Task.chat_llama_3_1_8b, overhead=0.4, mean=0.3, variance=4, task_type=TaskType.TEXT
+            task=Task.chat_llama_3_2_3b, overhead=0.2, mean=0.0025, variance=104, task_type=TaskType.TEXT
         ),
         orchestrator_server_config=OrchestratorServerConfig(
             server_needed=ServerType.LLM,
             load_model_config={
-                "model": "unsloth/Meta-Llama-3.1-8B-Instruct",
+                "model": "unsloth/Llama-3.2-3B-Instruct",
                 "half_precision": True,
                 "tokenizer": "tau-vision/llama-tokenizer-fix",
                 "max_model_len": 20_000,
-                "gpu_utilization": 0.6,
+                "gpu_utilization": 0.65,
             },
             endpoint=Endpoints.chat_completions.value,
             checking_function="check_text_result",
-            task=Task.chat_llama_3_1_8b.value,
+            task=Task.chat_llama_3_2_3b.value,
         ),
         synthetic_generation_config=SyntheticGenerationConfig(
-            func="generate_chat_synthetic", kwargs={"model": Task.chat_llama_3_1_8b.value}
+            func="generate_chat_synthetic", kwargs={"model": Task.chat_llama_3_2_3b.value}
         ),
         endpoint=Endpoints.chat_completions.value,
         volume_to_requests_conversion=300,
         is_stream=True,
-        weight=0.2,
+        weight=0.05,
         timeout=2,
         enabled=True,
     ),
@@ -96,7 +96,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         task=Task.chat_llama_3_1_70b,
         max_capacity=576_000,
         scoring_config=TaskScoringConfig(
-            task=Task.chat_llama_3_1_70b, overhead=0.3, mean=0.018, variance=130, task_type=TaskType.TEXT
+            task=Task.chat_llama_3_1_70b, overhead=0.3, mean=0.009, variance=416, task_type=TaskType.TEXT
         ),
         orchestrator_server_config=OrchestratorServerConfig(
             server_needed=ServerType.LLM,
@@ -121,11 +121,40 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         timeout=2,
         enabled=True,
     ),
+    Task.chat_llama_3_1_8b: FullTaskConfig(
+        task=Task.chat_llama_3_1_8b,
+        max_capacity=576_000,
+        scoring_config=TaskScoringConfig(
+            task=Task.chat_llama_3_1_8b, overhead=0.2, mean=0.005, variance=520, task_type=TaskType.TEXT
+        ),
+        orchestrator_server_config=OrchestratorServerConfig(
+            server_needed=ServerType.LLM,
+            load_model_config={
+                "model": "unsloth/Llama-3.1-8B-Instruct",
+                "half_precision": True,
+                "tokenizer": "tau-vision/llama-tokenizer-fix",
+                "max_model_len": 20_000,
+                "gpu_utilization": 0.65,
+            },
+            endpoint=Endpoints.chat_completions.value,
+            checking_function="check_text_result",
+            task=Task.chat_llama_3_1_8b.value,
+        ),
+        synthetic_generation_config=SyntheticGenerationConfig(
+            func="generate_chat_synthetic", kwargs={"model": Task.chat_llama_3_1_8b.value}
+        ),
+        endpoint=Endpoints.chat_completions.value,
+        volume_to_requests_conversion=300,
+        is_stream=True,
+        weight=0.15,
+        timeout=2,
+        enabled=True,
+    ),
     Task.proteus_text_to_image: FullTaskConfig(
         task=Task.proteus_text_to_image,
         max_capacity=3_600,
         scoring_config=TaskScoringConfig(
-            task=Task.proteus_text_to_image, mean=0.16, variance=18, overhead=0.2, task_type=TaskType.IMAGE
+            task=Task.proteus_text_to_image, mean=0.16, variance=10, overhead=0.25, task_type=TaskType.IMAGE
         ),
         orchestrator_server_config=OrchestratorServerConfig(
             server_needed=ServerType.IMAGE,
@@ -149,7 +178,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         task=Task.proteus_image_to_image,
         max_capacity=3_600,
         scoring_config=TaskScoringConfig(
-            task=Task.proteus_image_to_image, mean=0.6, variance=9, overhead=0.6, task_type=TaskType.IMAGE
+            task=Task.proteus_image_to_image, mean=0.1, variance=9, overhead=0.6, task_type=TaskType.IMAGE
         ),
         orchestrator_server_config=OrchestratorServerConfig(
             server_needed=ServerType.IMAGE,
@@ -173,7 +202,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         task=Task.flux_schnell_text_to_image,
         max_capacity=3_600,
         scoring_config=TaskScoringConfig(
-            task=Task.flux_schnell_text_to_image, mean=0.40, variance=18, overhead=0.4, task_type=TaskType.IMAGE
+            task=Task.flux_schnell_text_to_image, mean=0.18, variance=18, overhead=0.4, task_type=TaskType.IMAGE
         ),
         orchestrator_server_config=OrchestratorServerConfig(
             server_needed=ServerType.IMAGE,

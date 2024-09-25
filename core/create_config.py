@@ -19,10 +19,9 @@ def generate_secure_password(length: int = 16) -> str:
 def validate_input(prompt: str, validator: Callable[[str], bool], default: str | None = None) -> str:
     while True:
         value = input(prompt)
-        if value:
-            if validator(value):
-                return value
-        elif default:
+        if validator(value):
+            return value
+        elif default and not value:
             return default
         print("Invalid input. Please try again.")
 
@@ -74,6 +73,7 @@ def generate_miner_config(dev: bool = False) -> dict[str, Any]:
     config["NODE_EXTERNAL_IP"] = input("Enter NODE_EXTERNAL_IP (leave blank if not needed): ")
     config["IMAGE_WORKER_URL"] = input("Enter IMAGE_WORKER_URL: ")
     config["LLAMA_3_1_8B_TEXT_WORKER_URL"] = input("Enter LLAMA_3_1_8B_TEXT_WORKER_URL: ")
+    config["LLAMA_3_2_3B_TEXT_WORKER_URL"] = input("Enter LLAMA_3_2_3B_TEXT_WORKER_URL: ")
     config["LLAMA_3_1_70B_TEXT_WORKER_URL"] = input("Enter LLAMA_3_1_70B_TEXT_WORKER_URL: ")
     config["MIN_STAKE_THRESHOLD"] = input("Enter MIN_STAKE_THRESHOLD (default: 1000): ") or default_stake_threshold
     config["REFRESH_NODES"] = "true"

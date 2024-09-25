@@ -16,7 +16,7 @@ class ChatPayload(BaseModel):
     messages: list[utility_models.Message] = Field(...)
     temperature: float = Field(default=..., title="Temperature", description="Temperature for text generation.")
     seed: int = Field(default=..., title="Seed", description="Seed for text generation.")
-    model: Task = Field(default=..., examples=[Task.chat_llama_3_1_8b], title="Model")
+    model: Task = Field(default=..., examples=[Task.chat_llama_3_2_3b], title="Model")
     stream: bool = True
     logprobs: bool = True
     top_p: float =  1.0
