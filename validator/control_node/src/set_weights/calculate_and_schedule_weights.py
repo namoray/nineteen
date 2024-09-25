@@ -184,7 +184,7 @@ async def main():
 
     # To prevent validators getting deregistered - but up to them to use this and they should prioritise the values they have above
     logger.warning(
-        "\n\n!!!! Setting weights using the metagraph only since we have no data on the miners in the db. Please cancel if you do not want to do this !!! \n\n"
+        "\n\n!!!! Setting weights using the metagraph only since it failed using the non metagraph :(. Please cancel if you do not want to do this !!! \n\n"
     )
     await asyncio.sleep(10)
     await _set_metagraph_weights(config)
