@@ -67,7 +67,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         task=Task.chat_llama_3_1_8b,
         max_capacity=576_000,
         scoring_config=TaskScoringConfig(
-            task=Task.chat_llama_3_1_8b, overhead=0.4, mean=0.3, variance=4, task_type=TaskType.TEXT
+            task=Task.chat_llama_3_1_8b, overhead=0.2, mean=0.005, variance=520, task_type=TaskType.TEXT
         ),
         orchestrator_server_config=OrchestratorServerConfig(
             server_needed=ServerType.LLM,
@@ -76,7 +76,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
                 "half_precision": True,
                 "tokenizer": "tau-vision/llama-tokenizer-fix",
                 "max_model_len": 20_000,
-                "gpu_utilization": 0.6,
+                "gpu_utilization": 0.65,
             },
             endpoint=Endpoints.chat_completions.value,
             checking_function="check_text_result",
@@ -88,7 +88,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         endpoint=Endpoints.chat_completions.value,
         volume_to_requests_conversion=300,
         is_stream=True,
-        weight=0.2,
+        weight=0.20,
         timeout=2,
         enabled=True,
     ),
@@ -96,7 +96,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         task=Task.chat_llama_3_1_70b,
         max_capacity=576_000,
         scoring_config=TaskScoringConfig(
-            task=Task.chat_llama_3_1_70b, overhead=0.3, mean=0.018, variance=130, task_type=TaskType.TEXT
+            task=Task.chat_llama_3_1_70b, overhead=0.3, mean=0.009, variance=416, task_type=TaskType.TEXT
         ),
         orchestrator_server_config=OrchestratorServerConfig(
             server_needed=ServerType.LLM,
@@ -125,7 +125,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         task=Task.proteus_text_to_image,
         max_capacity=3_600,
         scoring_config=TaskScoringConfig(
-            task=Task.proteus_text_to_image, mean=0.16, variance=18, overhead=0.2, task_type=TaskType.IMAGE
+            task=Task.proteus_text_to_image, mean=0.16, variance=10, overhead=0.25, task_type=TaskType.IMAGE
         ),
         orchestrator_server_config=OrchestratorServerConfig(
             server_needed=ServerType.IMAGE,
@@ -149,7 +149,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         task=Task.proteus_image_to_image,
         max_capacity=3_600,
         scoring_config=TaskScoringConfig(
-            task=Task.proteus_image_to_image, mean=0.6, variance=9, overhead=0.6, task_type=TaskType.IMAGE
+            task=Task.proteus_image_to_image, mean=0.1, variance=9, overhead=0.6, task_type=TaskType.IMAGE
         ),
         orchestrator_server_config=OrchestratorServerConfig(
             server_needed=ServerType.IMAGE,
@@ -173,7 +173,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         task=Task.flux_schnell_text_to_image,
         max_capacity=3_600,
         scoring_config=TaskScoringConfig(
-            task=Task.flux_schnell_text_to_image, mean=0.40, variance=18, overhead=0.4, task_type=TaskType.IMAGE
+            task=Task.flux_schnell_text_to_image, mean=0.18, variance=18, overhead=0.4, task_type=TaskType.IMAGE
         ),
         orchestrator_server_config=OrchestratorServerConfig(
             server_needed=ServerType.IMAGE,
