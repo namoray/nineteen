@@ -15,7 +15,7 @@ class ChatRequest(BaseModel):
     messages: list[utility_models.Message] = Field(...)
     temperature: float = Field(default=0.5, examples=[0.5, 0.4, 0.3], title="Temperature", description="Temperature for text generation.")
     max_tokens: int = Field(500, title="Max Tokens", description="Max tokens for text generation.")
-    model: Task = Field(default=Task.chat_llama_3_2_3b, title="Model")
+    model: Task = Field(default=Task.chat_llama_3_1_8b, title="Model")
     top_p: float = Field(default=1.0, title="Top P", description="Top P for text generation.")
     stream: bool = Field(default=True, title="Stream", description="Stream for text generation.")
     logprobs: bool = True
