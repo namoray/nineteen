@@ -1,3 +1,4 @@
+from datetime import datetime
 import json
 import time
 from redis.asyncio import Redis
@@ -27,7 +28,7 @@ async def _decrement_requests_remaining(redis_db: Redis, task: Task):
 
 
 async def _acknowledge_job(redis_db: Redis, job_id: str):
-    logger.debug(f"Acknlowedging job id : {job_id}")
+    logger.debug(f"Acknowledging job id : {job_id}")
     await redis_db.publish(f"{gcst.ACKNLOWEDGED}:{job_id}", json.dumps({gcst.ACKNLOWEDGED: True}))
 
 
@@ -58,11 +59,11 @@ async def _handle_stream_query(config: Config, message: rdc.QueryQueueMessage, c
             payload=message.query_payload,
             start_time=start_time,
         )
-        if not success:
-            continue
+        if success:
+            break
 
     if not success:
-        logger.error(f"All Contenders for task {message.task} failed to respond! :(")
+        logger.error(f"All Contenders {[contender.node_id for contender in contenders_to_query]} for task {message.task} failed to respond! :(")
         await _handle_error(
             config=config,
             synthetic_query=message.query_type == gcst.SYNTHETIC,
@@ -89,11 +90,11 @@ async def _handle_nonstream_query(config: Config, message: rdc.QueryQueueMessage
             synthetic_query=message.query_type == gcst.SYNTHETIC,
             job_id=message.job_id,
         )
-        if not success:
-            continue
+        if success:
+            break
 
     if not success:
-        logger.error(f"All Contenders for task {message.task} failed to respond! :(")
+        logger.error(f"All Contenders {[contender.node_id for contender in contenders_to_query]} for task {message.task} failed to respond! :(")
         await _handle_error(
             config=config,
             synthetic_query=message.query_type == gcst.SYNTHETIC,
@@ -116,7 +117,9 @@ async def process_task(config: Config, message: rdc.QueryQueueMessage):
     task = Task(message.task)
 
     if message.query_type == gcst.ORGANIC:
+        logger.debug(f"Acknowledging job id : {message.job_id}")
         await _acknowledge_job(config.redis_db, message.job_id)
+        logger.debug(f"Successfully acknowledged job id : {message.job_id} ✅")
         await _decrement_requests_remaining(config.redis_db, task)
     else:
         message.query_payload = await putils.get_synthetic_payload(config.redis_db, task)
@@ -136,6 +139,7 @@ async def process_task(config: Config, message: rdc.QueryQueueMessage):
 
     async with await config.psql_db.connection() as connection:
         contenders_to_query = await get_contenders_for_task(connection, task)
+        
 
     if contenders_to_query is None:
         raise ValueError("No contenders to query! :(")

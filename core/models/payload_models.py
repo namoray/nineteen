@@ -36,8 +36,8 @@ class ImageResponse(BaseModel):
 
 class TextToImagePayload(BaseModel):
     prompt: str = Field(...)
-    negative_prompt: str | None = Field(
-        None, title="Negative Prompt", description="Negative Prompt for text generation."
+    negative_prompt: str = Field(
+        "", title="Negative Prompt", description="Negative Prompt for text generation."
     )
     seed: int = Field(0, title="Seed", description="Seed for text generation.")
     steps: int = Field(10, title="Steps", description="Steps for text generation.")
@@ -49,8 +49,8 @@ class TextToImagePayload(BaseModel):
 
 class ImageToImagePayload(BaseModel):
     prompt: str = Field(...)
-    negative_prompt: str | None = Field(
-        None, title="Negative Prompt", description="Negative Prompt for text generation."
+    negative_prompt: str = Field(
+        "", title="Negative Prompt", description="Negative Prompt for text generation."
     )
     seed: int = Field(0, title="Seed", description="Seed for text generation.")
     steps: int = Field(10, title="Steps", description="Steps for text generation.")

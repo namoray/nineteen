@@ -21,6 +21,7 @@ from validator.models import RewardData
 from validator.utils import work_and_speed_functions
 from validator.db.src import functions as db_functions
 from validator.db.src.sql.rewards_and_scores import (
+    delete_all_of_specific_task,
     delete_contender_history_older_than,
     delete_reward_data_older_than,
     select_tasks_and_number_of_results,
@@ -174,8 +175,15 @@ async def score_results(config: Config):
         if total_tasks_stored < min_tasks_to_start_scoring:
             await asyncio.sleep(5)
             continue
-
-        task_to_score = Task(random.choices(list(tasks_and_results.keys()), weights=list(tasks_and_results.values()), k=1)[0])
+        
+        task_to_score_str =  random.choices(list(tasks_and_results.keys()), weights=list(tasks_and_results.values()), k=1)[0]
+        try:
+            task_to_score = Task(task_to_score_str)
+        except ValueError:
+            logger.error(f"Invalid task: {task_to_score_str}")
+            async with await config.psql_db.connection() as connection:
+                await delete_all_of_specific_task(connection, task_to_score_str)
+            continue
 
         await _score_task(config, task_to_score, max_tasks_to_score=200)
 

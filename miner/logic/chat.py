@@ -31,7 +31,7 @@ async def chat_stream(
 
     decrypted_payload.model = model_name
 
-    assert address is not None, f"Address for model: {decrypted_payload.model} is not set in env vars!"
+    assert address is not None, f"Address for model: {decrypted_payload.model} is not set in your miner config!"
 
     if True:
         # NOTE: review timeout?
@@ -43,19 +43,26 @@ async def chat_stream(
                 logger.error(f"HTTP Error {e.response.status_code}: {e.response.text}")
                 raise
             async for chunk in resp.aiter_lines():
-                try:
-                    received_event_chunks = chunk.split("\n\n")
-                    for event in received_event_chunks:
-                        if event == "":
-                            continue
-                        prefix, _, data = event.partition(":")
-                        if data.strip() == "[DONE]":
-                            break
-                        yield f"data: {data}\n\n"
-                except Exception as e:
-                    logger.error(f"Error in streaming text from the server: {e}. Original chunk: {chunk}")
+                received_event_chunks = chunk.split("\n\n")
+                for event in received_event_chunks:
+                    if event == "":
+                        continue
+                    prefix, _, data = event.partition(":")
+                    if data.strip() == "[DONE]":
+                        break
+                    # This is quite ineffecient but needed
+                    # To work with base vllm image
+                    # I would recommended optimising this in some way
+                    # print(data)
+                    data2 = json.loads(data)
+                    if data2["choices"][0]["logprobs"] is None or data2["choices"][0]["logprobs"]["content"][0]["logprob"] is None:
+                        continue
+                    
+                    logger.info(f"data: {data}")
+                    yield f"data: {data}\n\n"
+
     else:
         for i in range(100):
-            data = {"choices": [{"delta": {"content": f"{i}"}}]}
+            data = {"choices": [{"delta": {"content": f"{i}"}, "logprobs": {"content": [{"logprob": 0.0}]}}]}
             yield f"data: {json.dumps(data)}\n\n"
         yield "data: [DONE]\n\n"
