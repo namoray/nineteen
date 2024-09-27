@@ -131,13 +131,11 @@ async def schedule_synthetics_until_done(config: Config):
         if time_to_sleep > 0:
             if time.time() - start_time + time_to_sleep > scoring_period_time:
                 break
-            if i % 10 == 3:
-                logger.info(f"Sleeping for {time_to_sleep} seconds while waiting for task {schedule.task} to be scheduled...")
-            else:
-                logger.debug(
-                    f"Sleeping for {time_to_sleep} seconds while waiting for task {schedule.task} to be scheduled;"
-                    f"{schedule.remaining_requests} requests remaining - estimated to take {schedule.remaining_requests  * schedule.interval} more seconds"
-                )
+
+            logger.debug(
+                f"Sleeping for {time_to_sleep} seconds while waiting for task {schedule.task} to be scheduled;"
+                f"{schedule.remaining_requests} requests remaining - estimated to take {schedule.remaining_requests  * schedule.interval} more seconds"
+            )
             sleep_chunk = 2  # Sleep in 2-second chunks to make debugging easier
             while time_to_sleep > 0:
                 await asyncio.sleep(min(sleep_chunk, time_to_sleep))
@@ -168,6 +166,28 @@ async def schedule_synthetics_until_done(config: Config):
 
         if time.time() - start_time > scoring_period_time:
             break
+
+        if i % 100 == 0:
+            # Print full stats of all tasks
+            schedules_left = [heapq.heappop(task_schedules) for _ in range(len(task_schedules))]
+            
+            task_info = []
+            for schedule in schedules_left:
+                task_info.append(
+                    f"Task {schedule.task}:\n"
+                    f"  - Scheduled: {schedule.total_requests - schedule.remaining_requests} / {schedule.total_requests}\n"
+                    f"  - Next request: {schedule.next_schedule_time - time.time():.2f} seconds from now\n"
+                    f"  - Estimated completion: {schedule.remaining_requests * schedule.interval:.2f} seconds"
+                )
+                heapq.heappush(task_schedules, schedule)
+
+            logger.info(
+                f"Synthetic query scheduling status:\n"
+                f"Iterations: {i}\n"
+                f"Time elapsed: {time.time() - start_time:.2f} / {scoring_period_time:.2f} seconds\n"
+                f"Task details:\n" + "\n\n".join(task_info)
+            )
+
 
     schedules_left = [heapq.heappop(task_schedules) for _ in range(len(task_schedules))]
     logger.info(
