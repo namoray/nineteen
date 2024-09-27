@@ -119,9 +119,10 @@ async def get_contenders_for_task(connection: Connection, task: Task, top_x: int
         )
         SELECT *
         FROM ranked_contenders
-        WHERE rank <= $2
+        WHERE rank <= $2 and {dcst.NODE_ID} = 1
         ORDER BY rank
         """,
+        # TODO: REMOVE THE NODE_ID = 1
         task.value,
         top_x,
     )

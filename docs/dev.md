@@ -40,7 +40,7 @@ task control_node_dev  # For example
 **If you want to dev with fiber locally too**
 ```bash
 cd ..
-git clone https://github.com/rayonlabs/fiber.git@0.1.0
+git clone https://github.com/rayonlabs/fiber.git
 cd fiber
 git pull
 pip install -e .

@@ -4,6 +4,9 @@ from typing import Dict, Any, List
 
 from core.models import utility_models
 from core import tasks_config as tcfg
+from fiber.logging_utils import get_logger
+
+logger = get_logger(__name__)
 
 MAX_SPEED_BONUS = 2.0
 CHARACTER_TO_TOKEN_CONVERSION = 4.0
@@ -90,13 +93,19 @@ def calculate_work(
         formatted_response = (
             json.loads(raw_formatted_response) if isinstance(raw_formatted_response, str) else raw_formatted_response
         )
-        miner_chat_responses: List[utility_models.Message] = [utility_models.Message(**r) for r in formatted_response]
-        all_text = "".join([message.content for message in miner_chat_responses])
-        number_of_characters = len(all_text)
+        logger.debug(f"Formatted response: {formatted_response}")
+        character_count = 0
+        for text_json in formatted_response:
+            try:
+                character_count += len(text_json["choices"][0]["delta"]["content"])
+            except KeyError:
+                logger.error(f"KeyError: {text_json}")
+            
+        logger.info(f"Number of characters: {character_count}")
 
-        if number_of_characters == 0:
+        if character_count == 0:
             return 1
 
-        return _calculate_work_text(number_of_characters)
+        return _calculate_work_text(character_count)
     else:
         raise ValueError(f"Task {task_config.task} not found for work bonus calculation")

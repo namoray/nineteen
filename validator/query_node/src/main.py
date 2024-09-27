@@ -1,3 +1,4 @@
+import time
 from dotenv import load_dotenv
 import os
 
@@ -72,7 +73,10 @@ async def listen_for_tasks(config: Config):
             await t
 
         while len(tasks) < MAX_CONCURRENT_TASKS:
+            time1 = time.time()
             message_json = await config.redis_db.blpop(rcst.QUERY_QUEUE_KEY, timeout=1)  # type: ignore
+            
+            logger.debug(f"Time waiting for message: {time.time() - time1}")
             if not message_json:
                 break
             try:

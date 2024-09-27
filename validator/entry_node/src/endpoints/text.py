@@ -68,14 +68,14 @@ async def make_stream_organic_query(
     job_id = uuid.uuid4().hex
     organic_message = _construct_organic_message(payload=payload, job_id=job_id, task=task)
 
-    await redis_db.lpush(rcst.QUERY_QUEUE_KEY, organic_message)  # type: ignore
-
     pubsub = redis_db.pubsub()
     await pubsub.subscribe(f"{gcst.ACKNLOWEDGED}:{job_id}")
+    await redis_db.lpush(rcst.QUERY_QUEUE_KEY, organic_message)  # type: ignore
+
 
     first_chunk = None
     try:
-        await asyncio.wait_for(_wait_for_acknowledgement(pubsub, job_id), timeout=1)
+        await asyncio.wait_for(_wait_for_acknowledgement(pubsub, job_id), timeout=0.1)
     except asyncio.TimeoutError:
         logger.error(f"Query node down? No confirmation received for job {job_id} within timeout period. Task: {task}, model: {payload['model']}")
         raise HTTPException(status_code=500, detail="Unable to process request")
