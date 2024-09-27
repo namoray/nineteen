@@ -130,7 +130,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         orchestrator_server_config=OrchestratorServerConfig(
             server_needed=ServerType.LLM,
             load_model_config={
-                "model": "unsloth/Llama-3.1-8B-Instruct",
+                "model": "unsloth/Meta-Llama-3.1-8B-Instruct",
                 "half_precision": True,
                 "tokenizer": "tau-vision/llama-tokenizer-fix",
                 "max_model_len": 20_000,
