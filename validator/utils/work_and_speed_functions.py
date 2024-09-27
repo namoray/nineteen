@@ -1,8 +1,7 @@
 import json
 import math
-from typing import Dict, Any, List
+from typing import Dict, Any
 
-from core.models import utility_models
 from core import tasks_config as tcfg
 from fiber.logging_utils import get_logger
 
@@ -61,14 +60,19 @@ def calculate_speed_modifier(task_config: tcfg.FullTaskConfig, result: Dict[str,
         return _calculate_speed_modifier(time_per_step, config)
     elif config.task_type == tcfg.TaskType.TEXT:
         formatted_response = result.get("formatted_response", {})
-        miner_chat_responses: List[utility_models.Message] = [utility_models.Message(**r) for r in formatted_response]
-        all_text = "".join([mcr.content for mcr in miner_chat_responses])
-        number_of_characters = len(all_text)
+        character_count = 0
+        for text_json in formatted_response:
+            try:
+                character_count += len(text_json["choices"][0]["delta"]["content"])
+            except KeyError:
+                logger.error(f"KeyError: {text_json}")
+            
+        logger.info(f"Number of characters: {character_count}")
 
-        if number_of_characters == 0:
-            return 0  # Doesn't matter what is returned here
+        if character_count == 0:
+            return 1
 
-        return _calculate_speed_modifier(normalised_response_time / number_of_characters, config)
+        return _calculate_speed_modifier(normalised_response_time / character_count, config)
     elif config.task_type == tcfg.TaskType.CLIP:
         return _calculate_speed_modifier(normalised_response_time, config)
     else:
