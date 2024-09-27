@@ -133,6 +133,15 @@ async def delete_specific_task(connection: Connection, task_name: str, checking_
     )
 
 
+async def delete_all_of_specific_task(connection: Connection, task_name: str) -> None:
+    await connection.execute(
+        f"""
+        DELETE FROM {dcst.TABLE_TASKS} WHERE {dcst.COLUMN_TASK_NAME} = $1
+        """,
+        task_name,
+    )
+
+
 #### Select
 
 

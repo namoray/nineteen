@@ -194,9 +194,9 @@ async def get_node(psql_db: PSQLDB, node_id: int, netuid: int) -> Node | None:
     node = await psql_db.fetchone(query, node_id, netuid)
 
     if node is None:
-        logger.error(f"No node found for hotkey {node_id} and netuid {netuid}")
+        logger.error(f"No node found for node id {node_id} and netuid {netuid}")
         logger.error(f"all nodes: {await psql_db.fetchall(f'SELECT * FROM {dcst.NODES_TABLE} WHERE {dcst.NETUID} = $1', netuid)}")
-        raise ValueError(f"No node found for hotkey {node_id} and netuid {netuid}")
+        raise ValueError(f"No node found for node id {node_id} and netuid {netuid}")
     try:
         node["fernet"] = Fernet(node[dcst.SYMMETRIC_KEY])
     except Exception as e:

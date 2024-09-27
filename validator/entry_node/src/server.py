@@ -8,6 +8,7 @@ from validator.entry_node.src.endpoints.generic import router as generic_router
 from fastapi.middleware.cors import CORSMiddleware
 from validator.entry_node.src.core import configuration
 from fiber.logging_utils import get_logger
+from fiber.miner.middleware import configure_extra_logging_middleware
 from scalar_fastapi import get_scalar_api_reference
 logger = get_logger(__name__)
 
@@ -47,31 +48,8 @@ app.add_middleware(
     allow_headers=["*"], 
 )
 
-# @app.middleware("http")
-# async def log_requests(request: Request, call_next):
-#     logger.debug(f"request body: {await request.body()}")
-#     response: Response = await call_next(request)
-#     if response.status_code != 200:
-#         if isinstance(response, _StreamingResponse):
-#             response_body = b""
-#             async for chunk in response.body_iterator:
-#                 response_body += chunk   # type: ignore
-
-#             async def new_body_iterator():
-#                 yield response_body
-
-#             response.body_iterator = new_body_iterator()
-#             logger.error(f"Response error content: {response_body.decode()}")
-#         else:
-#             response_body = await response.body()  # type: ignore
-#             logger.error(f"Response error content: {response_body.decode()}")
-#     return response
-
-
-# @app.exception_handler(Exception)
-# async def exception_handler(request: Request, exc: Exception):
-#     logger.error(f"An error occurred: {exc}", exc_info=True)
-#     return {"detail": "Internal Server Error"}
+if os.getenv("ENV") != "prod":
+    configure_extra_logging_middleware(app)
 
 
 

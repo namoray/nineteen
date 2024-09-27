@@ -16,7 +16,7 @@ class ChatPayload(BaseModel):
     messages: list[utility_models.Message] = Field(...)
     temperature: float = Field(default=..., title="Temperature", description="Temperature for text generation.")
     seed: int = Field(default=..., title="Seed", description="Seed for text generation.")
-    model: Task = Field(default=..., examples=[Task.chat_llama_3_1_8b], title="Model")
+    model: Task = Field(default=..., examples=[Task.chat_llama_3_2_3b], title="Model")
     stream: bool = True
     logprobs: bool = True
     top_p: float =  1.0
@@ -36,8 +36,8 @@ class ImageResponse(BaseModel):
 
 class TextToImagePayload(BaseModel):
     prompt: str = Field(...)
-    negative_prompt: str | None = Field(
-        None, title="Negative Prompt", description="Negative Prompt for text generation."
+    negative_prompt: str = Field(
+        "", title="Negative Prompt", description="Negative Prompt for text generation."
     )
     seed: int = Field(0, title="Seed", description="Seed for text generation.")
     steps: int = Field(10, title="Steps", description="Steps for text generation.")
@@ -49,8 +49,8 @@ class TextToImagePayload(BaseModel):
 
 class ImageToImagePayload(BaseModel):
     prompt: str = Field(...)
-    negative_prompt: str | None = Field(
-        None, title="Negative Prompt", description="Negative Prompt for text generation."
+    negative_prompt: str = Field(
+        "", title="Negative Prompt", description="Negative Prompt for text generation."
     )
     seed: int = Field(0, title="Seed", description="Seed for text generation.")
     steps: int = Field(10, title="Steps", description="Steps for text generation.")

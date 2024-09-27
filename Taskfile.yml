@@ -21,11 +21,15 @@ tasks:
   entry_node_dev:
     cmds:
       - LOCALHOST=true uvicorn validator.entry_node.src.server:app --reload --host 0.0.0.0 --port 8091 --env-file .vali.env
+    
+  weight_setter_dev:
+    cmds:
+      - LOCALHOST=true ENV_FILE=.vali.env python -m validator.control_node.src.set_weights.calculate_and_schedule_weights
 
   dev_setup:
     cmds:
       - docker compose --env-file .vali.env -f docker-compose.yml -f docker-compose.dev.yml --profile entry_node_profile up -d --build
-      - docker stop control_node query_node entry_node
+      - docker stop control_node query_node entry_node weight_setter
       # Now use control_node_dev etc
 
   m1_dev:

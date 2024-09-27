@@ -36,6 +36,7 @@ async def adjust_contender_from_result(
         capacity_consumed = work_and_speed_functions.calculate_work(
             task_config=task_config, result=query_result.model_dump(), steps=payload.get("steps")
         )
+        logger.debug(f"Capacity consumed: {capacity_consumed}")
 
         await update_contender_capacities(config.psql_db, contender, capacity_consumed)
 

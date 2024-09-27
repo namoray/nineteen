@@ -16,7 +16,7 @@ class Role(str, enum.Enum):
 
 class Message(BaseModel):
     role: Role = Role.user
-    content: str = "Remind me that I have forgot to set the messages"
+    content: str = Field(default=..., examples=["Remind me that I have forgot to set the messages"])
 
     class Config:
         use_enum_values = True

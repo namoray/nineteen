@@ -61,10 +61,10 @@ async def make_non_stream_organic_query(redis_db: Redis, payload: dict[str, Any]
     job_id = uuid.uuid4().hex
     organic_message = _construct_organic_message(payload=payload, job_id=job_id, task=task)
 
-    await redis_db.lpush(rcst.QUERY_QUEUE_KEY, organic_message)  # type: ignore
 
     pubsub = redis_db.pubsub()
     await pubsub.subscribe(f"{gcst.ACKNLOWEDGED}:{job_id}")
+    await redis_db.lpush(rcst.QUERY_QUEUE_KEY, organic_message)  # type: ignore
 
     try:
         await asyncio.wait_for(_wait_for_acknowledgement(pubsub, job_id), timeout=1)
@@ -83,6 +83,7 @@ async def process_image_request(
 ) -> request_models.ImageResponse:
     task_config = get_enabled_task_config(task)
     if task_config is None:
+        logger.error(f"Task config not found for task: {task}")
         raise HTTPException(status_code=400, detail="Invalid model")
 
     result = await make_non_stream_organic_query(redis_db=config.redis_db, payload=payload.model_dump(), task=task.value, timeout=task_config.timeout)
