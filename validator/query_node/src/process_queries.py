@@ -114,7 +114,6 @@ async def _handle_error(config: Config, synthetic_query: bool, job_id: str, stat
 
 
 async def process_task(config: Config, message: rdc.QueryQueueMessage):
-    logger.info(f"Start time datetime: {datetime.fromtimestamp(time.time())}")
     task = Task(message.task)
 
     if message.query_type == gcst.ORGANIC:

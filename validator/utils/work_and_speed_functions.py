@@ -93,7 +93,6 @@ def calculate_work(
         formatted_response = (
             json.loads(raw_formatted_response) if isinstance(raw_formatted_response, str) else raw_formatted_response
         )
-        logger.debug(f"Formatted response: {formatted_response}")
         character_count = 0
         for text_json in formatted_response:
             try:

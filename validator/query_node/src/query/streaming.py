@@ -156,7 +156,6 @@ async def consume_generator(
             logger.info(f" 👀  Queried node: {node.node_id} for task: {task}. Success: {not first_message}.")
 
         response_time = time.time() - start_time
-        logger.debug(f"Start time datetime: {datetime.fromtimestamp(start_time)}, end time datetime: {datetime.fromtimestamp(time.time())}")
         query_result = utility_models.QueryResult(
             formatted_response=text_jsons if len(text_jsons) > 0 else None,
             node_id=node.node_id,
