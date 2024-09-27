@@ -58,7 +58,6 @@ async def chat_stream(
                     if data2["choices"][0]["logprobs"] is None or data2["choices"][0]["logprobs"]["content"][0]["logprob"] is None:
                         continue
                     
-                    logger.info(f"data: {data}")
                     yield f"data: {data}\n\n"
 
     else:
