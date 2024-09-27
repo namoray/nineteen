@@ -153,6 +153,7 @@ async def schedule_synthetics_until_done(config: Config):
             schedule.next_schedule_time += schedule.interval * requests_to_skip
             schedule.remaining_requests = latest_remaining_requests
             heapq.heappush(task_schedules, schedule)
+            continue
         else:
             await _schedule_synthetic_query(config.redis_db, schedule.task, max_len=100)
 
@@ -163,6 +164,8 @@ async def schedule_synthetics_until_done(config: Config):
 
         if schedule.remaining_requests > 0:
             heapq.heappush(task_schedules, schedule)
+        else:
+            logger.info(f"No more requests remaining for task {schedule.task}")
 
         if time.time() - start_time > scoring_period_time:
             break
