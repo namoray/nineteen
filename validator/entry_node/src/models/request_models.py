@@ -44,7 +44,7 @@ class TextToImageRequest(BaseModel):
     cfg_scale: float = Field(3, description="CFG scale for image generation")
     width: int = Field(1024, description="Width for image generation")
     height: int = Field(1024, description="Height for image generation")
-    model: str = Field(default=Task.proteus_text_to_image.value, title="Model")
+    model: str = Field(..., examples=[Task.proteus_text_to_image.value], title="Model")
 
 
 def text_to_image_to_payload(text_to_image_request: TextToImageRequest) -> payload_models.TextToImagePayload:
@@ -69,7 +69,7 @@ class ImageToImageRequest(BaseModel):
     cfg_scale: float = Field(3, description="CFG scale for image generation")
     width: int = Field(1024, description="Width for image generation")
     height: int = Field(1024, description="Height for image generation")
-    model: str = Field(default=Task.proteus_image_to_image.value, title="Model")
+    model: str = Field(..., examples=[Task.proteus_image_to_image.value], title="Model")
     image_strength: float = Field(0.5, description="Image strength for image generation")
 
 
