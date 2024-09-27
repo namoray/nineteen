@@ -40,7 +40,7 @@ def calculate_volume_for_task(
 
 
 # Here are some examples
-calculate_volume_for_task(Task.chat_llama_3_1_8b, concurrent_requests_each_gpu_server_can_handle=20, gpus_with_server_on=1)
+calculate_volume_for_task(Task.chat_llama_3_2_3b, concurrent_requests_each_gpu_server_can_handle=20, gpus_with_server_on=1)
 
 calculate_volume_for_task(Task.chat_llama_3_1_70b, concurrent_requests_each_gpu_server_can_handle=20, gpus_with_server_on=1)
 calculate_volume_for_task(Task.proteus_text_to_image, concurrent_requests_each_gpu_server_can_handle=10, gpus_with_server_on=1)
