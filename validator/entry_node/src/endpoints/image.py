@@ -83,6 +83,7 @@ async def process_image_request(
 ) -> request_models.ImageResponse:
     task_config = get_enabled_task_config(task)
     if task_config is None:
+        logger.error(f"Task config not found for task: {task}")
         raise HTTPException(status_code=400, detail="Invalid model")
 
     result = await make_non_stream_organic_query(redis_db=config.redis_db, payload=payload.model_dump(), task=task.value, timeout=task_config.timeout)

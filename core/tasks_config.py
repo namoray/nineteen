@@ -119,7 +119,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         is_stream=True,
         weight=0.2,
         timeout=2,
-        enabled=False,
+        enabled=True,
     ),
     Task.proteus_text_to_image: FullTaskConfig(
         task=Task.proteus_text_to_image,
@@ -143,7 +143,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         is_stream=False,
         weight=0.1,
         timeout=5,
-        enabled=False,
+        enabled=True,
     ),
     Task.proteus_image_to_image: FullTaskConfig(
         task=Task.proteus_image_to_image,
@@ -167,7 +167,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         is_stream=False,
         weight=0.05,
         timeout=20,
-        enabled=False,
+        enabled=True,
     ),
     Task.flux_schnell_text_to_image: FullTaskConfig(
         task=Task.flux_schnell_text_to_image,
@@ -191,7 +191,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         is_stream=False,
         weight=0.15,
         timeout=20,
-        enabled=False,
+        enabled=True,
     ),
     Task.flux_schnell_image_to_image: FullTaskConfig(
         task=Task.flux_schnell_image_to_image,
@@ -215,7 +215,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         is_stream=False,
         weight=0.05,
         timeout=15,
-        enabled=False,
+        enabled=True,
     ),
     Task.avatar: FullTaskConfig(
         task=Task.avatar,
@@ -237,7 +237,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         is_stream=False,
         weight=0.15,
         timeout=15,
-        enabled=False,
+        enabled=True,
     ),
     Task.dreamshaper_text_to_image: FullTaskConfig(
         task=Task.dreamshaper_text_to_image,
@@ -261,7 +261,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         is_stream=False,
         weight=0.05,
         timeout=5,
-        enabled=False,
+        enabled=True,
     ),
     Task.dreamshaper_image_to_image: FullTaskConfig(
         task=Task.dreamshaper_image_to_image,
@@ -285,7 +285,7 @@ TASK_TO_CONFIG: dict[Task, FullTaskConfig] = {
         is_stream=False,
         weight=0.05,
         timeout=15,
-        enabled=False,
+        enabled=True,
     ),
     Task.inpaint: FullTaskConfig(
         task=Task.inpaint,

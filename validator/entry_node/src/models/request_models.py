@@ -39,7 +39,7 @@ def chat_to_payload(chat_request: ChatRequest) -> payload_models.ChatPayload:
 
 class TextToImageRequest(BaseModel):
     prompt: str = Field(..., description="Prompt for image generation")
-    negative_prompt: str | None = Field(None, description="Negative prompt for image generation")
+    negative_prompt: str = Field("", description="Negative prompt for image generation")
     steps: int = Field(10, description="Steps for image generation")
     cfg_scale: float = Field(3, description="CFG scale for image generation")
     width: int = Field(1024, description="Width for image generation")
