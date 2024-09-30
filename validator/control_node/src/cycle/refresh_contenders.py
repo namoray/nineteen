@@ -15,7 +15,7 @@ from validator.db.src.sql.contenders import (
     update_contenders_period_scores,
 )
 from validator.models import Contender
-from fiber.chain.models import Node
+from fiber.networking.models import NodeWithFernet as Node
 from core import tasks_config as tcfg
 from core.tasks import Task
 from validator.control_node.src.control_config import Config

@@ -7,7 +7,7 @@ import asyncio
 import traceback
 
 
-from fiber.chain.models import Node
+from fiber.networking.models import NodeWithFernet as Node
 from validator.db.src.sql.nodes import get_nodes, migrate_nodes_to_history, insert_nodes, get_last_updated_time_for_nodes
 from fiber.logging_utils import get_logger
 from fiber.chain import fetch_nodes

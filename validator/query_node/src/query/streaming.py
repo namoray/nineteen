@@ -10,7 +10,7 @@ from validator.query_node.src import utils
 
 from validator.models import Contender
 from fiber.validator import client
-from fiber.chain.models import Node
+from fiber.networking.models import NodeWithFernet as Node
 from core import tasks_config as tcfg
 from validator.utils.generic import generic_constants as gcst, generic_utils
 from validator.utils.redis import redis_constants as rcst
