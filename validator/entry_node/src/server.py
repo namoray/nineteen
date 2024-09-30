@@ -48,8 +48,8 @@ app.add_middleware(
     allow_headers=["*"], 
 )
 
-if os.getenv("ENV") != "prod":
-    configure_extra_logging_middleware(app)
+# if os.getenv("ENV") != "prod":
+#     configure_extra_logging_middleware(app)
 
 
 
