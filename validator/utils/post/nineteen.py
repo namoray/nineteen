@@ -86,6 +86,18 @@ class MinerCapacitiesPostObject(BaseModel):
     volume: float
 
 
+class ContenderPayload(BaseModel):
+    node_id: int
+    node_hotkey: str
+    validator_hotkey: str
+    task: str
+    declared_volume: float
+    consumed_volume: Optional[float]
+    total_requests_made: Optional[int]
+    requests_429: Optional[int]
+    requests_500: Optional[int]
+
+
 class MinerCapacitiesPostBody(BaseModel):
     data: List[MinerCapacitiesPostObject]
 
