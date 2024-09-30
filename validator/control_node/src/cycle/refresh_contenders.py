@@ -163,7 +163,8 @@ async def _get_contenders_from_nodes(config: Config, nodes: list[Node]) -> List[
 
 
 async def _post_contender_stats_to_nineteen(config: Config):
-    all_contenders = await fetch_all_contenders(config.psql_db, config.netuid)
+    async with await config.psql_db.connection() as connection:
+        all_contenders = await fetch_all_contenders(connection, config.netuid)
     payloads = []
     for contender in all_contenders:
         payloads.append(
@@ -184,7 +185,7 @@ async def _post_contender_stats_to_nineteen(config: Config):
 
 async def get_and_store_contenders(config: Config, nodes: list[Node]) -> list[Contender]:
     logger.info(f"Got {len(nodes)} nodes to get contenders from...")
-    await _post_contender_stats_to_nineteen
+    await _post_contender_stats_to_nineteen(config)
     contenders = await _get_contenders_from_nodes(config, nodes)
     await _store_and_migrate_old_contenders(config, contenders)
     return contenders
