@@ -8,7 +8,7 @@ from validator.entry_node.src.endpoints.generic import router as generic_router
 from fastapi.middleware.cors import CORSMiddleware
 from validator.entry_node.src.core import configuration
 from fiber.logging_utils import get_logger
-from fiber.miner.middleware import configure_extra_logging_middleware
+from fiber.miner.middleware import configure_extra_logging_middleware  # noqa
 from scalar_fastapi import get_scalar_api_reference
 logger = get_logger(__name__)
 
