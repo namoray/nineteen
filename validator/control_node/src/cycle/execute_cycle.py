@@ -11,6 +11,7 @@ A cycle consists of
 """
 
 import asyncio
+from datetime import datetime, timedelta
 from validator.control_node.src.control_config import Config
 from validator.control_node.src.cycle import (
     refresh_nodes,
@@ -22,6 +23,7 @@ from validator.db.src.sql.nodes import (
 )
 from fiber.logging_utils import get_logger
 
+from validator.db.src.sql.rewards_and_scores import delete_task_data_older_than_date
 from validator.models import Contender
 
 
@@ -52,6 +54,11 @@ async def get_nodes_and_contenders(config: Config) -> list[Contender] | None:
 async def main(config: Config) -> None:
     time_to_sleep_if_no_contenders = 20
     contenders = await get_nodes_and_contenders(config)
+
+    # NOTE: Remove next update
+    date_to_delete = datetime(2024, 10, 3, 17)
+    async with await config.psql_db.connection() as connection:
+        await delete_task_data_older_than_date(connection, date_to_delete)
 
     if contenders is None or len(contenders) == 0:
         logger.info(

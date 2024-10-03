@@ -24,6 +24,7 @@ from validator.db.src.sql.rewards_and_scores import (
     delete_all_of_specific_task,
     delete_contender_history_older_than,
     delete_reward_data_older_than,
+    delete_task_data_older_than_date,
     select_tasks_and_number_of_results,
     sql_insert_reward_data,
 )
@@ -144,10 +145,13 @@ async def _process_and_store_score(
 
         async with await config.psql_db.connection() as connection:
             await sql_insert_reward_data(connection, reward_data)
-            date_to_delete = datetime.now() - timedelta(days=7)
-            await delete_reward_data_older_than(connection, date_to_delete)
-            date_to_delete = datetime.now() - timedelta(days=3)
-            await delete_contender_history_older_than(connection, date_to_delete)
+            reward_date_to_delete = datetime.now() - timedelta(days=7)
+            await delete_reward_data_older_than(connection, reward_date_to_delete)
+            contender_date_to_delete = datetime.now() - timedelta(days=3)
+            await delete_contender_history_older_than(connection, contender_date_to_delete)
+            task_date_to_delete = datetime.now() - timedelta(hours=5)
+            await delete_task_data_older_than_date(connection, task_date_to_delete)
+
 
         logger.info(f"Successfully scored and stored data for task: {task}")
 
