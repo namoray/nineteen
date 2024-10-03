@@ -73,3 +73,11 @@ async def list_api_keys(connection: Connection) -> list[dict]:
     )
     return [dict(row) for row in rows]
 
+async def get_logs_for_key(connection: Connection, api_key: str) -> list[dict]:
+    rows = await connection.fetch(
+        f"""
+        SELECT * FROM {dcst.LOGS_TABLE} WHERE {dcst.KEY} = $1
+        """,
+        api_key,
+    )
+    return [dict(row) for row in rows]

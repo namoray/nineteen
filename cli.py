@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 from validator.db.src.sql.api import (
     add_api_key,
     delete_api_key,
+    get_logs_for_key,
     list_api_keys,
     update_api_key_balance,
     update_api_key_name,
@@ -109,9 +110,74 @@ async def list_keys():
 
             table.add_row(*[str(value) for value in key.values()])
 
-    console.print(table)    
-        
-        
+    console.print(table)
+
+
+@cli.command()
+@click.option("--api-key", prompt="API Key", help="The API key to get logs for.", required=True)
+async def logs_for_key(api_key):
+    await config.psql_db.connect()
+    async with await config.psql_db.connection() as connection:
+        logs = await get_logs_for_key(connection, api_key)
+    console = Console()
+    table = Table(show_header=True, header_style="bold magenta")
+
+    if logs:
+        for column_name in logs[0].keys():
+            table.add_column(column_name)
+
+        for log in logs:
+            log = dict(log)
+            table.add_row(*[str(value) for value in log.values()])
+
+        console.print(table)
+    else:
+        print(f"No logs found for key: {api_key}")
+
+
+@cli.command()
+async def logs_summary():
+
+    await config.psql_db.connect()
+    async with await config.psql_db.connection() as connection:
+        keys = await list_api_keys(connection)
+
+    console = Console()
+
+    summary_table = Table(show_header=True, header_style="bold magenta")
+    summary_table.add_column("key")
+    summary_table.add_column("Total Requests")
+    summary_table.add_column("Total Credits Used")
+
+    global_endpoint_dict = {}
+
+    for key in keys:
+        key = dict(key)[dcst.KEY]
+        async with await config.psql_db.connection() as connection:
+            logs = await get_logs_for_key(connection, key)
+
+        total_requests = len(logs)
+        total_credits_used = sum([dict(log).get("cost", 0) for log in logs])
+
+        for log in logs:
+            log = dict(log)
+            endpoint = log.get(dcst.ENDPOINT, "unknown_endpoint")
+            global_endpoint_dict[endpoint] = global_endpoint_dict.get(endpoint, 0) + 1
+
+        summary_table.add_row(key, str(total_requests), str(total_credits_used))
+
+    console.print(summary_table)
+
+    breakdown_table = Table(show_header=True, header_style="bold green")
+    breakdown_table.add_column("Endpoint")
+    breakdown_table.add_column("Count")
+
+    for endpoint, count in global_endpoint_dict.items():
+        breakdown_table.add_row(endpoint, str(count))
+
+    console.print("Endpoint Breakdown:")
+    console.print(breakdown_table)
+
 
 if __name__ == "__main__":
     cli(_anyio_backend="asyncio")
