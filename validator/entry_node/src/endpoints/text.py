@@ -51,7 +51,6 @@ async def _stream_results(pubsub: PubSub, job_id: str, first_chunk: str) -> Asyn
                 break
     await pubsub.unsubscribe(f"{rcst.JOB_RESULTS}:{job_id}")
 
-
 async def _get_first_chunk(pubsub: PubSub, job_id: str) -> str | None:
     async for message in pubsub.listen():
         if message["type"] == "message" and message["channel"].decode() == f"{rcst.JOB_RESULTS}:{job_id}":
@@ -61,7 +60,6 @@ async def _get_first_chunk(pubsub: PubSub, job_id: str) -> str | None:
             return result[gcst.CONTENT]
     return None
 
-
 async def make_stream_organic_query(
     redis_db: Redis,
     payload: dict[str, Any],
@@ -70,33 +68,30 @@ async def make_stream_organic_query(
     job_id = uuid.uuid4().hex
     organic_message = _construct_organic_message(payload=payload, job_id=job_id, task=task)
 
-    async with redis_db.pubsub() as pubsub:
-        await pubsub.subscribe(f"{gcst.ACKNLOWEDGED}:{job_id}")
-        await redis_db.lpush(rcst.QUERY_QUEUE_KEY, organic_message)  # type: ignore
+    pubsub = redis_db.pubsub()
+    await pubsub.subscribe(f"{gcst.ACKNLOWEDGED}:{job_id}")
+    await redis_db.lpush(rcst.QUERY_QUEUE_KEY, organic_message)  # type: ignore
 
-        first_chunk = None
-        try:
-            await asyncio.wait_for(_wait_for_acknowledgement(pubsub, job_id), timeout=1)
-        except asyncio.TimeoutError:
-            logger.error(
-                f"Query node down? No confirmation received for job {job_id} within timeout period. Task: {task}, model: {payload['model']}"
-            )
-            raise HTTPException(status_code=500, detail="Unable to process request")
 
-        await pubsub.subscribe(f"{rcst.JOB_RESULTS}:{job_id}")
-        logger.info("Here waiting for a message!")
-        try:
-            first_chunk = await asyncio.wait_for(_get_first_chunk(pubsub, job_id), timeout=2)
-        except asyncio.TimeoutError:
-            logger.error(
-                f"Query node down? Timed out waiting for the first chunk of results for job {job_id}. Task: {task}, model: {payload['model']}"
-            )
-            raise HTTPException(status_code=500, detail="Unable to process request")
+    first_chunk = None
+    try:
+        await asyncio.wait_for(_wait_for_acknowledgement(pubsub, job_id), timeout=1)
+    except asyncio.TimeoutError:
+        logger.error(f"Query node down? No confirmation received for job {job_id} within timeout period. Task: {task}, model: {payload['model']}")
+        raise HTTPException(status_code=500, detail="Unable to process request")
 
-        if first_chunk is None:
-            raise HTTPException(status_code=500, detail="Unable to process request")
-        return _stream_results(pubsub, job_id, first_chunk)
+    await pubsub.subscribe(f"{rcst.JOB_RESULTS}:{job_id}")
+    logger.info("Here waiting for a message!")  
+    try:
+        first_chunk = await asyncio.wait_for(_get_first_chunk(pubsub, job_id), timeout=2)
+    except asyncio.TimeoutError:
+        logger.error(f"Query node down? Timed out waiting for the first chunk of results for job {job_id}. Task: {task}, model: {payload['model']}")
+        raise HTTPException(status_code=500, detail="Unable to process request")
 
+    if first_chunk is None:
+        raise HTTPException(status_code=500, detail="Unable to process request")
+    return _stream_results(pubsub, job_id, first_chunk)
+        
 
 async def _handle_no_stream(text_generator: AsyncGenerator[str, str]) -> JSONResponse:
     all_content = ""
@@ -117,7 +112,7 @@ async def chat(
     config: Config = Depends(get_config),
 ) -> StreamingResponse | JSONResponse:
     payload = request_models.chat_to_payload(chat_request)
-    payload.temperature = 0.5
+    payload.temperature=0.5
 
     try:
         text_generator = await make_stream_organic_query(
