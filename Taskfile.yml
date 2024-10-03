@@ -2,6 +2,8 @@ version: "3"
 
 tasks:
 
+
+
   set_weights:
     cmds:
       - JUST_ONCE=true docker compose --env-file .vali.env -f docker-compose.yml run -e LOCALHOST=false --entrypoint "python src/set_weights/calculate_and_schedule_weights.py" weight_setter
@@ -20,7 +22,7 @@ tasks:
 
   entry_node_dev:
     cmds:
-      - LOCALHOST=true uvicorn validator.entry_node.src.server:app --reload --host 0.0.0.0 --port 8091 --env-file .vali.env
+      - LOCALHOST=true uvicorn validator.entry_node.src.server:app --reload --host 0.0.0.0 --port 8090 --env-file .vali.env
     
   weight_setter_dev:
     cmds:

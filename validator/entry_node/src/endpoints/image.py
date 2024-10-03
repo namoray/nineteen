@@ -10,6 +10,7 @@ from core.tasks import Task
 from core.tasks_config import get_enabled_task_config
 from validator.entry_node.src.core.configuration import Config
 from validator.entry_node.src.core.dependencies import get_config
+from validator.entry_node.src.core.middleware import verify_api_key_rate_limit
 from validator.utils.redis import redis_constants as rcst
 from validator.utils.generic import generic_constants as gcst
 from validator.entry_node.src.models import request_models
@@ -141,7 +142,11 @@ async def avatar(
 
 
 router = APIRouter()
-router.add_api_route("/v1/text-to-image", text_to_image, methods=["POST"], tags=["Image"])
-router.add_api_route("/v1/image-to-image", image_to_image, methods=["POST"], tags=["Image"])
-router.add_api_route("/v1/inpaint", inpaint, methods=["POST"], tags=["Image"])
-router.add_api_route("/v1/avatar", avatar, methods=["POST"], tags=["Image"])
+router.add_api_route(
+    "/v1/text-to-image", text_to_image, methods=["POST"], tags=["Image"], dependencies=[Depends(verify_api_key_rate_limit)]
+)
+router.add_api_route(
+    "/v1/image-to-image", image_to_image, methods=["POST"], tags=["Image"], dependencies=[Depends(verify_api_key_rate_limit)]
+)
+router.add_api_route("/v1/inpaint", inpaint, methods=["POST"], tags=["Image"], dependencies=[Depends(verify_api_key_rate_limit)])
+router.add_api_route("/v1/avatar", avatar, methods=["POST"], tags=["Image"], dependencies=[Depends(verify_api_key_rate_limit)])

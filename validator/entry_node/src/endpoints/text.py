@@ -8,6 +8,7 @@ from fiber.logging_utils import get_logger
 from fastapi.routing import APIRouter
 from validator.entry_node.src.core.configuration import Config
 from validator.entry_node.src.core.dependencies import get_config
+from validator.entry_node.src.core.middleware import verify_api_key_rate_limit
 from validator.utils.redis import redis_constants as rcst
 from validator.utils.generic import generic_constants as gcst
 from validator.entry_node.src.models import request_models
@@ -137,4 +138,11 @@ async def chat(
 
 
 router = APIRouter()
-router.add_api_route("/v1/chat/completions", chat, methods=["POST", "OPTIONS"], tags=["Text"], response_model=None)
+router.add_api_route(
+    "/v1/chat/completions",
+    chat,
+    methods=["POST", "OPTIONS"],
+    tags=["Text"],
+    response_model=None,
+    dependencies=[Depends(verify_api_key_rate_limit)],
+)
