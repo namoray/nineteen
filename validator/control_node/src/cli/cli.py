@@ -1,5 +1,5 @@
 from dotenv import load_dotenv
-
+load_dotenv(".vali.env")
 from validator.db.src.sql.api import (
     add_api_key,
     delete_api_key,
@@ -137,7 +137,6 @@ async def logs_for_key(api_key):
 
 @cli.command()
 async def logs_summary():
-
     await config.psql_db.connect()
     async with await config.psql_db.connection() as connection:
         keys = await list_api_keys(connection)

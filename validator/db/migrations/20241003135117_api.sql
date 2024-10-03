@@ -1,6 +1,6 @@
 -- migrate:up
 
-CREATE TABLE api_keys (
+CREATE TABLE IF NOT EXISTS api_keys (
     key TEXT PRIMARY KEY,
     name TEXT,
     balance REAL,
@@ -9,7 +9,7 @@ CREATE TABLE api_keys (
 );
 
 
-CREATE TABLE logs (
+CREATE TABLE IF NOT EXISTS logs (
     key TEXT,
     endpoint TEXT,
     cost REAL,

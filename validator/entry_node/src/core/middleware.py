@@ -27,8 +27,7 @@ async def verify_api_key_rate_limit(config: Config = Depends(get_config), api_ke
         await config.redis_db.expire(current_rate_limit_key, 60)
     else:
         current_rate_limit = int(current_rate_limit)
-    
+
     await config.redis_db.incr(current_rate_limit_key)
     if current_rate_limit >= rate_limit:
         raise HTTPException(status_code=429, detail="Too many requests")
-
