@@ -64,3 +64,12 @@ async def delete_api_key(connection: Connection, api_key: str) -> None:
         """,
         api_key,
     )
+
+async def list_api_keys(connection: Connection) -> list[dict]:
+    rows = await connection.fetch(
+        f"""
+        SELECT * FROM {dcst.API_KEYS_TABLE}
+        """
+    )
+    return [dict(row) for row in rows]
+
