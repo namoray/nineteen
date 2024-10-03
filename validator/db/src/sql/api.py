@@ -34,6 +34,7 @@ async def update_api_key_balance(connection: Connection, api_key: str, balance: 
         api_key,
     )
 
+
 async def update_api_key_rate_limit_per_minute(connection: Connection, api_key: str, rate_limit_per_minute: int) -> None:
     await connection.execute(
         f"""
@@ -43,7 +44,8 @@ async def update_api_key_rate_limit_per_minute(connection: Connection, api_key: 
         """,
         rate_limit_per_minute,
         api_key,
-    ) 
+    )
+
 
 async def update_api_key_name(connection: Connection, api_key: str, name: str) -> None:
     await connection.execute(
@@ -54,7 +56,7 @@ async def update_api_key_name(connection: Connection, api_key: str, name: str) -
         """,
         name,
         api_key,
-    )   
+    )
 
 
 async def delete_api_key(connection: Connection, api_key: str) -> None:
@@ -65,6 +67,7 @@ async def delete_api_key(connection: Connection, api_key: str) -> None:
         api_key,
     )
 
+
 async def list_api_keys(connection: Connection) -> list[dict]:
     rows = await connection.fetch(
         f"""
@@ -72,6 +75,7 @@ async def list_api_keys(connection: Connection) -> list[dict]:
         """
     )
     return [dict(row) for row in rows]
+
 
 async def get_logs_for_key(connection: Connection, api_key: str) -> list[dict]:
     rows = await connection.fetch(
@@ -81,3 +85,17 @@ async def get_logs_for_key(connection: Connection, api_key: str) -> list[dict]:
         api_key,
     )
     return [dict(row) for row in rows]
+
+
+async def get_api_key_rate_limit(connection: Connection, api_key: str) -> int | None:
+    row = await connection.fetchrow(
+        f"""
+        SELECT {dcst.RATE_LIMIT_PER_MINUTE} FROM {dcst.API_KEYS_TABLE} WHERE {dcst.KEY} = $1
+        """,
+        api_key,
+    )
+
+    if row is None:
+        return None
+
+    return row[dcst.RATE_LIMIT_PER_MINUTE]
