@@ -1,5 +1,7 @@
 from dotenv import load_dotenv
 
+from validator.db.src.sql.api import add_api_key
+
 load_dotenv(".vali.env")
 import asyncclick as click
 from rich.console import Console
@@ -22,7 +24,7 @@ def cli():
 @click.option(
     "--rate-limit-per-minute", prompt="Rate limit per minute", help="The rate limit per minute for the API key.", default=100
 )
-@click.option("--name", prompt="Name of the key for identification", help="The name for the API key.")
+@click.option("--name", prompt="Name of the key for identification", help="The name for the API key.", default="No-Name")
 async def create_key(count, rate_limit_per_minute, name):
     """Simple program that greets NAME for a total of COUNT times."""
     await config.psql_db.connect()
@@ -31,10 +33,7 @@ async def create_key(count, rate_limit_per_minute, name):
 
     api_key = str(uuid.uuid4())
     async with await config.psql_db.connection() as connection:
-        await connection.execute(
-            "INSERT INTO api_keys (api_key, balance, rate_limit_per_minute, name) VALUES (?, ?, ?, ?)",
-            (api_key, balance, rate_limit_per_minute, name)
-        )
+        await add_api_key(connection, api_key, balance, rate_limit_per_minute, name)
 
     console = Console()
     table = Table(show_header=True, header_style="bold magenta")
