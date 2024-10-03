@@ -1,4 +1,5 @@
 # Table names
+API_KEYS_TABLE = "api_keys"
 HOTKEY_INFO_TABLE = "hotkey_info"
 NODES_TABLE = "nodes"
 NODES_HISTORY_TABLE = "nodes_history"
@@ -13,6 +14,15 @@ DELAY_BETWEEN_SYNTHETIC_REQUESTS = "delay_between_synthetic_requests"
 SYNTHETIC_REQUESTS_STILL_TO_MAKE = "synthetic_requests_still_to_make"
 
 ######## Column names ###########
+
+# Api key table
+KEY = "key"
+NAME = "name"
+BALANCE = "balance"
+RATE_LIMIT_PER_MINUTE = "rate_limit_per_minute"
+CREATED_AT = "created_at"
+
+
 
 # Hotkey info table
 HOTKEY = "hotkey"
