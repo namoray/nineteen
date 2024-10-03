@@ -63,19 +63,19 @@ async def make_non_stream_organic_query(
     job_id = uuid.uuid4().hex
     organic_message = _construct_organic_message(payload=payload, job_id=job_id, task=task)
 
-    async with redis_db.pubsub() as pubsub:
-        await pubsub.subscribe(f"{gcst.ACKNLOWEDGED}:{job_id}")
-        await redis_db.lpush(rcst.QUERY_QUEUE_KEY, organic_message)  # type: ignore
+    pubsub = redis_db.pubsub()
+    await pubsub.subscribe(f"{gcst.ACKNLOWEDGED}:{job_id}")
+    await redis_db.lpush(rcst.QUERY_QUEUE_KEY, organic_message)  # type: ignore
 
-        try:
-            await asyncio.wait_for(_wait_for_acknowledgement(pubsub, job_id), timeout=1)
+    try:
+        await asyncio.wait_for(_wait_for_acknowledgement(pubsub, job_id), timeout=1)
 
-            await pubsub.subscribe(f"{rcst.JOB_RESULTS}:{job_id}")
-            return await asyncio.wait_for(_collect_single_result(pubsub, job_id), timeout=timeout)
+        await pubsub.subscribe(f"{rcst.JOB_RESULTS}:{job_id}")
+        return await asyncio.wait_for(_collect_single_result(pubsub, job_id), timeout=timeout)
 
-        except asyncio.TimeoutError:
-            logger.error(f"No confirmation received for job {job_id} within timeout period. Task: {task}")
-            raise HTTPException(status_code=500, detail=f"Unable to proccess task: {task}, please try again later.")
+    except asyncio.TimeoutError:
+        logger.error(f"No confirmation received for job {job_id} within timeout period. Task: {task}")
+        raise HTTPException(status_code=500, detail=f"Unable to proccess task: {task}, please try again later.")
 
 
 async def process_image_request(
