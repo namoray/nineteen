@@ -1,7 +1,7 @@
 import datetime
 from fiber import SubstrateInterface
 from validator.db.src.database import PSQLDB
-from fiber.chain.models import Node
+from fiber.networking.models import NodeWithFernet as Node
 from fiber.logging_utils import get_logger
 
 from asyncpg import Connection

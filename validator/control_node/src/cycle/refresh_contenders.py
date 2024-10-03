@@ -10,18 +10,21 @@ from typing import List
 
 
 from validator.db.src.sql.contenders import (
+    fetch_all_contenders,
     migrate_contenders_to_contender_history,
     insert_contenders,
     update_contenders_period_scores,
 )
 from validator.models import Contender
-from fiber.chain.models import Node
+from fiber.networking.models import NodeWithFernet as Node
 from core import tasks_config as tcfg
 from core.tasks import Task
 from validator.control_node.src.control_config import Config
 from fiber.logging_utils import get_logger
 
 from fiber.validator import client
+
+from validator.utils.post.nineteen import ContenderPayload, DataTypeToPost, post_to_nineteen_ai
 
 logger = get_logger(__name__)
 
@@ -159,8 +162,30 @@ async def _get_contenders_from_nodes(config: Config, nodes: list[Node]) -> List[
     return contenders
 
 
+async def _post_contender_stats_to_nineteen(config: Config):
+    async with await config.psql_db.connection() as connection:
+        all_contenders = await fetch_all_contenders(connection, config.netuid)
+    payloads = []
+    for contender in all_contenders:
+        payloads.append(
+            ContenderPayload(
+                node_id=contender.node_id,
+                node_hotkey=contender.node_hotkey,
+                validator_hotkey=config.keypair.ss58_address,
+                task=contender.task,
+                declared_volume=contender.raw_capacity,
+                consumed_volume=contender.consumed_capacity,
+                total_requests_made=contender.total_requests_made,
+                requests_429=contender.requests_429,
+                requests_500=contender.requests_500,
+            ).model_dump(mode="json")
+        )
+    await post_to_nineteen_ai(data_to_post=payloads, keypair=config.keypair, data_type_to_post=DataTypeToPost.UID_RECORD, timeout=10)
+
+
 async def get_and_store_contenders(config: Config, nodes: list[Node]) -> list[Contender]:
     logger.info(f"Got {len(nodes)} nodes to get contenders from...")
+    await _post_contender_stats_to_nineteen(config)
     contenders = await _get_contenders_from_nodes(config, nodes)
     await _store_and_migrate_old_contenders(config, contenders)
     return contenders

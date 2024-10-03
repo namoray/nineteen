@@ -7,7 +7,7 @@ import asyncio
 import traceback
 
 
-from fiber.chain.models import Node
+from fiber.networking.models import NodeWithFernet as Node
 from validator.db.src.sql.nodes import get_nodes, migrate_nodes_to_history, insert_nodes, get_last_updated_time_for_nodes
 from fiber.logging_utils import get_logger
 from fiber.chain import fetch_nodes
@@ -30,7 +30,10 @@ async def get_and_store_nodes(config: Config) -> list[Node]:
         if await is_recent_update(connection, config.netuid):
             return await get_nodes(config.psql_db, config.netuid)
 
-    nodes = await fetch_nodes_from_substrate(config)
+    raw_nodes = await fetch_nodes_from_substrate(config)
+
+    # Ensuring the Nodes get converted to NodesWithFernet
+    nodes = [Node(**node.model_dump(mode="json")) for node in raw_nodes]
 
     await store_nodes(config, nodes)
     await update_our_validator_node(config)
