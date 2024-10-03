@@ -31,7 +31,9 @@ async def create_key(count, rate_limit_per_minute, name):
     balance = 100000000
     print("For now, the balance is set to 100,000,000 [will be improved soon]")
 
+
     api_key = str(uuid.uuid4())
+    print(api_key, balance, rate_limit_per_minute, name)
     async with await config.psql_db.connection() as connection:
         await add_api_key(connection, api_key, balance, rate_limit_per_minute, name)
 
