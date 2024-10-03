@@ -111,6 +111,15 @@ async def delete_contender_history_older_than(connection: Connection, date: date
     )
 
 
+async def delete_task_data_older_than_date(connection: Connection, date: datetime) -> None:
+    await connection.execute(
+        f"""
+        DELETE FROM {dcst.TABLE_TASKS} WHERE {dcst.COLUMN_CREATED_AT} < $1
+        """,
+        date,
+    )
+
+
 async def delete_oldest_rows_from_tasks(connection: Connection, limit: int = 10) -> None:
     await connection.execute(
         f"""
