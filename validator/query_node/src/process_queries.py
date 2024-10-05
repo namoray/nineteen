@@ -1,12 +1,10 @@
-from datetime import datetime
 import json
 import time
 from redis.asyncio import Redis
 from core.models.payload_models import ImageResponse
 from validator.models import Contender
 from validator.query_node.src.query_config import Config
-from core.tasks import Task
-from core import tasks_config as tcfg
+from core import task_config as tcfg
 from validator.utils.generic import generic_utils as gutils
 from validator.utils.contender import contender_utils as putils
 from validator.utils.redis import redis_constants as rcst
@@ -22,8 +20,8 @@ logger = get_logger(__name__)
 MAX_CONCURRENT_TASKS = 10
 
 
-async def _decrement_requests_remaining(redis_db: Redis, task: Task):
-    key = f"task_synthetics_info:{task.value}:requests_remaining"
+async def _decrement_requests_remaining(redis_db: Redis, task: str):
+    key = f"task_synthetics_info:{task}:requests_remaining"
     await redis_db.decr(key)
 
 
@@ -63,7 +61,9 @@ async def _handle_stream_query(config: Config, message: rdc.QueryQueueMessage, c
             break
 
     if not success:
-        logger.error(f"All Contenders {[contender.node_id for contender in contenders_to_query]} for task {message.task} failed to respond! :(")
+        logger.error(
+            f"All Contenders {[contender.node_id for contender in contenders_to_query]} for task {message.task} failed to respond! :("
+        )
         await _handle_error(
             config=config,
             synthetic_query=message.query_type == gcst.SYNTHETIC,
@@ -94,7 +94,9 @@ async def _handle_nonstream_query(config: Config, message: rdc.QueryQueueMessage
             break
 
     if not success:
-        logger.error(f"All Contenders {[contender.node_id for contender in contenders_to_query]} for task {message.task} failed to respond! :(")
+        logger.error(
+            f"All Contenders {[contender.node_id for contender in contenders_to_query]} for task {message.task} failed to respond! :("
+        )
         await _handle_error(
             config=config,
             synthetic_query=message.query_type == gcst.SYNTHETIC,
@@ -114,7 +116,7 @@ async def _handle_error(config: Config, synthetic_query: bool, job_id: str, stat
 
 
 async def process_task(config: Config, message: rdc.QueryQueueMessage):
-    task = Task(message.task)
+    task = message.task
 
     if message.query_type == gcst.ORGANIC:
         logger.debug(f"Acknowledging job id : {message.job_id}")
@@ -126,12 +128,13 @@ async def process_task(config: Config, message: rdc.QueryQueueMessage):
 
     task_config = tcfg.get_enabled_task_config(task)
     if task_config is None:
+        logger.error(f"Can't find the task {task} in the query node!")
         await _handle_error(
             config=config,
             synthetic_query=message.query_type == gcst.SYNTHETIC,
             job_id=message.job_id,
             status_code=500,
-            error_message=f"Can't find the task {task.value}, please try again later",
+            error_message=f"Can't find the task {task}, please try again later",
         )
         return
 
@@ -139,7 +142,6 @@ async def process_task(config: Config, message: rdc.QueryQueueMessage):
 
     async with await config.psql_db.connection() as connection:
         contenders_to_query = await get_contenders_for_task(connection, task)
-        
 
     if contenders_to_query is None:
         raise ValueError("No contenders to query! :(")
@@ -150,11 +152,11 @@ async def process_task(config: Config, message: rdc.QueryQueueMessage):
         else:
             return await _handle_nonstream_query(config=config, message=message, contenders_to_query=contenders_to_query)
     except Exception as e:
-        logger.error(f"Error processing task {task.value}: {e}")
+        logger.error(f"Error processing task {task}: {e}")
         await _handle_error(
             config=config,
             synthetic_query=message.query_type == gcst.SYNTHETIC,
             job_id=message.job_id,
             status_code=500,
-            error_message=f"Error processing task {task.value}: {e}",
+            error_message=f"Error processing task {task}: {e}",
         )

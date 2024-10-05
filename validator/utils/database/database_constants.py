@@ -130,7 +130,7 @@ COLUMN_NODE_ID = "node_id"
 COLUMN_QUALITY_SCORE = "quality_score"
 COLUMN_VALIDATOR_HOTKEY = "validator_hotkey"
 COLUMN_SYNTHETIC_QUERY = "synthetic_query"
-COLUMN_SPEED_SCORING_FACTOR = "speed_scoring_factor"
+COLUMN_METRIC = "metric"
 COLUMN_RESPONSE_TIME = "response_time"
 COLUMN_VOLUME = "volume"
 

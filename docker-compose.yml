@@ -128,7 +128,7 @@ services:
       - postgres_network
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgresql:5432/${POSTGRES_DB}?sslmode=disable
-    container_name: 0_dbmate
+    container_name: 0_dbmate_nineteen
 
 
   redis:

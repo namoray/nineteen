@@ -9,7 +9,7 @@ from validator.query_node.src.query_config import Config
 from validator.models import Contender
 from fiber.networking.models import NodeWithFernet as Node
 from fiber.validator import client
-from core import tasks_config as tcfg
+from core import task_config as tcfg
 from fiber.logging_utils import get_logger
 from validator.query_node.src import utils
 from validator.utils.redis import redis_constants as rcst

@@ -8,6 +8,12 @@ from fastapi import HTTPException
 
 
 async def verify_api_key_rate_limit(config: Config = Depends(get_config), api_key: str = Depends(get_api_key)):
+
+    # NOTE: abit dangerous but very useful
+    if not config.prod:
+        if api_key == "test":
+            return True
+
     rate_limit_key = f"rate_limit:{api_key}"
     rate_limit = await config.redis_db.get(rate_limit_key)
     if rate_limit is None:

@@ -10,8 +10,7 @@ from redis.asyncio import Redis
 from validator.db.src.database import PSQLDB
 from validator.control_node.src.control_config import Config
 from validator.models import Contender
-from core.tasks import Task
-from core import tasks_config as tcfg
+from core import task_config as tcfg
 from validator.utils.contender import contender_utils as putils
 from validator.utils.generic import generic_constants as gcst
 from validator.utils.redis import redis_constants as rcst
@@ -23,7 +22,7 @@ logger = get_logger(__name__)
 
 @dataclass
 class TaskScheduleInfo:
-    task: Task
+    task: str
     total_requests: int
     interval: float
     next_schedule_time: float
@@ -37,19 +36,19 @@ async def _load_contenders(psql_db: PSQLDB) -> List[Contender]:
     return await putils.load_contenders(psql_db)
 
 
-async def _group_contenders_by_task(contenders: List[Contender]) -> Dict[Task, List[Contender]]:
-    task_groups: Dict[Task, List[Contender]] = {}
+async def _group_contenders_by_task(contenders: List[Contender]) -> Dict[str, List[Contender]]:
+    task_groups: Dict[str, List[Contender]] = {}
+    task_configs = tcfg.get_task_configs()
     for contender in contenders:
-        if contender.task not in Task._value2member_map_:
+        if contender.task not in task_configs:
             continue
-        task = Task(contender.task)
-        if task not in task_groups:
-            task_groups[task] = []
-        task_groups[task].append(contender)
+        if contender.task not in task_groups:
+            task_groups[contender.task] = []
+        task_groups[contender.task].append(contender)
     return task_groups
 
 
-def _calculate_task_requests(task: Task, contenders: List[Contender], config: Config) -> int:
+def _calculate_task_requests(task: str, contenders: List[Contender], config: Config) -> int:
     task_config = tcfg.get_enabled_task_config(task)
     if task_config is None:
         return 0
@@ -61,7 +60,7 @@ def _get_initial_schedule_time(current_time: float, interval: float) -> float:
     return current_time + random.random() * interval
 
 
-async def _initialize_task_schedules(task_groups: Dict[Task, List[Contender]], config: Config) -> List[TaskScheduleInfo]:
+async def _initialize_task_schedules(task_groups: Dict[str, List[Contender]], config: Config) -> List[TaskScheduleInfo]:
     scoring_period_time = ccst.SCORING_PERIOD_TIME * config.scoring_period_time_multiplier
     schedules = []
     for task, contenders in task_groups.items():
@@ -81,18 +80,18 @@ async def _initialize_task_schedules(task_groups: Dict[Task, List[Contender]], c
     return schedules
 
 
-async def _update_redis_remaining_requests(redis_db: Redis, task: Task, remaining_requests: int):
-    key = f"task_synthetics_info:{task.value}:requests_remaining"
+async def _update_redis_remaining_requests(redis_db: Redis, task: str, remaining_requests: int):
+    key = f"task_synthetics_info:{task}:requests_remaining"
     await redis_db.set(key, remaining_requests)
 
 
-async def _get_redis_remaining_requests(redis_db: Redis, task: Task) -> int:
-    key = f"task_synthetics_info:{task.value}:requests_remaining"
+async def _get_redis_remaining_requests(redis_db: Redis, task: str) -> int:
+    key = f"task_synthetics_info:{task}:requests_remaining"
     value = await redis_db.get(key)
     return int(value) if value is not None else 0
 
 
-async def _schedule_synthetic_query(redis_db: Redis, task: Task, max_len: int):
+async def _schedule_synthetic_query(redis_db: Redis, task: str, max_len: int):
     await putils.add_synthetic_query_to_queue(redis_db, task, max_len)
 
 
