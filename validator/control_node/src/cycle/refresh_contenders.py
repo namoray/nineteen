@@ -23,7 +23,13 @@ from fiber.logging_utils import get_logger
 from core import constants as cst
 from fiber.validator import client
 
-from validator.utils.post.nineteen import ContenderPayload, DataTypeToPost, MinerCapacitiesPostObject, post_to_nineteen_ai
+from validator.utils.post.nineteen import (
+    ContenderPayload,
+    DataTypeToPost,
+    MinerCapacitiesPostObject,
+    MinerTypesPostBody,
+    post_to_nineteen_ai,
+)
 
 logger = get_logger(__name__)
 
@@ -107,6 +113,8 @@ async def _get_contenders_from_nodes(config: Config, nodes: list[Node]) -> List[
     task_configs = tcfg.get_task_configs()
     logger.info(f"Got capacities for {len([i for i in raw_capacities if i is not None])} nodes")
 
+    miner_types = {}
+
     contenders = []
     for node, raw_node_capacities in zip(nodes, raw_capacities):
         if raw_node_capacities is None:
@@ -121,6 +129,8 @@ async def _get_contenders_from_nodes(config: Config, nodes: list[Node]) -> List[
 
         miner_type = raw_node_capacities[cst.MINER_TYPE]
         del raw_node_capacities[cst.MINER_TYPE]
+
+        miner_types[node_hotkey] = miner_type
 
         for task, declared_capacity in raw_node_capacities.items():
             if task not in task_configs:
@@ -150,6 +160,19 @@ async def _get_contenders_from_nodes(config: Config, nodes: list[Node]) -> List[
                     period_score=None,
                 )
             )
+
+    # Post miner types to nineteen
+    miner_types_payload = [
+        MinerTypesPostBody(
+            miner_hotkey=node_hotkey,
+            validator_hotkey=config.keypair.ss58_address,
+            miner_type=miner_type,
+        ).model_dump(mode="json")
+        for node_hotkey, miner_type in miner_types.items()
+    ]
+    await post_to_nineteen_ai(
+        data_to_post=miner_types_payload, keypair=config.keypair, data_type_to_post=DataTypeToPost.MINER_TYPES, timeout=10
+    )
 
     logger.info(f"Got {len(contenders)} contenders to score")
     return contenders
@@ -192,11 +215,13 @@ async def _post_contender_stats_to_nineteen(config: Config):
 
 async def get_and_store_contenders(config: Config, nodes: list[Node]) -> list[Contender]:
     logger.info(f"Got {len(nodes)} nodes to get contenders from...")
+
+    contenders = await _get_contenders_from_nodes(config, nodes)
+    await _store_and_migrate_old_contenders(config, contenders)
+
     await _post_contender_stats_to_nineteen(config)
     # NOTE: Could also add a feature here which deletes everything from
     # contender history for a node which doesn't align with their miner_type.
     # This would prevent changing miner_types - though there is no benefit to that
     # anyway
-    contenders = await _get_contenders_from_nodes(config, nodes)
-    await _store_and_migrate_old_contenders(config, contenders)
     return contenders

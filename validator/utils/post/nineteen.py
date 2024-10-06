@@ -18,7 +18,7 @@ class DataTypeToPost(enum.Enum):
     UID_RECORD = 2
     MINER_CAPACITIES = 3
     VALIDATOR_INFO = 4
-
+    MINER_TYPES = 5
 
 
 
@@ -27,6 +27,7 @@ data_type_to_url = {
     DataTypeToPost.UID_RECORD: ccst.BASE_NINETEEN_API_URL + "v1/store/uid_records",
     DataTypeToPost.MINER_CAPACITIES: ccst.BASE_NINETEEN_API_URL + "v1/store/miner_capacities",
     DataTypeToPost.VALIDATOR_INFO: ccst.BASE_NINETEEN_API_URL + "v1/store/validator_info",
+    DataTypeToPost.MINER_TYPES: ccst.BASE_NINETEEN_API_URL + "v1/store/miner_types",
 }
 
 # Turn off if you don't wanna post your validator info to nineteen.ai
@@ -70,6 +71,11 @@ async def post_to_nineteen_ai(
         except Exception as e:
             logger.error(f"Error when posting to {ccst.BASE_NINETEEN_API_URL} to store data for {data_type_to_post}: {repr(e)}")
 
+
+class MinerTypesPostBody(BaseModel):
+    validator_hotkey: str
+    miner_hotkey: str
+    miner_type: str
 
 class RewardDataPostBody(RewardData):
     testnet: bool
