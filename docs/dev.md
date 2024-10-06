@@ -6,7 +6,7 @@ Same as always
 ```bash
 docker compose --env-file .vali.env -f docker-compose.yml  up -d
 ```
-use run this
+Set env vars by running this
 ```bash
 sed -i 's/ENV=[^ ]*/ENV=dev/' .vali.env
 ```
@@ -17,8 +17,6 @@ sed -i 's/ENV=[^ ]*/ENV=dev/' .vali.env
 ```bash
 docker compose --env-file .vali.env -f docker-compose.yml -f docker-compose.dev.yml up -d --build
 ```
-
-
 
 
 ## For dev without docker:
