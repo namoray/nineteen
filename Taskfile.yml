@@ -30,8 +30,7 @@ tasks:
 
   dev_setup:
     cmds:
-      - docker compose --env-file .vali.env -f docker-compose.yml -f docker-compose.dev.yml --profile entry_node_profile up -d --build
-      - docker stop control_node query_node entry_node weight_setter
+      - docker compose --env-file .vali.env -f docker-compose.yml -f docker-compose.dev.yml --profile entry_node_profile up -d --build --scale entry_node=0 --scale query_node=0 --scale control_node=0 --scale weight_setter=0
       # Now use control_node_dev etc
 
   m1_dev:

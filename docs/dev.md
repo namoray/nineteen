@@ -5,11 +5,12 @@ the notes telling you to come back here
 
 ## For dev without docker:
 
-Optional if you need a venv
+1. Optional if you need a venv
 ```bash
 python -m venv .venv || python3 -m venv .venv
 ```
 
+2. Set up the venv and what not (dont worry about bittensor incompatibility warnings)
 ```bash
 source .venv/bin/activate
 find . -path "./venv" -prune -o -path "./.venv" -prune -o -name "requirements.txt" -exec pip install -r {} \;
@@ -20,7 +21,7 @@ task m1_dev  # For example for the miner 1
 ```
 
 
-**If you want to dev with fiber locally too [optional - probably ignore if you are not working on fiber]**
+3. **If you want to dev with fiber locally too [optional - probably ignore if you are not working on fiber]**
 ```bash
 cd ..
 git clone https://github.com/rayonlabs/fiber.git
@@ -31,7 +32,7 @@ cd ..
 cd nineteen
 ```
 
-## To run the whole system
+## To run the whole system with docker
 ```bash
 docker compose --env-file .vali.env -f docker-compose.yml -f docker-compose.dev.yml --profile entry_node_profile up -d --build
 ```
