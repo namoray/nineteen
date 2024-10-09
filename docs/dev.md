@@ -1,7 +1,14 @@
 # Instructions to help devs (Mainly Notes to self)
 
-Follow the validating.md / mining.md docs first until you get to 
-the notes telling you to come back here
+## Get started with bittensor
+
+Use these https://docs.bittensor.com/ to help you with most steps
+1. Create a wallet with a coldkey and 2 hotkeys - one for mining and one for validating
+2. Have some testtao transferred to your coldkey from someone you know that has testtao (you can't use the faucet)
+3. Register your hotkey for validating with the network (you need to do this before you can validate)
+4. Register your hotkey for mining with the network (you need to do this before you can mine)
+5. Follow the validating.md / mining.md docs first until you get to the notes telling you to come back here
+
 
 ## For dev without docker:
 
