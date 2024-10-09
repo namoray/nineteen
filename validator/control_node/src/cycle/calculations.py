@@ -103,7 +103,7 @@ def _normalise_period_scores(period_scores: list[PeriodScore]) -> float:
         return 0
     else:
         # Requires an abundance of data before handing out top scores
-        period_score_multiplier = 1 if len(period_scores) < 8 else 0.25
+        period_score_multiplier = 1 if len(period_scores) > 8 else 0.25
         return period_score_multiplier * total_score / total_weight
 
 
