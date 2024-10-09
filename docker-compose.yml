@@ -88,7 +88,7 @@ services:
       - postgres_network
       - redis_network
     ports:
-      - "${ORGANIC_SERVER_PORT-8091}:${ORGANIC_SERVER_PORT-8091}"
+      - "${ORGANIC_SERVER_PORT:-8091}:${ORGANIC_SERVER_PORT:-8091}"
     entrypoint: [ "python", "-u", "/app/validator/entry_node/src/server.py" ]
     container_name: entry_node
     env_file:
