@@ -39,15 +39,15 @@ def _get_metric_bonuses(metric_scores: dict[str, float]) -> dict[str, float]:
 async def _get_reward_datas(psql_db: PSQLDB, task: str, netuid: int) -> dict[str, list[RewardData]]:
     # Flow is:
     # Get all possible hotkeys
-    # Try to get the first 50 reward datas for the task
-    # If there are less than 50, get the remaining from other tasks that hotkey has done
+    # Get reward data for this task - as much as possible
+    # If there are not enough, then get the remaining from other tasks that hotkey has done
 
     all_nodes = await get_nodes(psql_db, netuid=netuid)
     all_hotkeys = [node.hotkey for node in all_nodes]
     reward_datas = []
     async with await psql_db.connection() as connection:
         for hotkey in all_hotkeys:
-            reward_data = await db_functions.fetch_recent_most_rewards(connection, task, hotkey)
+            reward_data = await db_functions.fetch_recent_most_rewards(connection, task, hotkey, quality_tasks_to_fetch=50)
             reward_datas.extend(reward_data)
     return reward_datas
 
