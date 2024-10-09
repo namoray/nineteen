@@ -66,11 +66,11 @@ Securely move them onto your machine as usual. Either with the btcli or with a s
 
 ## Create the necessary config
 
-
+(Add --dev flag if you are a developer on nineteen)
 ```bash
 python core/create_config.py
 ```
-(^ Add --dev flag if you are a developer on nineteen)
+
 
 If you're running the autoupdater, then you should be running!
 

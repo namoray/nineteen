@@ -1,5 +1,8 @@
 # Instructions to help devs (Mainly Notes to self)
 
+Follow the validating.md / mining.md docs first until you get to 
+the notes telling you to come back here
+
 ## For dev without docker:
 
 Optional if you need a venv
