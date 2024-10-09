@@ -1,6 +1,5 @@
 services:
 
-
   control_node:
     build:
       context: .
@@ -13,7 +12,7 @@ services:
     networks:
       - postgres_network
       - redis_network
-    entrypoint: ["python", "-u", "/app/validator/control_node/src/main.py"]
+    entrypoint: [ "python", "-u", "/app/validator/control_node/src/main.py" ]
     volumes:
       - ${HOME}/.bittensor/wallets:/root/.bittensor/wallets
     env_file:
@@ -35,7 +34,7 @@ services:
     networks:
       - postgres_network
       - redis_network
-    entrypoint: ["python", "-u", "/app/validator/control_node/src/set_weights/calculate_and_schedule_weights.py"]
+    entrypoint: [ "python", "-u", "/app/validator/control_node/src/set_weights/calculate_and_schedule_weights.py" ]
     volumes:
       - ${HOME}/.bittensor/wallets:/root/.bittensor/wallets
     env_file:
@@ -44,7 +43,7 @@ services:
     deploy:
       restart_policy:
         condition: on-failure
- 
+
   query_node:
     build:
       context: .
@@ -65,7 +64,7 @@ services:
       - redis_network
     volumes:
       - ${HOME}/.bittensor/wallets:/root/.bittensor/wallets
-    entrypoint: ["python", "-u", "/app/validator/query_node/src/main.py"]
+    entrypoint: [ "python", "-u", "/app/validator/query_node/src/main.py" ]
     container_name: query_node
     env_file:
       - .vali.env
@@ -89,8 +88,8 @@ services:
       - postgres_network
       - redis_network
     ports:
-      - "8091:8091"
-    entrypoint: ["python", "-u", "/app/validator/entry_node/src/server.py"]
+      - "${ORGANIC_SERVER_PORT-8091}:${ORGANIC_SERVER_PORT-8091}"
+    entrypoint: [ "python", "-u", "/app/validator/entry_node/src/server.py" ]
     container_name: entry_node
     env_file:
       - .vali.env
@@ -102,7 +101,7 @@ services:
     volumes:
       - ./postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -129,7 +128,6 @@ services:
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgresql:5432/${POSTGRES_DB}?sslmode=disable
     container_name: 0_dbmate_nineteen
-
 
   redis:
     image: redis/redis-stack:latest
