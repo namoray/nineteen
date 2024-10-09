@@ -53,7 +53,7 @@ def custom_task_configs_factory():
         )
     }
 
-    combined_config = base_task_config + addition
+    combined_config = base_task_config | addition
     # Optionally use the voted weights to help set consensus
     combined_config = get_updated_task_config_with_voted_weights(combined_config)
     return combined_config
