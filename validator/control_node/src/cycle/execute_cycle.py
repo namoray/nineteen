@@ -77,13 +77,13 @@ async def main(config: Config) -> None:
     contenders = await get_nodes_and_contenders(config)
 
     # NOTE: REMOVE AFTER Nineteen 6.0 - hard reset
-    date_of_update = datetime(2024, 10, 9, 14)
+    date_of_update = datetime(2024, 10, 9, 15, 30)
     # NOTE: after 36 hours remove the first 24 hours of the update, to not overly penalize the miners for updating ineffeciencies
     if datetime.now() - date_of_update > timedelta(hours=36):
         date_to_delete = datetime(2024, 10, 10, 14)
     else:
-        # date_to_delete = datetime(2024, 10, 9, 14)
-        date_to_delete = datetime(2023, 10, 1, 13)  # TODO: not deleting anything whilst dev - change on final PR
+        date_to_delete = date_of_update
+
 
     async with await config.psql_db.connection() as connection:
         await delete_task_data_older_than_date(connection, date_to_delete)
