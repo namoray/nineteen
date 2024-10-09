@@ -32,6 +32,7 @@ async def _process_image_request(
         raise ValueError(f"Task config not found for model: {decrypted_payload.model}")
     
     # NOTE: load_model_config for image models is set only for the models that are added customly by validators 
+    # It is up to miners to have a nicer way of doing this
     if task_config.orchestrator_server_config.load_model_config:
         model_name = f'{task_config.orchestrator_server_config.load_model_config["model_repo"]} | {task_config.orchestrator_server_config.load_model_config["safetensors_filename"]}'
         decrypted_payload.model = model_name
