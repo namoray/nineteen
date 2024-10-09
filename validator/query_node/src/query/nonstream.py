@@ -102,6 +102,7 @@ async def query_nonstream(
     if task_config is None:
         logger.error(f"Task config not found for task: {contender.task}")
         return False
+
     try:
         response = await client.make_non_streamed_post(
             httpx_client=config.httpx_client,

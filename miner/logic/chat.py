@@ -26,6 +26,7 @@ async def chat_stream(
         address = worker_config.LLAMA_3_1_70B_TEXT_WORKER_URL
     elif task_config.task == "chat-llama-3-2-3b":
         address = worker_config.LLAMA_3_2_3B_TEXT_WORKER_URL
+    # NOTE: adjust on validator UID basis by adding custom endpoints in worker_config init
     else:
         raise ValueError(f"Invalid model: {decrypted_payload.model}")
 
