@@ -13,10 +13,9 @@ import uuid
 
 import httpx
 
-from core import tasks_config as tcfg
+from core import task_config as tcfg
 
 from fiber.logging_utils import get_logger
-from core.tasks import Task
 from validator.models import RewardData
 from validator.utils import work_and_speed_functions
 from validator.db.src import functions as db_functions
@@ -124,9 +123,10 @@ async def _process_and_store_score(
         logger.error(f"Task {task} is not enabled")
         return
     volume = work_and_speed_functions.calculate_work(task_config=task_config, result=result, steps=payload.get("steps"))
-    speed_scoring_factor = work_and_speed_functions.calculate_speed_modifier(
-        task_config=task_config, result=result, payload=payload
-    )
+    try:
+        metric = volume / result["response_time"]
+    except (KeyError, ValueError, ZeroDivisionError):
+        metric = None
 
     for node_id, quality_score in node_scores.items():
         reward_data = RewardData(
@@ -139,7 +139,7 @@ async def _process_and_store_score(
             synthetic_query=synthetic_query,
             response_time=result["response_time"],
             volume=volume,
-            speed_scoring_factor=speed_scoring_factor,
+            metric=metric,
             created_at=result["created_at"],
         )
 
@@ -151,7 +151,6 @@ async def _process_and_store_score(
             await delete_contender_history_older_than(connection, contender_date_to_delete)
             task_date_to_delete = datetime.now() - timedelta(hours=5)
             await delete_task_data_older_than_date(connection, task_date_to_delete)
-
 
         logger.info(f"Successfully scored and stored data for task: {task}")
 
@@ -179,10 +178,10 @@ async def score_results(config: Config):
         if total_tasks_stored < min_tasks_to_start_scoring:
             await asyncio.sleep(5)
             continue
-        
-        task_to_score_str =  random.choices(list(tasks_and_results.keys()), weights=list(tasks_and_results.values()), k=1)[0]
+
+        task_to_score_str = random.choices(list(tasks_and_results.keys()), weights=list(tasks_and_results.values()), k=1)[0]
         try:
-            task_to_score = Task(task_to_score_str)
+            task_to_score = task_to_score_str
         except ValueError:
             logger.error(f"Invalid task: {task_to_score_str}")
             async with await config.psql_db.connection() as connection:
@@ -192,7 +191,7 @@ async def score_results(config: Config):
         await _score_task(config, task_to_score, max_tasks_to_score=200)
 
 
-async def _score_task(config: Config, task: Task, max_tasks_to_score: int):
+async def _score_task(config: Config, task: str, max_tasks_to_score: int):
     consecutive_errors = 0
     for _ in range(max_tasks_to_score):
         data_and_hotkey = await db_functions.select_and_delete_task_result(config.psql_db, task)
@@ -225,7 +224,7 @@ async def _score_task(config: Config, task: Task, max_tasks_to_score: int):
             logger.info(f"Successfully scored task {task} with task result: {task_result}")
         await _process_and_store_score(
             config=config,
-            task=task.value,
+            task=task,
             result=query_result,
             payload=payload,
             node_hotkey=node_hotkey,

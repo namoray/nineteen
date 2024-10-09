@@ -5,8 +5,7 @@ from typing import Any
 
 from core.models import utility_models
 from validator.utils.synthetic import synthetic_constants as scst
-from core.tasks import Task
-from core import tasks_config
+from core import task_config as tcfg
 from core.models import payload_models
 from PIL import Image
 import io
@@ -146,7 +145,7 @@ async def generate_chat_synthetic(model: str) -> payload_models.ChatPayload:
         temperature=round(random.random(), 1),
         max_tokens=1024,
         seed=random.randint(1, scst.MAX_SEED),
-        model=Task(model),
+        model=model,
         top_p=1,
     )
 
@@ -159,23 +158,11 @@ async def generate_text_to_image_synthetic(
     # TODO: Fix to be our allowed seeds for the relay mining solution
     seed = random.randint(1, scst.MAX_SEED)
 
-    if model == Task.proteus_text_to_image.value:
-        height = 1024
-        width = 1024
-        cfg_scale = 4.0
-        steps = 8
-    elif model == Task.dreamshaper_text_to_image.value:
-        height = 1024
-        width = 1024
-        cfg_scale = 3.0
-        steps = 8
-    elif model == Task.flux_schnell_text_to_image.value:
-        height = 1024
-        width = 1024
-        cfg_scale = 3.0
-        steps = 5
-    else:
-        raise ValueError(f"Model {model} not supported")
+    # NOTE: Needs to be in task config perhaps to make more robust?
+    height = 1024
+    width = 1024
+    cfg_scale = 3.0
+    steps = 8
 
     return payload_models.TextToImagePayload(
         prompt=prompt,
@@ -199,26 +186,12 @@ async def generate_image_to_image_synthetic(
     # TODO: Fix to be our allowed seeds for the relay mining solution
     seed = random.randint(1, scst.MAX_SEED)
 
-    if model == Task.flux_schnell_image_to_image.value:
-        height = 1024
-        width = 1024
-        cfg_scale = 3.0
-        steps = 10
-        image_strength = 0.5
-    elif model == Task.dreamshaper_image_to_image.value:
-        height = 1024
-        width = 1024
-        cfg_scale = 2.0
-        steps = 8
-        image_strength = 0.5
-    elif model == Task.proteus_image_to_image.value:
-        height = 1024
-        width = 1024
-        cfg_scale = 2.0
-        steps = 8
-        image_strength = 0.5
-    else:
-        raise ValueError(f"Engine {model} not supported")
+    # NOTE: Needs to be in task config perhaps to make more robust?
+    height = 1024
+    width = 1024
+    cfg_scale = 2.0
+    steps = 8
+    image_strength = 0.5
 
     init_image = await sutils.get_random_image_b64(cache)
 
@@ -249,7 +222,7 @@ async def generate_inpaint_synthetic() -> payload_models.InpaintPayload:
         prompt=prompt,
         negative_prompt=negative_prompt,
         cfg_scale=2.0,
-        seed=seed, 
+        seed=seed,
         height=1016,
         width=1016,
         steps=8,
@@ -264,7 +237,7 @@ async def generate_avatar_synthetic() -> payload_models.AvatarPayload:
     seed = random.randint(1, scst.MAX_SEED)
 
     init_image = None
-    max_retries = 10    
+    max_retries = 10
     retries = 0
     while init_image is None and retries < max_retries:
         init_image = get_randomly_edited_face_picture_for_avatar()
@@ -293,7 +266,7 @@ async def generate_synthetic_data(task: str) -> Any:
     Gets task config and dynamically calls the synthetic generation function
     Not super clean, but it works
     """
-    task_config = tasks_config.get_enabled_task_config(task)
+    task_config = tcfg.get_enabled_task_config(task)
     if task_config is None:
         return
     generative_function_name = task_config.synthetic_generation_config.func

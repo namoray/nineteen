@@ -14,7 +14,7 @@ async def sql_insert_reward_data(connection: Connection, data: RewardData) -> No
             {dcst.COLUMN_ID}, {dcst.COLUMN_TASK}, {dcst.COLUMN_NODE_ID}, 
             {dcst.COLUMN_QUALITY_SCORE}, {dcst.COLUMN_VALIDATOR_HOTKEY}, 
             {dcst.COLUMN_MINER_HOTKEY}, {dcst.COLUMN_SYNTHETIC_QUERY}, 
-            {dcst.COLUMN_SPEED_SCORING_FACTOR}, {dcst.COLUMN_RESPONSE_TIME}, {dcst.COLUMN_VOLUME}
+            {dcst.COLUMN_METRIC}, {dcst.COLUMN_RESPONSE_TIME}, {dcst.COLUMN_VOLUME}
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         RETURNING {dcst.COLUMN_ID}
         """,
@@ -25,7 +25,7 @@ async def sql_insert_reward_data(connection: Connection, data: RewardData) -> No
         data.validator_hotkey,
         data.node_hotkey,
         data.synthetic_query,
-        data.speed_scoring_factor,
+        data.metric,
         data.response_time,
         data.volume,
     )
@@ -202,10 +202,9 @@ async def select_task_for_deletion(connection: Connection, task_name: str) -> tu
 
 
 async def select_recent_reward_data_for_a_task(
-    connection: Connection, task: str, date: datetime, node_hotkey: str
+    connection: Connection, task: str, date: datetime, node_hotkey: str | None = None
 ) -> list[tuple] | None:
-    return await connection.fetch(
-        f"""
+    query = f"""
         SELECT
             {dcst.COLUMN_ID},
             {dcst.COLUMN_TASK},
@@ -214,25 +213,33 @@ async def select_recent_reward_data_for_a_task(
             {dcst.COLUMN_VALIDATOR_HOTKEY},
             {dcst.COLUMN_MINER_HOTKEY},
             {dcst.COLUMN_SYNTHETIC_QUERY},
-            {dcst.COLUMN_SPEED_SCORING_FACTOR},
+            {dcst.COLUMN_METRIC},
             {dcst.COLUMN_RESPONSE_TIME},
             {dcst.COLUMN_VOLUME},
             {dcst.COLUMN_CREATED_AT}
         FROM {dcst.TABLE_REWARD_DATA}
         WHERE {dcst.COLUMN_TASK} = $1
         AND {dcst.COLUMN_CREATED_AT} > $2
-        AND {dcst.COLUMN_MINER_HOTKEY} = $3
-        ORDER BY {dcst.COLUMN_CREATED_AT} DESC
-        """,
-        task,
-        date,
-        node_hotkey,
+        """
+
+    if node_hotkey:
+        query += f" AND {dcst.COLUMN_MINER_HOTKEY} = $3"
+        params = (task, date, node_hotkey)
+    else:
+        params = (task, date)
+
+    query += f"ORDER BY {dcst.COLUMN_CREATED_AT} DESC"
+
+    return await connection.fetch(
+        query,
+        *params,
     )
 
 
-async def select_recent_reward_data(connection: Connection, date: datetime, node_hotkey: str, limit: int) -> list[tuple] | None:
-    return await connection.fetch(
-        f"""
+async def select_recent_reward_data(
+    connection: Connection, date: datetime, node_hotkey: str | None = None, limit: int = 50
+) -> list[tuple] | None:
+    query = f"""
         SELECT
             {dcst.COLUMN_ID},
             {dcst.COLUMN_TASK},
@@ -241,17 +248,24 @@ async def select_recent_reward_data(connection: Connection, date: datetime, node
             {dcst.COLUMN_VALIDATOR_HOTKEY},
             {dcst.COLUMN_MINER_HOTKEY},
             {dcst.COLUMN_SYNTHETIC_QUERY},
-            {dcst.COLUMN_SPEED_SCORING_FACTOR},
+            {dcst.COLUMN_METRIC},
             {dcst.COLUMN_RESPONSE_TIME},
             {dcst.COLUMN_VOLUME},
             {dcst.COLUMN_CREATED_AT}
         FROM {dcst.TABLE_REWARD_DATA}
         WHERE {dcst.COLUMN_CREATED_AT} > $1
-        AND {dcst.COLUMN_MINER_HOTKEY} = $2
-        ORDER BY {dcst.COLUMN_CREATED_AT} DESC
-        LIMIT $3
-        """,
-        date,
-        node_hotkey,
-        limit,
+
+        """
+
+    if node_hotkey:
+        query += f" AND {dcst.COLUMN_MINER_HOTKEY} = $2"
+        params = (date, node_hotkey, limit)
+    else:
+        params = (date, limit)
+
+    query += f"ORDER BY {dcst.COLUMN_CREATED_AT} DESC LIMIT $" + str(len(params))
+
+    return await connection.fetch(
+        query,
+        *params,
     )

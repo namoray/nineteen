@@ -3,10 +3,12 @@ services:
   postgresql:
     ports:
       - "127.0.0.1:5432:5432"
+    container_name: 0_postgresql_dev
 
   redis:
     ports:
       - "127.0.0.1:6379:6379"
+    container_name: 0_redis_dev
 
   redis-commander:
     image: ghcr.io/joeferner/redis-commander:latest
