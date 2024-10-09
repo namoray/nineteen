@@ -46,7 +46,7 @@ def task_configs_factory() -> dict[str, cmodels.FullTaskConfig]:
             is_stream=True,
             weight=0.05,
             timeout=2,
-            enabled=False,
+            enabled=True,
         ),
         CHAT_LLAMA_3_1_70B: cmodels.FullTaskConfig(
             task=CHAT_LLAMA_3_1_70B,
