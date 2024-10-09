@@ -64,12 +64,15 @@ def generate_miner_config(dev: bool = False) -> dict[str, Any]:
     config["WALLET_NAME"] = input("Enter wallet name (default: default): ") or "default"
     config["HOTKEY_NAME"] = input("Enter hotkey name (default: default): ") or "default"
     config["SUBTENSOR_NETWORK"] = input("Enter subtensor network (default: test): ") or "test"
-    config["SUBTENSOR_ADDRESS"] = validate_input("Enter subtensor address (default: None): ", websocket_validator)
+    subtensor_address = validate_input("Enter subtensor address (default: None): ", websocket_validator)
+    if subtensor_address:
+        config["SUBTENSOR_ADDRESS"] = subtensor_address
+
     default_stake_threshold = "0" if config["SUBTENSOR_NETWORK"] == "test" else "1000"
     config["NETUID"] = 176 if config["SUBTENSOR_NETWORK"] == "test" else 19
     config["ENV"] = "dev" if dev else "prod"
     config["IS_VALIDATOR"] = "False"
-    config["NODE_PORT"] = input("Enter the port to run the miner server on (default: 4002): ") or "4002"
+    config["NODE_PORT"] = input("Enter the port to run the miner server on (default: 4001): ") or "4001"
     config["IMAGE_WORKER_URL"] = input("Enter IMAGE_WORKER_URL: ")
     config["LLAMA_3_1_8B_TEXT_WORKER_URL"] = input("Enter LLAMA_3_1_8B_TEXT_WORKER_URL: ")
     config["LLAMA_3_2_3B_TEXT_WORKER_URL"] = input("Enter LLAMA_3_2_3B_TEXT_WORKER_URL: ")
@@ -93,7 +96,9 @@ def generate_validator_config(dev: bool = False) -> dict[str, Any]:
     config["WALLET_NAME"] = input("Enter wallet name (default: default): ") or "default"
     config["HOTKEY_NAME"] = input("Enter hotkey name (default: default): ") or "default"
     config["SUBTENSOR_NETWORK"] = input("Enter subtensor network (default: finney): ") or "finney"
-    config["SUBTENSOR_ADDRESS"] = validate_input("Enter subtensor address (default: None): ", websocket_validator)
+    subtensor_address = validate_input("Enter subtensor address (default: None): ", websocket_validator)
+    if subtensor_address:
+        config["SUBTENSOR_ADDRESS"] = subtensor_address
     config["NETUID"] = 176 if config["SUBTENSOR_NETWORK"] == "test" else 19
     organic_server_port = input("Enter port for your organic server (optional) (default: None): ")
     if organic_server_port:
