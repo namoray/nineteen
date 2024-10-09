@@ -50,10 +50,15 @@ async def _get_period_scores(psql_db: PSQLDB, task: str, node_hotkey: str) -> li
 async def _calculate_combined_quality_score(psql_db: PSQLDB, task: str) -> float:
     reward_datas: list[RewardData] = await _get_reward_datas(psql_db, task)
 
-
     metrics = {}
     quality_scores = {}
     for reward_data in reward_datas:
+        if reward_data.metric is None or reward_data.quality_score is None:
+            logger.warning(
+                f"Skipping reward data for task: {task} as metric or quality score is None"
+                f" Metric: {reward_data.metric}, quality_score: {reward_data.quality_score}"
+            )
+            continue
         metrics[reward_data.node_hotkey] = metrics.get(reward_data.node_hotkey, []) + [reward_data.metric]
         quality_scores[reward_data.node_hotkey] = quality_scores.get(reward_data.node_hotkey, []) + [reward_data.quality_score]
 
