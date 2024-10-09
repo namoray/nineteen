@@ -3,8 +3,7 @@ import httpx
 from fiber.logging_utils import get_logger
 
 from core.models import payload_models
-from core import tasks_config as tcfg
-from core.tasks import Task
+from core import task_config as tcfg
 from miner.config import WorkerConfig
 
 logger = get_logger(__name__)
@@ -20,12 +19,14 @@ async def chat_stream(
 
     model_name = task_config.orchestrator_server_config.load_model_config["model"]
 
-    if task_config.task == Task.chat_llama_3_1_8b:
+    # NOTE: you will probably need a smarter way to do this
+    if task_config.task == "chat-llama-3-1-8b":
         address = worker_config.LLAMA_3_1_8B_TEXT_WORKER_URL
-    elif task_config.task == Task.chat_llama_3_1_70b:
+    elif task_config.task == "chat-llama-3-1-70b":
         address = worker_config.LLAMA_3_1_70B_TEXT_WORKER_URL
-    elif task_config.task == Task.chat_llama_3_2_3b:
+    elif task_config.task == "chat-llama-3-2-3b":
         address = worker_config.LLAMA_3_2_3B_TEXT_WORKER_URL
+    # NOTE: adjust on validator UID basis by adding custom endpoints in worker_config init
     else:
         raise ValueError(f"Invalid model: {decrypted_payload.model}")
 
@@ -55,9 +56,12 @@ async def chat_stream(
                     # I would recommended optimising this in some way
                     # print(data)
                     data2 = json.loads(data)
-                    if data2["choices"][0]["logprobs"] is None or data2["choices"][0]["logprobs"]["content"][0]["logprob"] is None:
+                    if (
+                        data2["choices"][0]["logprobs"] is None
+                        or data2["choices"][0]["logprobs"]["content"][0]["logprob"] is None
+                    ):
                         continue
-                    
+
                     yield f"data: {data}\n\n"
 
     else:

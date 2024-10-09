@@ -16,6 +16,7 @@ postgres_data
 postgres_data/*
 
 todo.md
+core/custom_task_config.py
 
 *_keys.encrypted
 container_logs.txt

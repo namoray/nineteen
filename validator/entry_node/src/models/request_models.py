@@ -3,7 +3,6 @@ from fastapi import HTTPException
 import httpx
 from pydantic import BaseModel, Field
 from core.models import utility_models
-from core.tasks import Task
 from core.models import payload_models
 from fiber.logging_utils import get_logger
 from validator.utils.entry_utils import image_b64_is_valid, fetch_image_b64
@@ -15,7 +14,7 @@ class ChatRequest(BaseModel):
     messages: list[utility_models.Message] = Field(...)
     temperature: float = Field(default=0.5, examples=[0.5, 0.4, 0.3], title="Temperature", description="Temperature for text generation.")
     max_tokens: int = Field(500, title="Max Tokens", description="Max tokens for text generation.")
-    model: Task = Field(default=Task.chat_llama_3_2_3b, title="Model")
+    model: str = Field(..., examples=["chat_llama_3_2_3b"], title="Model")
     top_p: float = Field(default=1.0, title="Top P", description="Top P for text generation.")
     stream: bool = Field(default=True, title="Stream", description="Stream for text generation.")
     logprobs: bool = True
@@ -44,7 +43,7 @@ class TextToImageRequest(BaseModel):
     cfg_scale: float = Field(3, description="CFG scale for image generation")
     width: int = Field(1024, description="Width for image generation")
     height: int = Field(1024, description="Height for image generation")
-    model: str = Field(..., examples=[Task.proteus_text_to_image.value], title="Model")
+    model: str = Field(..., examples=["proteus_text_to_image"], title="Model")
 
 
 def text_to_image_to_payload(text_to_image_request: TextToImageRequest) -> payload_models.TextToImagePayload:
@@ -69,7 +68,7 @@ class ImageToImageRequest(BaseModel):
     cfg_scale: float = Field(3, description="CFG scale for image generation")
     width: int = Field(1024, description="Width for image generation")
     height: int = Field(1024, description="Height for image generation")
-    model: str = Field(..., examples=[Task.proteus_image_to_image.value], title="Model")
+    model: str = Field(..., examples=["proteus_image_to_image"], title="Model")
     image_strength: float = Field(0.5, description="Image strength for image generation")
 
 

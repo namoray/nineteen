@@ -1,7 +1,7 @@
 # Schema for the db
 
 
-from core import tasks_config as tcfg
+from core.task_config import get_task_configs
 from validator.db.src import functions as db_functions
 from validator.db.src.database import PSQLDB
 from validator.db.src.sql.contenders import fetch_hotkey_scores_for_task
@@ -13,11 +13,31 @@ from fiber.logging_utils import get_logger
 logger = get_logger(__name__)
 
 PERIOD_SCORE_TIME_DECAYING_FACTOR = 0.5
+METRIC_PERCENTILE = 0.3
+SPEED_BONUS_MAX = 0.5
 
 
-async def _get_reward_datas(psql_db: PSQLDB, task: str, node_hotkey: str) -> list[RewardData]:
+def _get_metric_score(metrics: list[float]) -> float:
+    # get the METRIC_PERCENTILEth percentile
+    metrics = sorted(metrics)
+    percentile_index = int(len(metrics) * METRIC_PERCENTILE)
+    percentile_value = metrics[percentile_index]
+
+    return percentile_value
+
+
+def _get_metric_bonuses(metric_scores: dict[str, float]) -> dict[str, float]:
+    ranked_scores = {
+        hotkey: rank for rank, (hotkey, _) in enumerate(sorted(metric_scores.items(), key=lambda x: x[1], reverse=True))
+    }
+    if len(ranked_scores) <= 1:
+        return ranked_scores
+    return {hotkey: SPEED_BONUS_MAX * (0.5 - rank / (len(metric_scores) - 1)) for hotkey, rank in ranked_scores.items()}
+
+
+async def _get_reward_datas(psql_db: PSQLDB, task: str) -> list[RewardData]:
     async with await psql_db.connection() as connection:
-        reward_datas = await db_functions.fetch_recent_most_rewards_for_uid(connection, task, node_hotkey)
+        reward_datas = await db_functions.fetch_recent_most_rewards(connection, task)
     return reward_datas
 
 
@@ -27,12 +47,26 @@ async def _get_period_scores(psql_db: PSQLDB, task: str, node_hotkey: str) -> li
     return period_scores
 
 
-async def _calculate_combined_quality_score(psql_db: PSQLDB, task: str, node_hotkey: str) -> float:
-    reward_datas: list[RewardData] = await _get_reward_datas(psql_db, task, node_hotkey)
-    combined_quality_scores = [reward_data.quality_score**1.5 * reward_data.speed_scoring_factor for reward_data in reward_datas]
-    if not combined_quality_scores:
-        return 0
-    return sum(combined_quality_scores) / len(combined_quality_scores)
+async def _calculate_combined_quality_score(psql_db: PSQLDB, task: str) -> float:
+    reward_datas: list[RewardData] = await _get_reward_datas(psql_db, task)
+
+
+    metrics = {}
+    quality_scores = {}
+    for reward_data in reward_datas:
+        metrics[reward_data.node_hotkey] = metrics.get(reward_data.node_hotkey, []) + [reward_data.metric]
+        quality_scores[reward_data.node_hotkey] = quality_scores.get(reward_data.node_hotkey, []) + [reward_data.quality_score]
+
+    average_weighted_quality_scores = {
+        node_hotkey: sum(score**1.5 for score in scores) / len(scores) for node_hotkey, scores in quality_scores.items()
+    }
+    metric_scores = {node_hotkey: _get_metric_score(scores) for node_hotkey, scores in metrics.items()}
+    metric_bonuses = _get_metric_bonuses(metric_scores)
+
+    combined_quality_scores = {
+        node_hotkey: average_weighted_quality_scores[node_hotkey] * (1 + metric_bonuses[node_hotkey]) for node_hotkey in metrics
+    }
+    return combined_quality_scores
 
 
 async def _calculate_normalised_period_score(psql_db: PSQLDB, task: str, node_hotkey: str) -> float:
@@ -63,7 +97,9 @@ def _normalise_period_scores(period_scores: list[PeriodScore]) -> float:
     if total_weight == 0:
         return 0
     else:
-        return total_score / total_weight
+        # Requires an abundance of data before handing out top scores
+        period_score_multiplier = 1 if len(period_scores) < 8 else 0.25
+        return period_score_multiplier * total_score / total_weight
 
 
 def _calculate_hotkey_effective_volume_for_task(
@@ -74,21 +110,18 @@ def _calculate_hotkey_effective_volume_for_task(
 
 async def _calculate_effective_volumes_for_task(psql_db: PSQLDB, contenders: list[Contender], task: str) -> dict[str, float]:
     hotkey_to_effective_volumes: dict[str, float] = {}
-    combined_quality_scores = {}
     normalised_period_scores = {}
+    combined_quality_scores = await _calculate_combined_quality_score(psql_db, task)
     for contender in [i for i in contenders if i.task == task]:
-        combined_quality_score = await _calculate_combined_quality_score(psql_db, task, contender.node_hotkey)
+        if contender.node_hotkey not in combined_quality_scores:
+            continue
         normalised_period_score = await _calculate_normalised_period_score(psql_db, task, contender.node_hotkey)
         effective_volume = _calculate_hotkey_effective_volume_for_task(
-            combined_quality_score, normalised_period_score, contender.capacity
+            combined_quality_scores[contender.node_hotkey], normalised_period_score, contender.capacity
         )
         hotkey_to_effective_volumes[contender.node_hotkey] = effective_volume
-        combined_quality_scores[contender.node_hotkey] = combined_quality_score
         normalised_period_scores[contender.node_hotkey] = normalised_period_score
 
-    # logger.debug(f"Combined quality scores: {combined_quality_scores}")
-    # logger.debug(f"Normalised period scores: {normalised_period_scores}")
-    # logger.debug(f"Effective volumes: {hotkey_to_effective_volumes}")
     return hotkey_to_effective_volumes
 
 
@@ -104,7 +137,7 @@ def _apply_non_linear_transformation(scores: dict[str, float]) -> dict[str, floa
 
 
 async def _calculate_normalised_scores_for_task(psql_db: PSQLDB, task: str, contenders: list[Contender]) -> dict[str, float]:
-    effective_volumes = await _calculate_effective_volumes_for_task(psql_db, contenders, task.value)
+    effective_volumes = await _calculate_effective_volumes_for_task(psql_db, contenders, task)
     normalised_scores_before_non_linear = _normalize_scores_for_task(effective_volumes)
     # logger.info(f"Normalised scores before non-linear transformation: {normalised_scores_before_non_linear}\n")
     effective_volumes_after_non_linear_transformation = _apply_non_linear_transformation(normalised_scores_before_non_linear)
@@ -118,7 +151,8 @@ async def calculate_scores_for_settings_weights(
 ) -> tuple[list[int], list[float]]:
     total_hotkey_scores: dict[str, float] = {}
 
-    for task, config in tcfg.TASK_TO_CONFIG.items():
+    task_configs = get_task_configs()
+    for task, config in task_configs.items():
         if not config.enabled:
             logger.debug(f"Skipping task: {task} as it is not enabled")
             continue

@@ -1,4 +1,3 @@
-from core.tasks import Task
 from fiber.logging_utils import get_logger
 
 from asyncpg import Connection
@@ -99,7 +98,7 @@ async def migrate_contenders_to_contender_history(connection: Connection) -> Non
     await connection.execute(f"DELETE FROM {dcst.CONTENDERS_TABLE}")
 
 
-async def get_contenders_for_task(connection: Connection, task: Task, top_x: int = 5) -> list[Contender]:
+async def get_contenders_for_task(connection: Connection, task: str, top_x: int = 5) -> list[Contender]:
     rows = await connection.fetch(
         f"""
         WITH ranked_contenders AS (
@@ -119,11 +118,10 @@ async def get_contenders_for_task(connection: Connection, task: Task, top_x: int
         )
         SELECT *
         FROM ranked_contenders
-        WHERE rank <= $2 and {dcst.NODE_ID} = 1
+        WHERE rank <= $2
         ORDER BY rank
         """,
-        # TODO: REMOVE THE NODE_ID = 1
-        task.value,
+        task,
         top_x,
     )
 
@@ -145,7 +143,7 @@ async def get_contenders_for_task(connection: Connection, task: Task, top_x: int
             LIMIT $2
             OFFSET $3
             """,
-            task.value,
+            task,
             top_x - len(rows) if rows else top_x,
             len(rows) if rows else 0,
         )

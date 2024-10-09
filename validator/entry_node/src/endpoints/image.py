@@ -6,8 +6,7 @@ from redis.asyncio import Redis
 from fiber.logging_utils import get_logger
 from fastapi.routing import APIRouter
 from core.models import payload_models
-from core.tasks import Task
-from core.tasks_config import get_enabled_task_config
+from core.task_config import get_enabled_task_config
 from validator.entry_node.src.core.configuration import Config
 from validator.entry_node.src.core.dependencies import get_config
 from validator.entry_node.src.core.middleware import verify_api_key_rate_limit
@@ -62,7 +61,7 @@ async def make_non_stream_organic_query(
     redis_db: Redis, payload: dict[str, Any], task: str, timeout: float
 ) -> GenericResponse | None:
     job_id = uuid.uuid4().hex
-    organic_message = _construct_organic_message(payload=payload, job_id=job_id, task=task)
+    organic_message = _construct_organic_message(payload=payload, job_id=job_id, task=task)  # NOTE: tis grim
 
     pubsub = redis_db.pubsub()
     await pubsub.subscribe(f"{gcst.ACKNLOWEDGED}:{job_id}")
@@ -84,16 +83,17 @@ async def process_image_request(
     | payload_models.ImageToImagePayload
     | payload_models.InpaintPayload
     | payload_models.AvatarPayload,
-    task: Task,
+    task: str,
     config: Config,
 ) -> request_models.ImageResponse:
-    task_config = get_enabled_task_config(task)
+    task = task.replace("_", "-")
+    task_config = get_enabled_task_config(task)  # NOTE: is grim
     if task_config is None:
         logger.error(f"Task config not found for task: {task}")
-        raise HTTPException(status_code=400, detail="Invalid model")
+        raise HTTPException(status_code=400, detail=f"Invalid model {task}")
 
     result = await make_non_stream_organic_query(
-        redis_db=config.redis_db, payload=payload.model_dump(), task=task.value, timeout=task_config.timeout
+        redis_db=config.redis_db, payload=payload.model_dump(), task=task, timeout=task_config.timeout
     )
     if result is None or result.content is None:
         logger.error(f"No content received an image request for some reason. Task: {task}")
@@ -112,7 +112,7 @@ async def text_to_image(
     config: Config = Depends(get_config),
 ) -> request_models.ImageResponse:
     payload = request_models.text_to_image_to_payload(text_to_image_request)
-    return await process_image_request(payload, Task(payload.model), config)
+    return await process_image_request(payload, payload.model, config)
 
 
 async def image_to_image(
@@ -122,7 +122,7 @@ async def image_to_image(
     payload = await request_models.image_to_image_to_payload(
         image_to_image_request, httpx_client=config.httpx_client, prod=config.prod
     )
-    return await process_image_request(payload, Task(payload.model), config)
+    return await process_image_request(payload, payload.model, config)
 
 
 async def inpaint(
@@ -130,7 +130,7 @@ async def inpaint(
     config: Config = Depends(get_config),
 ) -> request_models.ImageResponse:
     payload = await request_models.inpaint_to_payload(inpaint_request, httpx_client=config.httpx_client, prod=config.prod)
-    return await process_image_request(payload, Task.inpaint, config)
+    return await process_image_request(payload, "inpaint", config)
 
 
 async def avatar(
@@ -138,7 +138,7 @@ async def avatar(
     config: Config = Depends(get_config),
 ) -> request_models.ImageResponse:
     payload = await request_models.avatar_to_payload(avatar_request, httpx_client=config.httpx_client, prod=config.prod)
-    return await process_image_request(payload, Task.avatar, config)
+    return await process_image_request(payload, "avatar", config)
 
 
 router = APIRouter()

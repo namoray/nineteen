@@ -1,13 +1,14 @@
 import random
 from typing import Any
 
-from core import tasks_config
+from core import task_config as tcfg
 from validator.utils.redis import (
     redis_utils as rutils,
     redis_constants as rcst,
 )
 from validator.utils.synthetic import synthetic_constants as scst
 from redis.asyncio import Redis
+from core.models import config_models as cmodels
 
 import base64
 from io import BytesIO
@@ -159,14 +160,14 @@ async def fetch_synthetic_data_for_task(redis_db: Redis, task: str) -> dict[str,
     synthetic_data = await rutils.json_load_from_redis(redis_db, key=construct_synthetic_data_task_key(task), default=None)
     if synthetic_data is None:
         raise ValueError(f"No synthetic data found for task: {task}")
-    task_config = tasks_config.get_enabled_task_config(task)
+    task_config = tcfg.get_enabled_task_config(task)
     if task_config is None:
         raise ValueError(f"No task config found for task: {task}")
-    task_type = task_config.scoring_config.task_type
-    if task_type == tasks_config.TaskType.IMAGE:
+    task_type = task_config.task_type
+    if task_type == cmodels.TaskType.IMAGE:
         synthetic_data[scst.SEED] = random.randint(1, 1_000_000_000)
         synthetic_data[scst.TEXT_PROMPTS] = _get_random_text_prompt()
-    elif task_type == tasks_config.TaskType.TEXT:
+    elif task_type == cmodels.TaskType.TEXT:
         synthetic_data[scst.SEED] = random.randint(1, 1_000_000_000)
         synthetic_data[scst.TEMPERATURE] = round(random.uniform(0, 1), 2)
     else:

@@ -6,6 +6,7 @@ import httpx
 from pydantic import BaseModel
 from fiber.logging_utils import get_logger
 from fiber import Keypair
+from core import constants as ccst
 
 from validator.models import RewardData
 
@@ -17,16 +18,16 @@ class DataTypeToPost(enum.Enum):
     UID_RECORD = 2
     MINER_CAPACITIES = 3
     VALIDATOR_INFO = 4
+    MINER_TYPES = 5
 
 
-# TODO: Change
-BASE_URL = "https://dev.tauvision.ai/"
 
 data_type_to_url = {
-    DataTypeToPost.REWARD_DATA: BASE_URL + "v1/store/reward_data",
-    DataTypeToPost.UID_RECORD: BASE_URL + "v1/store/uid_records",
-    DataTypeToPost.MINER_CAPACITIES: BASE_URL + "v1/store/miner_capacities",
-    DataTypeToPost.VALIDATOR_INFO: BASE_URL + "v1/store/validator_info",
+    DataTypeToPost.REWARD_DATA: ccst.BASE_NINETEEN_API_URL + "v1/store/reward_data",
+    DataTypeToPost.UID_RECORD: ccst.BASE_NINETEEN_API_URL + "v1/store/uid_records",
+    DataTypeToPost.MINER_CAPACITIES: ccst.BASE_NINETEEN_API_URL + "v1/store/miner_capacities",
+    DataTypeToPost.VALIDATOR_INFO: ccst.BASE_NINETEEN_API_URL + "v1/store/validator_info",
+    DataTypeToPost.MINER_TYPES: ccst.BASE_NINETEEN_API_URL + "v1/store/miner_types",
 }
 
 # Turn off if you don't wanna post your validator info to nineteen.ai
@@ -43,6 +44,7 @@ async def post_to_nineteen_ai(
     data_type_to_post: DataTypeToPost,
     timeout: int = 10,
 ) -> None:
+    logger.debug(f"Sending {data_type_to_post} to {ccst.BASE_NINETEEN_API_URL}. Data: {data_to_post}")
     if not POST_TO_NINETEEN_AI:
         return
     timestamp = time.time()
@@ -63,12 +65,17 @@ async def post_to_nineteen_ai(
                 data=json.dumps(data_to_post),
                 headers=headers,
             )
-            logger.info(f"Resp status code from {BASE_URL}: {resp.status_code} for post type {data_type_to_post}")
+            logger.info(f"Resp status code from {ccst.BASE_NINETEEN_API_URL}: {resp.status_code} for post type {data_type_to_post}")
             resp.raise_for_status()
             return resp
         except Exception as e:
-            logger.error(f"Error when posting to {BASE_URL} to store data for {data_type_to_post}: {repr(e)}")
+            logger.error(f"Error when posting to {ccst.BASE_NINETEEN_API_URL} to store data for {data_type_to_post}: {repr(e)}")
 
+
+class MinerTypesPostBody(BaseModel):
+    validator_hotkey: str
+    miner_hotkey: str
+    miner_type: str
 
 class RewardDataPostBody(RewardData):
     testnet: bool
@@ -77,13 +84,14 @@ class RewardDataPostBody(RewardData):
 class ValidatorInfoPostBody(BaseModel):
     versions: str
     validator_hotkey: str
+    task_configs: list[dict[str, Any]]
 
 
 class MinerCapacitiesPostObject(BaseModel):
-    validator_hotkey: str
     miner_hotkey: str
     task: str
     volume: float
+    validator_hotkey: str
 
 
 class ContenderPayload(BaseModel):
@@ -96,21 +104,6 @@ class ContenderPayload(BaseModel):
     total_requests_made: Optional[int]
     requests_429: Optional[int]
     requests_500: Optional[int]
-
-
-class MinerCapacitiesPostBody(BaseModel):
-    data: List[MinerCapacitiesPostObject]
-
-    def dump(self):
-        return [
-            {
-                "validator_hotkey": ob.validator_hotkey,
-                "miner_hotkey": ob.miner_hotkey,
-                "task": ob.task.value,
-                "volume": ob.volume,
-            }
-            for ob in self.data
-        ]
 
 
 class UidRecordPostObject(BaseModel):

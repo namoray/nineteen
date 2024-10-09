@@ -147,7 +147,6 @@ usermod -aG docker $SUDO_USER || true
 # pm2 & jq
 ################################################################################
 echo_ "checking for pm2 & jq"
-apt-get update -qq && apt-get upgrade -y -qq
 apt-get install -y -qq nodejs npm
 npm i -g -q pm2
 apt-get install -y -qq jq
