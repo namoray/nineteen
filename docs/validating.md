@@ -66,11 +66,11 @@ Securely move them onto your machine as usual. Either with the btcli or with a s
 
 ## Create the necessary config
 
-
+(Add --dev flag if you are a developer on nineteen)
 ```bash
 python core/create_config.py
 ```
-(^ Add --dev flag if you are a developer on nineteen)
+
 
 If you're running the autoupdater, then you should be running!
 
@@ -81,8 +81,10 @@ pm2 logs validator_autoupdater
 
 ## Start the services if you don't have autoupdates
 
+(If you are a dev, go to dev.md docs now)
+
 ```bash
-docker compose --env-file .vali.env -f docker-compose.yml up -d --build
+./utils/launch_validator.sh
 ```
 
 See [helpful commands](./helpful-commands.md) for more information on the docker commands
