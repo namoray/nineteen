@@ -223,12 +223,14 @@ async def select_recent_reward_data_for_a_task(
         """
 
     if node_hotkey:
-        query += f" AND {dcst.COLUMN_MINER_HOTKEY} = $3"
+        query += f" AND {dcst.COLUMN_MINER_HOTKEY} = $3 "
         params = (task, date, node_hotkey)
     else:
         params = (task, date)
 
-    query += f"ORDER BY {dcst.COLUMN_CREATED_AT} DESC"
+    query += f" ORDER BY {dcst.COLUMN_CREATED_AT} DESC"
+
+
 
     return await connection.fetch(
         query,
@@ -258,12 +260,12 @@ async def select_recent_reward_data(
         """
 
     if node_hotkey:
-        query += f" AND {dcst.COLUMN_MINER_HOTKEY} = $2"
+        query += f" AND {dcst.COLUMN_MINER_HOTKEY} = $2 "
         params = (date, node_hotkey, limit)
     else:
         params = (date, limit)
 
-    query += f"ORDER BY {dcst.COLUMN_CREATED_AT} DESC LIMIT $" + str(len(params))
+    query += f" ORDER BY {dcst.COLUMN_CREATED_AT} DESC LIMIT $" + str(len(params))
 
     return await connection.fetch(
         query,
