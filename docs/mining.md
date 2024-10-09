@@ -60,6 +60,8 @@ fiber-post-ip --netuid 176 --subtensor.network test --external_port 1234 --walle
 ```
 
 ## Start miners
+
+(If you are a dev, go to dev.md docs now)
 Example command
 ```bash
 uvicorn miner.server:app --reload --host 0.0.0.0 --port 1234 --env-file .default.env --log-level debug &

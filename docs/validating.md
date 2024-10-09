@@ -81,8 +81,10 @@ pm2 logs validator_autoupdater
 
 ## Start the services if you don't have autoupdates
 
+(If you are a dev, go to dev.md docs now)
+
 ```bash
-docker compose --env-file .vali.env -f docker-compose.yml up -d --build
+./utils/launch_validator.sh
 ```
 
 See [helpful commands](./helpful-commands.md) for more information on the docker commands

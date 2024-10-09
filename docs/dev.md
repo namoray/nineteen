@@ -1,24 +1,5 @@
 # Instructions to help devs (Mainly Notes to self)
 
-## Spin up all services for dev
-
-Same as always
-```bash
-docker compose --env-file .vali.env -f docker-compose.yml  up -d
-```
-Set env vars by running this
-```bash
-sed -i 's/ENV=[^ ]*/ENV=dev/' .vali.env
-```
-
-## Utils
-
-** UTILS **
-```bash
-docker compose --env-file .vali.env -f docker-compose.yml -f docker-compose.dev.yml up -d --build
-```
-
-
 ## For dev without docker:
 
 Optional if you need a venv
@@ -31,11 +12,12 @@ source .venv/bin/activate
 find . -path "./venv" -prune -o -path "./.venv" -prune -o -name "requirements.txt" -exec pip install -r {} \;
 pip install --no-cache-dir "git+https://github.com/rayonlabs/fiber.git@1.0.0#egg=fiber[full]"
 task dev_setup
-task control_node_dev  # For example
+task control_node_dev  # For example for the validator control node
+task m1_dev  # For example for the miner 1
 ```
 
 
-**If you want to dev with fiber locally too**
+**If you want to dev with fiber locally too [optional - probably ignore if you are not working on fiber]**
 ```bash
 cd ..
 git clone https://github.com/rayonlabs/fiber.git
@@ -46,4 +28,7 @@ cd ..
 cd nineteen
 ```
 
-as you were
+## To run the whole system
+```bash
+docker compose --env-file .vali.env -f docker-compose.yml -f docker-compose.dev.yml --profile entry_node_profile up -d --build
+```
