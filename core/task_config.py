@@ -24,7 +24,7 @@ def task_configs_factory() -> dict[str, cmodels.FullTaskConfig]:
         CHAT_LLAMA_3_2_3B: cmodels.FullTaskConfig(
             task=CHAT_LLAMA_3_2_3B,
             task_type=cmodels.TaskType.TEXT,
-            max_capacity=120_000,  # Lower to account for lack of stake weights
+            max_capacity=120_000, 
             orchestrator_server_config=cmodels.OrchestratorServerConfig(
                 server_needed=cmodels.ServerType.LLM,
                 load_model_config={
