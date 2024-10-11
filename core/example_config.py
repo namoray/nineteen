@@ -9,7 +9,6 @@ from core.task_config import (
     CHAT_LLAMA_3_2_3B,
     DREAMSHAPER_IMAGE_TO_IMAGE,
     task_configs_factory,
-    image_tasks_to_load_model_config
 )
 from core.utils import get_updated_task_config_with_voted_weights
 
@@ -24,12 +23,6 @@ def custom_task_configs_factory():
     del base_task_config[CHAT_LLAMA_3_2_3B]
     # In fact, I might even feel like Dreamshaper ain't shaping the dreams enough
     del base_task_config[DREAMSHAPER_IMAGE_TO_IMAGE]
-
-
-    image_tasks_to_load_model_config[ANIMAGINEXL_TEXT_TO_IMAGE] = {
-        "model_repo": "cagliostrolab/animagine-xl-3.1",  # This repo should exist on hugging face else it wont work
-        "safetensors_filename": "animagine-xl-3.1.safetensors" # This safetensors model file should exist within the HF repo on the top level
-    }
 
     # Now I will add the models I do want
     addition = {
@@ -68,9 +61,12 @@ def custom_task_configs_factory():
             max_capacity=3_600,
             orchestrator_server_config=cmodels.OrchestratorServerConfig(
                 server_needed=cmodels.ServerType.IMAGE,
-                load_model_config=image_tasks_to_load_model_config[ANIMAGINEXL_TEXT_TO_IMAGE],
+                load_model_config={
+                    "model_repo": "cagliostrolab/animagine-xl-3.1",  # This repo should exist on hugging face else it wont work
+                    "safetensors_filename": "animagine-xl-3.1.safetensors",  # This safetensors model file should exist within the HF repo on the top level
+                },
                 checking_function="check_image_result",
-                endpoint=cmodels.Endpoints.text_to_image.value, # Currently supports SDXL finetunes etc, support for custom Flux and custom image-to-image soon!
+                endpoint=cmodels.Endpoints.text_to_image.value,  # Currently supports SDXL finetunes etc, support for custom Flux and custom image-to-image soon!
                 task=ANIMAGINEXL_TEXT_TO_IMAGE,
             ),
             synthetic_generation_config=cmodels.SyntheticGenerationConfig(
@@ -83,7 +79,7 @@ def custom_task_configs_factory():
             weight=0.1,
             timeout=5,
             enabled=True,
-        )
+        ),
     }
 
     combined_config = base_task_config | addition
