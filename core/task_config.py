@@ -123,6 +123,7 @@ def task_configs_factory() -> dict[str, cmodels.FullTaskConfig]:
             weight=0.1,
             timeout=5,
             enabled=True,
+            model_info={"model": "dataautogpt3/ProteusV0.4-Lightning"},
         ),
         PROTEUS_IMAGE_TO_IMAGE: cmodels.FullTaskConfig(
             task=PROTEUS_IMAGE_TO_IMAGE,
@@ -145,6 +146,7 @@ def task_configs_factory() -> dict[str, cmodels.FullTaskConfig]:
             weight=0.05,
             timeout=20,
             enabled=True,
+            model_info={"model": "dataautogpt3/ProteusV0.4-Lightning"},
         ),
         FLUX_SCHNELL_TEXT_TO_IMAGE: cmodels.FullTaskConfig(
             task=FLUX_SCHNELL_TEXT_TO_IMAGE,
@@ -167,6 +169,7 @@ def task_configs_factory() -> dict[str, cmodels.FullTaskConfig]:
             weight=0.15,
             timeout=20,
             enabled=True,
+            model_info={"model": "black-forest-labs/FLUX.1-schnell"},
         ),
         FLUX_SCHNELL_IMAGE_TO_IMAGE: cmodels.FullTaskConfig(
             task=FLUX_SCHNELL_IMAGE_TO_IMAGE,
@@ -189,6 +192,7 @@ def task_configs_factory() -> dict[str, cmodels.FullTaskConfig]:
             weight=0.05,
             timeout=15,
             enabled=True,
+            model_info={"model": "black-forest-labs/FLUX.1-schnell"},
         ),
         AVATAR: cmodels.FullTaskConfig(
             task=AVATAR,
@@ -211,6 +215,7 @@ def task_configs_factory() -> dict[str, cmodels.FullTaskConfig]:
             weight=0.15,
             timeout=15,
             enabled=True,
+            model_info={"model": "dataautogpt3/ProteusV0.4-Lightning"},
         ),
         DREAMSHAPER_TEXT_TO_IMAGE: cmodels.FullTaskConfig(
             task=DREAMSHAPER_TEXT_TO_IMAGE,
@@ -233,6 +238,7 @@ def task_configs_factory() -> dict[str, cmodels.FullTaskConfig]:
             weight=0.05,
             timeout=5,
             enabled=True,
+            model_info={"model": "Lykon/dreamshaper-xl-lightning"},
         ),
         DREAMSHAPER_IMAGE_TO_IMAGE: cmodels.FullTaskConfig(
             task=DREAMSHAPER_IMAGE_TO_IMAGE,
@@ -255,6 +261,7 @@ def task_configs_factory() -> dict[str, cmodels.FullTaskConfig]:
             weight=0.05,
             timeout=15,
             enabled=True,
+            model_info={"model": "Lykon/dreamshaper-xl-lightning"},
         ),
     }
 

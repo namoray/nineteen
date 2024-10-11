@@ -58,11 +58,16 @@ class FullTaskConfig(BaseModel):
     weight: float
     timeout: float
     enabled: bool = True
+    model_info: dict | None = None
 
     def get_public_config(self) -> dict | None:
         if not self.enabled:
             return None
-        model_config = self.orchestrator_server_config.load_model_config
+        if self.model_info is not None:
+            model_config = self.model_info
+        else:
+            assert self.orchestrator_server_config.load_model_config, "Model info is None but load_model_config is not set"
+            model_config = self.orchestrator_server_config.load_model_config
         if "gpu_utilization" in model_config:
             del model_config["gpu_utilization"]
         return {
