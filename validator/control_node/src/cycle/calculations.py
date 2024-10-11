@@ -170,11 +170,11 @@ async def _calculate_normalised_scores_for_task(psql_db: PSQLDB, task: str, cont
     return normalised_scores_for_task, combined_quality_scores, average_quality_scores, metric_bonuses, normalised_period_scores, period_score_multipliers
 
 async def calculate_scores_for_settings_weights(
-    config: Config,
+    config_main: Config,
     contenders: list[Contender]
 ) -> tuple[list[int], list[float]]:
-    psql_db = config.psql_db 
-    netuid = config.netuid
+    psql_db = config_main.psql_db 
+    netuid = config_main.netuid
     ss58_address = None
     while ss58_address is None:
         ss58_address = await get_vali_ss58_address(psql_db, netuid)
@@ -237,8 +237,8 @@ async def calculate_scores_for_settings_weights(
         )
         miner_weights_objects.append(miner_weight_object)
 
-    await _post_scoring_stats_to_local_db(config, contender_weights_info_objects, miner_weights_objects)
-    await _post_scoring_stats_to_nineteen(config, contender_weights_info_objects, miner_weights_objects)
+    await _post_scoring_stats_to_local_db(config_main, contender_weights_info_objects, miner_weights_objects)
+    await _post_scoring_stats_to_nineteen(config_main, contender_weights_info_objects, miner_weights_objects)
 
     return node_ids, node_weights
 
