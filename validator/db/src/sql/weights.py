@@ -71,7 +71,6 @@ async def insert_weights(connection: Connection, miner_weights: list[MinerWeight
                 weight_info.version_key,
                 weight_info.netuid,
                 weight_info.validator_hotkey,
-                weight_info.created_at,
                 weight_info.miner_hotkey,
                 weight_info.node_weight
             )
