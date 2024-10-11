@@ -64,7 +64,7 @@ async def _get_period_scores(psql_db: PSQLDB, task: str, node_hotkey: str) -> li
     return period_scores
 
 
-async def _calculate_combined_quality_score(psql_db: PSQLDB, task: str, netuid: int) -> tuple[dict[str, float], dict[str, float], dict[str, float]]:
+async def _calculate_metrics_and_quality_score(psql_db: PSQLDB, task: str, netuid: int) -> tuple[dict[str, float], dict[str, float]]:
     reward_datas: list[RewardData] = await _get_reward_datas(psql_db, task, netuid)
 
     metrics = {}
@@ -78,18 +78,13 @@ async def _calculate_combined_quality_score(psql_db: PSQLDB, task: str, netuid: 
             continue
         metrics[reward_data.node_hotkey] = metrics.get(reward_data.node_hotkey, []) + [reward_data.metric]
         quality_scores[reward_data.node_hotkey] = quality_scores.get(reward_data.node_hotkey, []) + [reward_data.quality_score]
+    return metrics, quality_scores
 
-    average_weighted_quality_scores = {
-        node_hotkey: sum(score**1.5 for score in scores) / len(scores) for node_hotkey, scores in quality_scores.items()
-    }
+
+async def _calculate_metric_bonuses(metrics: dict[str, float]) -> dict[str, float]:
     metric_scores = {node_hotkey: _get_metric_score(scores) for node_hotkey, scores in metrics.items()}
     metric_bonuses = _get_metric_bonuses(metric_scores)
-
-    combined_quality_scores = {
-        node_hotkey: average_weighted_quality_scores[node_hotkey] * (1 + metric_bonuses[node_hotkey]) for node_hotkey in metrics
-    }
-    return combined_quality_scores, average_weighted_quality_scores, metric_bonuses
-
+    return metric_bonuses
 
 
 async def _calculate_normalised_period_score(psql_db: PSQLDB, task: str, node_hotkey: str) -> tuple[float, float]:
@@ -97,11 +92,11 @@ async def _calculate_normalised_period_score(psql_db: PSQLDB, task: str, node_ho
     all_period_scores = [ps for ps in period_scores if ps.period_score is not None]
     # Requires an abundance of data before handing out top scores
     period_score_multiplier = 1 if len(all_period_scores) > 8 else 0.25
-    normalised_period_scores = _normalise_period_scores(all_period_scores, period_score_multiplier)
+    normalised_period_scores = _normalise_period_scores(all_period_scores)
     return normalised_period_scores, period_score_multiplier
 
 
-def _normalise_period_scores(period_scores: list[PeriodScore], period_score_multiplier: float) -> float:
+def _normalise_period_scores(period_scores: list[PeriodScore]) -> float:
     if len(period_scores) == 0:
         return 0
 
@@ -119,6 +114,9 @@ def _normalise_period_scores(period_scores: list[PeriodScore], period_score_mult
             total_score += score.period_score * combined_weight
             total_weight += combined_weight
 
+    # Requires an abundance of data before handing out top scores
+    period_score_multiplier = 1 if len(period_scores) > 8 else 0.25
+
     if total_weight == 0:
         return 0
     else:
@@ -130,12 +128,21 @@ def _calculate_hotkey_effective_volume_for_task(
 ) -> float:
     return combined_quality_score * normalised_period_score * volume
 
+async def _process_quality_scores(psql_db: PSQLDB, task: str, netuid: int) -> tuple[dict[str, float], dict[str, float], dict[str, float]]:
+    metrics, quality_scores = await _calculate_metrics_and_quality_score(psql_db, task, netuid)
+    average_weighted_quality_scores = {
+        node_hotkey: sum(score**1.5 for score in scores) / len(scores) for node_hotkey, scores in quality_scores.items()
+    }
+    metric_bonuses = await _calculate_metric_bonuses(metrics)
+    combined_quality_scores = {
+        node_hotkey: average_weighted_quality_scores[node_hotkey] * (1 + metric_bonuses[node_hotkey]) for node_hotkey in metrics
+    }
+    return combined_quality_scores, average_weighted_quality_scores, metric_bonuses
 
-async def _calculate_effective_volumes_for_task(psql_db: PSQLDB, contenders: list[Contender], task: str, netuid: int) -> tuple[dict[str, float], dict[str, float], dict[str, float], dict[str, float], dict[str, float], dict[str, float]]:
+async def _calculate_effective_volumes_for_task(psql_db: PSQLDB, contenders: list[Contender], task: str, combined_quality_scores: dict[str, float]) -> tuple[dict[str, float], dict[str, float], dict[str, float]]:
     hotkey_to_effective_volumes: dict[str, float] = {}
     normalised_period_scores = {}
     period_score_multipliers = {}
-    combined_quality_scores, average_quality_scores, metric_bonuses = await _calculate_combined_quality_score(psql_db, task, netuid)
     for contender in [i for i in contenders if i.task == task]:
         if contender.node_hotkey not in combined_quality_scores:
             continue
@@ -147,10 +154,10 @@ async def _calculate_effective_volumes_for_task(psql_db: PSQLDB, contenders: lis
         normalised_period_scores[contender.node_hotkey] = normalised_period_score
         period_score_multipliers[contender.node_hotkey] = period_score_multiplier
 
-    return hotkey_to_effective_volumes, combined_quality_scores, average_quality_scores, metric_bonuses, normalised_period_scores, period_score_multipliers
+    return hotkey_to_effective_volumes, normalised_period_scores, period_score_multipliers
 
 
-def _normalize_scores_for_task(effective_volumes: dict[str, float]) -> dict[str, float]:
+def _normalise_volumes_for_task(effective_volumes: dict[str, float]) -> dict[str, float]:
     sum_of_effective_volumes = sum(effective_volumes.values())
     if sum_of_effective_volumes == 0:
         return {}
@@ -161,13 +168,13 @@ def _apply_non_linear_transformation(scores: dict[str, float]) -> dict[str, floa
     return {hotkey: score**2 for hotkey, score in scores.items()}
 
 
-async def _calculate_normalised_scores_for_task(psql_db: PSQLDB, task: str, contenders: list[Contender], netuid: int) -> tuple[dict[str, float], dict[str, float], dict[str, float], dict[str, float], dict[str, float], dict[str, float]]:
-    effective_volumes, combined_quality_scores, average_quality_scores, metric_bonuses, normalised_period_scores, period_score_multipliers = await _calculate_effective_volumes_for_task(psql_db, contenders, task, netuid)
-    normalised_scores_before_non_linear = _normalize_scores_for_task(effective_volumes)
-    # logger.info(f"Normalised scores before non-linear transformation: {normalised_scores_before_non_linear}\n")
-    effective_volumes_after_non_linear_transformation = _apply_non_linear_transformation(normalised_scores_before_non_linear)
-    normalised_scores_for_task = _normalize_scores_for_task(effective_volumes_after_non_linear_transformation)
-    return normalised_scores_for_task, combined_quality_scores, average_quality_scores, metric_bonuses, normalised_period_scores, period_score_multipliers
+async def _normalise_effective_volumes_for_task(effective_volumes: dict[str, float]) -> dict[str, float]:
+    
+    normalised_effective_volumes_before_non_linear = _normalise_volumes_for_task(effective_volumes)
+    # logger.info(f"Normalised effective volumes before non-linear transformation: {normalised_effective_volumes_before_non_linear}\n")
+    effective_volumes_after_non_linear_transformation = _apply_non_linear_transformation(normalised_effective_volumes_before_non_linear)
+    normalised_scores_for_task = _normalise_volumes_for_task(effective_volumes_after_non_linear_transformation)
+    return normalised_scores_for_task
 
 async def calculate_scores_for_settings_weights(
     config_main: Config,
@@ -192,7 +199,10 @@ async def calculate_scores_for_settings_weights(
         task_weight = config.weight
         logger.debug(f"Processing task: {task}, weight: {task_weight}\n")
 
-        normalised_scores_for_task, combined_quality_scores, average_quality_scores, metric_bonuses, normalised_period_scores, period_score_multipliers = await _calculate_normalised_scores_for_task(psql_db, task, contenders, netuid)
+        combined_quality_scores, average_quality_scores, metric_bonuses = await _process_quality_scores(psql_db, task, netuid)
+        effective_volumes, normalised_period_scores, period_score_multipliers = await _calculate_effective_volumes_for_task(psql_db, contenders, task, combined_quality_scores)
+    
+        normalised_scores_for_task = await _normalise_effective_volumes_for_task(effective_volumes)
 
         for hotkey, score in normalised_scores_for_task.items():
             total_hotkey_scores[hotkey] = total_hotkey_scores.get(hotkey, 0) + score * task_weight
@@ -294,7 +304,7 @@ async def calculate_scores_for_settings_weights_debug(
         logger.debug(f"Processing task: {task}, weight: {task_weight}\n")
 
         # Calculate normalised scores and gather detailed information
-        normalised_scores_for_task = await _calculate_normalised_scores_for_task(psql_db, task, contenders, netuid)
+        normalised_scores_for_task = await _normalise_effective_volumes_for_task(psql_db, task, contenders, netuid)
         combined_quality_scores = await _calculate_combined_quality_score(psql_db, task, netuid)
         period_scores = {
             contender.node_hotkey: await _calculate_normalised_period_score(psql_db, task, contender.node_hotkey)
