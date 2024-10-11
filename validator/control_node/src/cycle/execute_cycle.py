@@ -11,7 +11,6 @@ A cycle consists of
 """
 
 import asyncio
-from datetime import datetime, timedelta
 from validator.control_node.src.control_config import Config
 from validator.control_node.src.cycle import (
     refresh_nodes,
@@ -23,11 +22,6 @@ from validator.db.src.sql.nodes import (
 )
 from fiber.logging_utils import get_logger
 
-from validator.db.src.sql.rewards_and_scores import (
-    delete_task_data_older_than_date,
-    delete_contender_history_older_than,
-    delete_reward_data_older_than,
-)
 from validator.models import Contender
 from validator.utils.post.nineteen import DataTypeToPost, ValidatorInfoPostBody, post_to_nineteen_ai
 from core.task_config import get_public_task_configs
@@ -76,19 +70,11 @@ async def main(config: Config) -> None:
     time_to_sleep_if_no_contenders = 20
     contenders = await get_nodes_and_contenders(config)
 
-    # NOTE: REMOVE AFTER Nineteen 6.0 - hard reset
-    date_of_update = datetime(2024, 10, 9, 13, 30)
-    # NOTE: after 36 hours remove the first 24 hours of the update, to not overly penalize the miners for updating ineffeciencies
-    if datetime.now() - date_of_update > timedelta(hours=36):
-        date_to_delete = datetime(2024, 10, 13, 30)
-    else:
-        date_to_delete = date_of_update
-
-
-    async with await config.psql_db.connection() as connection:
-        await delete_task_data_older_than_date(connection, date_to_delete)
-        await delete_contender_history_older_than(connection, date_to_delete)
-        await delete_reward_data_older_than(connection, date_to_delete)
+    # date_to_delete = datetime(2024, 10, 13, 30)
+    # async with await config.psql_db.connection() as connection:
+    #     await delete_task_data_older_than_date(connection, date_to_delete)
+    #     await delete_contender_history_older_than(connection, date_to_delete)
+    #     await delete_reward_data_older_than(connection, date_to_delete)
 
     if contenders is None or len(contenders) == 0:
         logger.info(
