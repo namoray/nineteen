@@ -6,14 +6,14 @@ from core import constants as ccst
 from validator.db.src import functions as db_functions
 from validator.db.src.database import PSQLDB
 from validator.db.src.sql.contenders import fetch_hotkey_scores_for_task
-from validator.db.src.sql.weights import insert_scoring_stats, insert_weights
+from validator.db.src.sql.weights import insert_scoring_stats, insert_weights, delete_weights_info_older_than, delete_miner_weights_older_than
 from validator.db.src.sql.nodes import get_vali_ss58_address
 from validator.utils.post.nineteen import DataTypeToPost, post_to_nineteen_ai, ContenderWeightsInfoPostObject, MinerWeightsPostObject
 from validator.control_node.src.control_config import Config
 from validator.db.src.sql.nodes import get_nodes
 from validator.models import Contender, PeriodScore
 from validator.models import RewardData
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from fiber.logging_utils import get_logger
 
 
@@ -239,6 +239,11 @@ async def calculate_scores_for_settings_weights(
 
     await _post_scoring_stats_to_local_db(config_main, contender_weights_info_objects, miner_weights_objects)
     await _post_scoring_stats_to_nineteen(config_main, contender_weights_info_objects, miner_weights_objects)
+    
+    scoring_stats_to_delete_locally = datetime.now(timezone.utc) - timedelta(days=7)
+    async with await config_main.psql_db.connection() as connection:
+        await delete_weights_info_older_than(connection, scoring_stats_to_delete_locally)
+        await delete_miner_weights_older_than(connection, scoring_stats_to_delete_locally)
 
     return node_ids, node_weights
 

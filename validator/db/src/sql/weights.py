@@ -1,6 +1,7 @@
 from fiber.logging_utils import get_logger
 
 from asyncpg import Connection
+from datetime import datetime
 from validator.db.src.database import PSQLDB
 from validator.models import Contender, PeriodScore, calculate_period_score
 from validator.utils.database import database_constants as dcst
@@ -76,4 +77,23 @@ async def insert_weights(connection: Connection, miner_weights: list[MinerWeight
             )
             for weight_info in miner_weights
         ],
+    )
+
+async def delete_weights_info_older_than(connection: Connection, timestamp: datetime) -> None:
+    await connection.execute(
+        f"""
+        DELETE FROM {dcst.CONTENDERS_WEIGHTS_STATS_TABLE}
+        WHERE {dcst.CREATED_AT} < $1
+        """,
+        timestamp
+    )
+
+
+async def delete_miner_weights_older_than(connection: Connection, timestamp: datetime) -> None:
+    await connection.execute(
+        f"""
+        DELETE FROM {dcst.NODES_WEIGHTS_TABLE}
+        WHERE {dcst.CREATED_AT} < $1
+        """,
+        timestamp
     )
