@@ -6,6 +6,7 @@ from core import constants as ccst
 from validator.db.src import functions as db_functions
 from validator.db.src.database import PSQLDB
 from validator.db.src.sql.contenders import fetch_hotkey_scores_for_task
+from validator.db.src.sql.weights import insert_scoring_stats, insert_weights
 from validator.db.src.sql.nodes import get_vali_ss58_address
 from validator.utils.post.nineteen import DataTypeToPost, post_to_nineteen_ai, ContenderWeightsInfoPostObject, MinerWeightsPostObject
 from validator.control_node.src.control_config import Config
@@ -232,13 +233,26 @@ async def calculate_scores_for_settings_weights(
             validator_hotkey=ss58_address,
             created_at = datetime.now(timezone.utc),
             miner_hotkey=hotkey,
-            weight=score / total_score
+            node_weight=score / total_score
         )
         miner_weights_objects.append(miner_weight_object)
 
+    await _post_scoring_stats_to_local_db(config, contender_weights_info_objects, miner_weights_objects)
     await _post_scoring_stats_to_nineteen(config, contender_weights_info_objects, miner_weights_objects)
 
     return node_ids, node_weights
+
+async def _post_scoring_stats_to_local_db(config: Config, contender_weights_info_list: list[ContenderWeightsInfoPostObject], miner_weights_list: list[MinerWeightsPostObject]):
+    async with await config.psql_db.connection() as conn:
+        await insert_scoring_stats(
+            connection=conn,
+            scoring_stats=contender_weights_info_list
+        )
+        
+        await insert_weights(
+            connection=conn,
+            miner_weights=miner_weights_list
+        )
 
 async def _post_scoring_stats_to_nineteen(config: Config, contender_weights_info_list: list[ContenderWeightsInfoPostObject], miner_weights_list: list[MinerWeightsPostObject]):
     await post_to_nineteen_ai(

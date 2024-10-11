@@ -103,7 +103,7 @@ class MinerWeightsPostObject(BaseModel):
     validator_hotkey: str
     created_at: datetime
     miner_hotkey: str
-    weight: float
+    node_weight: float
 
 class ContenderWeightsInfoPostObject(BaseModel):
     version_key: int
