@@ -28,14 +28,13 @@ async def insert_scoring_stats(connection: Connection, scoring_stats: list[Conte
             {dcst.COLUMN_CONTENDER_CAPACITY},
             {dcst.COLUMN_NORMALISED_NET_SCORE}
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        VALUES ($1, $2, $3, NOW(), $4, $5, $6, $7, $8, $9, $10, $11, $12)
         """,
         [
             (
                 stat.version_key,
                 stat.netuid,
                 stat.validator_hotkey,
-                stat.created_at,
                 stat.miner_hotkey,
                 stat.task,
                 stat.average_quality_score,
@@ -64,7 +63,7 @@ async def insert_weights(connection: Connection, miner_weights: list[MinerWeight
             {dcst.COLUMN_MINER_HOTKEY},
             {dcst.COLUMN_WEIGHT}
         )
-        VALUES ($1, $2, $3, $4, $5, $6)
+        VALUES ($1, $2, $3, NOW(), $4, $5)
         """,
         [
             (
