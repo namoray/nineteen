@@ -202,7 +202,7 @@ async def _post_contender_stats_to_nineteen(config: Config):
                 miner_hotkey=contender.node_hotkey,
                 validator_hotkey=config.keypair.ss58_address,
                 task=contender.task,
-                volume=contender.capacity_to_score,
+                volume=contender.capacity,
             ).model_dump(mode="json")
         )
     await post_to_nineteen_ai(
