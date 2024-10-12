@@ -1,7 +1,7 @@
 import asyncio
 import random
 import sys
-from typing import Any
+from typing import Union
 
 from core.models import utility_models
 from validator.utils.synthetic import synthetic_constants as scst
@@ -12,11 +12,11 @@ import io
 import base64
 import markovify
 import datasets
-import diskcache
 from functools import lru_cache
 from fiber.logging_utils import get_logger
 from validator.utils.synthetic import synthetic_utils as sutils
 import binascii
+from cachetools import LRUCache
 
 logger = get_logger(__name__)
 
@@ -40,9 +40,8 @@ async def markov_model_factory():
 
 
 @lru_cache(maxsize=1)
-def image_cache_factory() -> diskcache.Cache:
-    cache = diskcache.Cache("./cache/image_cache")
-    return cache
+def image_cache_factory() -> LRUCache:
+    return LRUCache(maxsize=scst.IMAGE_CACHE_SIZE)
 
 
 async def _get_markov_sentence(max_words: int = 10) -> str:
@@ -261,14 +260,21 @@ async def generate_avatar_synthetic() -> payload_models.AvatarPayload:
     )
 
 
-async def generate_synthetic_data(task: str) -> Any:
+async def generate_synthetic_data(task: str) -> Union[
+    payload_models.ChatPayload,
+    payload_models.TextToImagePayload,
+    payload_models.ImageToImagePayload,
+    payload_models.InpaintPayload,
+    payload_models.AvatarPayload,
+    None
+]:
     """
     Gets task config and dynamically calls the synthetic generation function
     Not super clean, but it works
     """
     task_config = tcfg.get_enabled_task_config(task)
     if task_config is None:
-        return
+        return None
     generative_function_name = task_config.synthetic_generation_config.func
 
     if generative_function_name not in sys.modules[__name__].__dict__:
