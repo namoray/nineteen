@@ -11,21 +11,22 @@ A cycle consists of
 """
 
 import asyncio
-from validator.control_node.src.control_config import Config
-from validator.control_node.src.cycle import (
-    refresh_nodes,
-    refresh_contenders,
-)
-from validator.control_node.src.cycle.schedule_synthetic_queries import schedule_synthetics_until_done
-from validator.db.src.sql.nodes import (
-    get_nodes,
-)
+from typing import List
+
 from fiber.logging_utils import get_logger
 
-from validator.models import Contender
-from validator.utils.post.nineteen import DataTypeToPost, ValidatorInfoPostBody, post_to_nineteen_ai
-from core.task_config import get_public_task_configs
 from core import constants as ccst
+from core.task_config import get_public_task_configs
+from validator.control_node.src.control_config import Config
+from validator.control_node.src.cycle import refresh_contenders
+from validator.control_node.src.cycle import refresh_nodes
+from validator.control_node.src.cycle.schedule_synthetic_queries import schedule_synthetics_until_done
+from validator.db.src.sql.nodes import get_nodes
+from validator.models import Contender
+from validator.utils.post.nineteen import DataTypeToPost
+from validator.utils.post.nineteen import ValidatorInfoPostBody
+from validator.utils.post.nineteen import post_to_nineteen_ai
+
 
 logger = get_logger(__name__)
 
@@ -43,25 +44,25 @@ async def _post_vali_stats(config: Config):
     )
 
 
-async def get_nodes_and_contenders(config: Config) -> list[Contender] | None:
+async def get_nodes_and_contenders(config: Config) -> List[Contender] | None:
     logger.info("Starting cycle...")
     if config.refresh_nodes:
-        logger.info("First refreshing metagraph and storing the nodes")
+        logger.info("Refreshing metagraph and storing the nodes.")
         nodes = await refresh_nodes.get_and_store_nodes(config)
     else:
         nodes = await get_nodes(config.psql_db, config.netuid)
 
     await _post_vali_stats(config)
 
-    logger.info("Got nodes! Performing handshakes now...")
+    logger.info("Nodes refreshed! Performing handshakes now...")
 
     nodes = await refresh_nodes.perform_handshakes(nodes, config)
 
-    logger.info("Got handshakes! Getting the contenders from the nodes...")
+    logger.info("Handshakes completed! Fetching contenders from the nodes...")
 
     contenders = await refresh_contenders.get_and_store_contenders(config, nodes)
 
-    logger.info(f"Got all contenders! {len(contenders)} contenders will be queried...")
+    logger.info(f"Contenders fetched! Total contenders: {len(contenders)}.")
 
     return contenders
 
@@ -70,17 +71,11 @@ async def main(config: Config) -> None:
     time_to_sleep_if_no_contenders = 20
     contenders = await get_nodes_and_contenders(config)
 
-    # date_to_delete = datetime(2024, 10, 13, 30)
-    # async with await config.psql_db.connection() as connection:
-    #     await delete_task_data_older_than_date(connection, date_to_delete)
-    #     await delete_contender_history_older_than(connection, date_to_delete)
-    #     await delete_reward_data_older_than(connection, date_to_delete)
-
-    if contenders is None or len(contenders) == 0:
+    if not contenders:
         logger.info(
-            f"No contenders to query, skipping synthetic scheduling and sleeping for {time_to_sleep_if_no_contenders} seconds to wait."
+            f"No contenders available. Skipping synthetic scheduling and sleeping for {time_to_sleep_if_no_contenders} seconds."
         )
-        await asyncio.sleep(time_to_sleep_if_no_contenders)  # Sleep for 5 minutes to wait for contenders to become available
+        await asyncio.sleep(time_to_sleep_if_no_contenders)
         tasks = []
     else:
         tasks = [schedule_synthetics_until_done(config)]
@@ -88,11 +83,11 @@ async def main(config: Config) -> None:
     while True:
         await asyncio.gather(*tasks)
         contenders = await get_nodes_and_contenders(config)
-        if contenders is None or len(contenders) == 0:
+        if not contenders:
             logger.info(
-                f"No contenders to query, skipping synthetic scheduling and sleeping for {time_to_sleep_if_no_contenders} seconds to wait."
+                f"No contenders available. Skipping synthetic scheduling and sleeping for {time_to_sleep_if_no_contenders} seconds."
             )
-            await asyncio.sleep(time_to_sleep_if_no_contenders)  # Sleep for 5 minutes to wait for contenders to become available
+            await asyncio.sleep(time_to_sleep_if_no_contenders)
             tasks = []
         else:
             tasks = [schedule_synthetics_until_done(config)]
