@@ -201,7 +201,7 @@ def task_configs_factory() -> dict[str, cmodels.FullTaskConfig]:
             orchestrator_server_config=cmodels.OrchestratorServerConfig(
                 server_needed=cmodels.ServerType.IMAGE,
                 load_model_config={
-                    "model": "avatar"
+                    "model": AVATAR
                     },
                 checking_function="check_image_result",
                 endpoint=cmodels.Endpoints.avatar.value,
