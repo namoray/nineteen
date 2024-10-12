@@ -17,19 +17,27 @@ from validator.utils.redis import redis_constants as rcst
 from core import constants as ccst
 from fiber.logging_utils import get_logger
 
+from validator.utils.synthetic.synthetic_utils import (
+    get_random_image_b64,
+    get_synthetic_data_version,
+    construct_synthetic_data_task_key,
+    fetch_synthetic_data_for_task,
+)
+
 logger = get_logger(__name__)
 
 
-@dataclass
+@dataclass(order=True)
 class TaskScheduleInfo:
+    next_schedule_time: float
     task: str
     total_requests: int
     interval: float
-    next_schedule_time: float
     remaining_requests: int
 
-    def __lt__(self, other: "TaskScheduleInfo"):
-        return self.next_schedule_time < other.next_schedule_time
+    def __post_init__(self):
+        # Ensure heapq uses next_schedule_time for ordering
+        object.__setattr__(self, "sort_index", self.next_schedule_time)
 
 
 async def _load_contenders(psql_db: PSQLDB) -> List[Contender]:
@@ -57,7 +65,7 @@ def _calculate_task_requests(task: str, contenders: List[Contender], config: Con
 
 
 def _get_initial_schedule_time(current_time: float, interval: float) -> float:
-    return current_time + random.random() * interval
+    return current_time + random.uniform(0, interval)
 
 
 async def _initialize_task_schedules(task_groups: Dict[str, List[Contender]], config: Config) -> List[TaskScheduleInfo]:
@@ -92,13 +100,22 @@ async def _get_redis_remaining_requests(redis_db: Redis, task: str) -> int:
 
 
 async def _schedule_synthetic_query(redis_db: Redis, task: str, max_len: int):
-    await putils.add_synthetic_query_to_queue(redis_db, task, max_len)
+    # Directly generate synthetic payload and push to the queue
+    try:
+        synthetic_data = await fetch_synthetic_data_for_task(redis_db, task)
+    except ValueError as e:
+        logger.error(f"Failed to fetch synthetic data for task {task}: {e}")
+        return
+
+    # Here, you would queue the synthetic data for processing
+    # For example, pushing to a Redis list
+    await redis_db.rpush(rcst.QUERY_QUEUE_KEY, json.dumps(synthetic_data))  # type: ignore
 
 
 async def _clear_old_synthetic_queries(redis_db: Redis):
     all_items = await redis_db.lrange(rcst.QUERY_QUEUE_KEY, 0, -1)  # type: ignore
 
-    non_synthetic_items = [item for item in all_items if json.loads(item).get("query_type") != gcst.SYNTHETIC]
+    non_synthetic_items = [item for item in all_items if json.loads(item).get("task_type") != gcst.SYNTHETIC]
     await redis_db.delete(rcst.QUERY_QUEUE_KEY)
 
     if non_synthetic_items:
@@ -109,7 +126,7 @@ async def _clear_old_synthetic_queries(redis_db: Redis):
 
 async def schedule_synthetics_until_done(config: Config):
     scoring_period_time = ccst.SCORING_PERIOD_TIME * config.scoring_period_time_multiplier
-    logger.info(f"Scheduling synthetics; this will take {scoring_period_time // 60} minutes ish...")
+    logger.info(f"Scheduling synthetics; this will take approximately {scoring_period_time / 60:.2f} minutes...")
 
     start_time = time.time()
 
@@ -121,19 +138,19 @@ async def schedule_synthetics_until_done(config: Config):
     for schedule in task_schedules:
         await _update_redis_remaining_requests(config.redis_db, schedule.task, schedule.total_requests)
 
-    i = 0
     while task_schedules:
-        i += 1
         schedule = heapq.heappop(task_schedules)
-        time_to_sleep = schedule.next_schedule_time - time.time()
+        current_time = time.time()
+        time_to_sleep = schedule.next_schedule_time - current_time
 
         if time_to_sleep > 0:
-            if time.time() - start_time + time_to_sleep > scoring_period_time:
+            if (current_time - start_time + time_to_sleep) > scoring_period_time:
                 break
 
             logger.debug(
-                f"Sleeping for {time_to_sleep} seconds while waiting for task {schedule.task} to be scheduled;"
-                f"{schedule.remaining_requests} requests remaining - estimated to take {schedule.remaining_requests  * schedule.interval} more seconds"
+                f"Sleeping for {time_to_sleep:.2f} seconds while waiting to schedule task '{schedule.task}'. "
+                f"{schedule.remaining_requests} requests remaining "
+                f"- estimated to take {schedule.remaining_requests * schedule.interval:.2f} more seconds"
             )
             sleep_chunk = 2  # Sleep in 2-second chunks to make debugging easier
             while time_to_sleep > 0:
@@ -142,59 +159,30 @@ async def schedule_synthetics_until_done(config: Config):
 
         latest_remaining_requests = await _get_redis_remaining_requests(config.redis_db, schedule.task)
         if latest_remaining_requests <= 0:
-            logger.info(f"No more requests remaining for task {schedule.task}")
+            logger.info(f"No more requests remaining for task '{schedule.task}'")
             continue
-        requests_to_skip = schedule.remaining_requests - latest_remaining_requests
 
-        if requests_to_skip > 0:
-            logger.info(f"Skipping {requests_to_skip} requests for task {schedule.task}")
+        await _schedule_synthetic_query(config.redis_db, schedule.task, max_len=100)
 
-            schedule.next_schedule_time += schedule.interval * requests_to_skip
-            schedule.remaining_requests = latest_remaining_requests
-            heapq.heappush(task_schedules, schedule)
-            continue
+        remaining_requests = latest_remaining_requests - 1
+        await _update_redis_remaining_requests(config.redis_db, schedule.task, remaining_requests)
+        next_schedule_time = time.time() + schedule.interval
+
+        updated_schedule = TaskScheduleInfo(
+            task=schedule.task,
+            total_requests=schedule.total_requests,
+            interval=schedule.interval,
+            next_schedule_time=next_schedule_time,
+            remaining_requests=remaining_requests,
+        )
+
+        if updated_schedule.remaining_requests > 0:
+            heapq.heappush(task_schedules, updated_schedule)
         else:
-            await _schedule_synthetic_query(config.redis_db, schedule.task, max_len=100)
+            logger.info(f"No more requests remaining for task '{updated_schedule.task}'")
 
-            remaining_requests = latest_remaining_requests - 1
-            await _update_redis_remaining_requests(config.redis_db, schedule.task, remaining_requests)
-            schedule.next_schedule_time = time.time() + schedule.interval
-            schedule.remaining_requests = remaining_requests
-
-        if schedule.remaining_requests > 0:
-            heapq.heappush(task_schedules, schedule)
-        else:
-            logger.info(f"No more requests remaining for task {schedule.task}")
-
-        if time.time() - start_time > scoring_period_time:
+        if (time.time() - start_time) > scoring_period_time:
             break
 
-        if i % 100 == 0:
-            # Print full stats of all tasks
-            schedules_left = [heapq.heappop(task_schedules) for _ in range(len(task_schedules))]
-            
-            task_info = []
-            for schedule in schedules_left:
-                task_info.append(
-                    f"Task {schedule.task}:\n"
-                    f"  - Scheduled: {schedule.total_requests - schedule.remaining_requests} / {schedule.total_requests}\n"
-                    f"  - Next request: {schedule.next_schedule_time - time.time():.2f} seconds from now\n"
-                    f"  - Estimated completion: {schedule.remaining_requests * schedule.interval:.2f} seconds"
-                )
-                heapq.heappush(task_schedules, schedule)
-
-            logger.info(
-                f"Synthetic query scheduling status:\n"
-                f"Iterations: {i}\n"
-                f"Time elapsed: {time.time() - start_time:.2f} / {scoring_period_time:.2f} seconds\n"
-                f"Task details:\n" + "\n\n".join(task_info)
-            )
-
-
-    schedules_left = [heapq.heappop(task_schedules) for _ in range(len(task_schedules))]
-    logger.info(
-        f"Some info:\n iterations: {i}\n time elapsed: {time.time() - start_time} - max time: {scoring_period_time}\n"
-        f"schedules left: {[s.task for s in schedules_left]}"
-    )
-    logger.info("All tasks completed. Waiting for 10 seconds to take a breath...")
+    logger.info("All scheduled synthetic queries have been queued. Waiting for 10 seconds before finishing...")
     await asyncio.sleep(10)
