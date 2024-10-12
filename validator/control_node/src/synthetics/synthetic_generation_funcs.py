@@ -260,6 +260,7 @@ async def generate_avatar_synthetic(
         seed=seed,
         steps=8,
         init_image=init_image,
+        model=model,
     )
 
 
