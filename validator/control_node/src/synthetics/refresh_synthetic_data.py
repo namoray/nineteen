@@ -1,61 +1,65 @@
 import asyncio
-import datetime
 import json
 import time
 from pydantic import BaseModel
 from core import task_config as tcfg
 from redis.asyncio import Redis
+from typing import List
 from validator.control_node.src.control_config import Config
 from validator.utils.redis import redis_constants as rcst
-from validator.utils.synthetic import synthetic_constants as scst
-from validator.utils.synthetic import synthetic_utils as sutils
-from validator.control_node.src.synthetics import synthetic_generation_funcs
+from validator.utils.synthetic.synthetic_utils import (
+    construct_synthetic_data_task_key,
+    fetch_synthetic_data_for_task,
+)
 from fiber.logging_utils import get_logger
 
 logger = get_logger(__name__)
 
 
-# TOOD: Change to mapping
 async def _store_synthetic_data_in_redis(redis_db: Redis, task: str, synthetic_data: BaseModel) -> None:
     pipe = redis_db.pipeline(transaction=True)
 
-    task_key = sutils.construct_synthetic_data_task_key(task)
+    task_key = construct_synthetic_data_task_key(task)
     await pipe.set(task_key, json.dumps(synthetic_data.model_dump()))
 
-    current_time = int(time.time() * 1000) / 1000
+    current_time = int(time.time())
     await pipe.hset(rcst.SYNTHETIC_DATA_VERSIONS_KEY, task, current_time)  # type: ignore
 
     await pipe.execute()
 
 
-async def update_tasks_synthetic_data(redis_db: Redis, slow_sync: bool = True, fixed_task: str | None = None) -> None:
-    if fixed_task is not None:
-        now = datetime.datetime.now().timestamp()
-        synthetic_data_version = await sutils.get_synthetic_data_version(redis_db, fixed_task)
-        if synthetic_data_version is None or now - synthetic_data_version > scst.SYNTHETIC_DATA_EXPIRATION_TIME:
-            new_synthetic_data = await synthetic_generation_funcs.generate_synthetic_data(fixed_task)
-            if new_synthetic_data is not None:
-                await _store_synthetic_data_in_redis(redis_db, fixed_task, new_synthetic_data)
+async def warm_up_synthetic_cache(redis_db: Redis, config: Config, tasks: List[str]):
+    """
+    Preloads synthetic data for all enabled tasks into Redis.
+    """
+    for task in tasks:
+        task_config = tcfg.get_enabled_task_config(task)
+        if task_config is None:
+            logger.warning(f"Task configuration for '{task}' not found. Skipping cache warm-up.")
+            continue
 
-    else:
-        task_configs = tcfg.get_task_configs()
-        for task in task_configs:
-            now = datetime.datetime.now().timestamp()
-            synthetic_data_version = await sutils.get_synthetic_data_version(redis_db, task)
-            if synthetic_data_version is None or now - synthetic_data_version > scst.SYNTHETIC_DATA_EXPIRATION_TIME:
-                new_synthetic_data = await synthetic_generation_funcs.generate_synthetic_data(task)
-                if new_synthetic_data is not None:
-                    await _store_synthetic_data_in_redis(redis_db, task, new_synthetic_data)
-            if slow_sync:
-                await asyncio.sleep(0.1)
+        try:
+            synthetic_data = await fetch_synthetic_data_for_task(redis_db, task)
+            synthetic_data_model = BaseModel.parse_obj(synthetic_data)
+            await _store_synthetic_data_in_redis(redis_db, task, synthetic_data_model)
+            logger.info(f"Preloaded synthetic data for task '{task}'.")
+        except Exception as e:
+            logger.error(f"Failed to preload synthetic data for task '{task}': {e}")
 
-
-async def continuously_fetch_synthetic_data_for_tasks(redis_db: Redis) -> None:
-    await update_tasks_synthetic_data(redis_db, slow_sync=False)
-
-    while True:
-        await update_tasks_synthetic_data(redis_db, slow_sync=True)
+    logger.info("Synthetic cache warm-up completed.")
 
 
 async def main(config: Config):
-    await continuously_fetch_synthetic_data_for_tasks(config.redis_db)
+    """
+    Handles initial cache warm-up.
+    """
+    tasks = [task for task in tcfg.get_task_configs() if tcfg.get_enabled_task_config(task)]
+    await warm_up_synthetic_cache(config.redis_db, config, tasks)
+
+
+if __name__ == "__main__":
+    import asyncio
+    from validator.control_node.src.control_config import load_config
+
+    config = load_config()
+    asyncio.run(main(config))
