@@ -36,7 +36,7 @@ def _get_metric_bonuses(metric_scores: dict[str, float]) -> dict[str, float]:
     return {hotkey: SPEED_BONUS_MAX * (0.5 - rank / (len(metric_scores) - 1)) for hotkey, rank in ranked_scores.items()}
 
 
-async def _get_reward_datas(psql_db: PSQLDB, task: str, netuid: int) -> dict[str, list[RewardData]]:
+async def _get_reward_datas(psql_db: PSQLDB, task: str, netuid: int) -> list[RewardData]:
     # Flow is:
     # Get all possible hotkeys
     # Get reward data for this task - as much as possible
