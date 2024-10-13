@@ -124,7 +124,7 @@ async def process_task(config: Config, message: rdc.QueryQueueMessage):
         logger.debug(f"Successfully acknowledged job id : {message.job_id} ✅")
         await _decrement_requests_remaining(config.redis_db, task)
     else:
-        synthetic_data = await sgen.generate_synthetic_data(task)
+        synthetic_data = await sgen.generate_synthetic_data(task, config.redis_db)
         if synthetic_data is None:
             logger.error(f"Failed to generate synthetic data for task: {task}")
             await _handle_error(

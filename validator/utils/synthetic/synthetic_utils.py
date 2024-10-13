@@ -1,18 +1,13 @@
 import random
-
-
 import base64
 from io import BytesIO
-
-
 import aiohttp
-from cachetools import LRUCache
 from PIL import Image
 import uuid
 import numpy as np
 from fiber.logging_utils import get_logger
 from validator.utils.synthetic import synthetic_constants as scst
-
+from redis.asyncio import Redis
 
 logger = get_logger(__name__)
 
@@ -104,25 +99,31 @@ async def _get_random_picsum_image(x_dim: int, y_dim: int) -> str:
 
 
 
-async def get_random_image_b64(cache: LRUCache) -> str:
-    if cache:
-        if random.random() < 0.01:
-            # Occasionally remove a random item from the cache
-            if cache:
-                key = random.choice(list(cache.keys()))
-                del cache[key]
-        elif cache:
-            # Return a random item from the cache
-            key = random.choice(list(cache.keys()))
-            return cache[key]
+async def get_random_image_b64(redis_db: Redis) -> str:
+    cache_key = scst.IMAGE_CACHE_KEY
+    cache_size = scst.IMAGE_CACHE_SIZE
+
+    logger.debug(f"Starting get_random_image_b64. Cache key: {cache_key}, Cache size: {cache_size}")
+
+    if random.random() < 0.01:
+        if await redis_db.scard(cache_key) > 0:
+            random_key = await redis_db.srandmember(cache_key)
+            await redis_db.srem(cache_key, random_key)
+            await redis_db.delete(random_key)
+    elif await redis_db.scard(cache_key) > 0:
+        random_key = await redis_db.srandmember(cache_key)
+        return await redis_db.get(random_key)
 
     # If cache is empty or we decided to get a new image
     random_picsum_image = await _get_random_picsum_image(1024, 1024)
-    if len(cache) >= cache.maxsize:
-        # If cache is full, remove a random item
-        key = random.choice(list(cache.keys()))
-        del cache[key]
-    cache[str(uuid.uuid4())] = random_picsum_image
+    if await redis_db.scard(cache_key) >= cache_size:
+        random_key = await redis_db.srandmember(cache_key)
+        await redis_db.srem(cache_key, random_key)
+        await redis_db.delete(random_key)
+
+    new_key = str(uuid.uuid4())
+    await redis_db.set(new_key, random_picsum_image)
+    await redis_db.sadd(cache_key, new_key)
     return random_picsum_image
 
 

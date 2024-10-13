@@ -67,6 +67,11 @@ class TestSyntheticGeneration:
     async def test_process_task_synthetic_image_to_image_generation(self, mock_handle_nonstream_query, mock_handle_error, mock_acknowledge_job):
         config = AsyncMock()
         config.redis_db = AsyncMock()
+        
+        # Mock the redis calls
+        config.redis_db.scard.return_value = 1
+        config.redis_db.srandmember.return_value = "mocked_image_key"
+        config.redis_db.get.return_value = "mocked_base64_image"
 
         message = rdc.QueryQueueMessage(
             query_type="synthetic",
