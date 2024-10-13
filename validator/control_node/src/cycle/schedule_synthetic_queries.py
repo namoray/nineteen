@@ -105,15 +105,12 @@ async def _get_redis_remaining_requests(redis_db: Redis, task: str) -> int:
 
 
 async def _schedule_synthetic_query(redis_db: Redis, task: str, max_len: int):
-    # Directly generate synthetic payload and push to the queue
     try:
         synthetic_data = await fetch_synthetic_data_for_task(redis_db, task)
     except ValueError as e:
         logger.error(f"Failed to fetch synthetic data for task {task}: {e}")
         return
 
-    # Here, you would queue the synthetic data for processing
-    # For example, pushing to a Redis list
     await redis_db.rpush(rcst.QUERY_QUEUE_KEY, json.dumps(synthetic_data))  # type: ignore
 
 
