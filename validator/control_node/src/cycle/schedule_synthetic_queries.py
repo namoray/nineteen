@@ -3,7 +3,7 @@ from dataclasses import dataclass
 import json
 import random
 import time
-from typing import Dict, List
+from typing import Dict, List, Any
 import heapq
 
 from redis.asyncio import Redis
@@ -22,6 +22,11 @@ from validator.utils.synthetic.synthetic_utils import (
     get_synthetic_data_version,
     construct_synthetic_data_task_key,
     fetch_synthetic_data_for_task,
+)
+
+from validator.control_node.src.synthetics.synthetic_generation_funcs import (
+    generate_chat_synthetic,
+    generate_text_to_image_synthetic,
 )
 
 logger = get_logger(__name__)
@@ -124,65 +129,96 @@ async def _clear_old_synthetic_queries(redis_db: Redis):
     logger.info(f"Cleared {len(all_items) - len(non_synthetic_items)} synthetic queries from the queue")
 
 
-async def schedule_synthetics_until_done(config: Config):
-    scoring_period_time = ccst.SCORING_PERIOD_TIME * config.scoring_period_time_multiplier
-    logger.info(f"Scheduling synthetics; this will take approximately {scoring_period_time / 60:.2f} minutes...")
+async def _fetch_tasks_in_chunks(redis_client: Redis, batch_size: int) -> List[Dict[str, Any]]:
+    tasks = []
 
-    start_time = time.time()
-
-    contenders = await _load_contenders(config.psql_db)
-    task_groups = await _group_contenders_by_task(contenders)
-    task_schedules = await _initialize_task_schedules(task_groups, config)
-    await _clear_old_synthetic_queries(config.redis_db)
-
-    for schedule in task_schedules:
-        await _update_redis_remaining_requests(config.redis_db, schedule.task, schedule.total_requests)
-
-    while task_schedules:
-        schedule = heapq.heappop(task_schedules)
-        current_time = time.time()
-        time_to_sleep = schedule.next_schedule_time - current_time
-
-        if time_to_sleep > 0:
-            if (current_time - start_time + time_to_sleep) > scoring_period_time:
-                break
-
-            logger.debug(
-                f"Sleeping for {time_to_sleep:.2f} seconds while waiting to schedule task '{schedule.task}'. "
-                f"{schedule.remaining_requests} requests remaining "
-                f"- estimated to take {schedule.remaining_requests * schedule.interval:.2f} more seconds"
-            )
-            sleep_chunk = 2  # Sleep in 2-second chunks to make debugging easier
-            while time_to_sleep > 0:
-                await asyncio.sleep(min(sleep_chunk, time_to_sleep))
-                time_to_sleep -= sleep_chunk
-
-        latest_remaining_requests = await _get_redis_remaining_requests(config.redis_db, schedule.task)
-        if latest_remaining_requests <= 0:
-            logger.info(f"No more requests remaining for task '{schedule.task}'")
-            continue
-
-        await _schedule_synthetic_query(config.redis_db, schedule.task, max_len=100)
-
-        remaining_requests = latest_remaining_requests - 1
-        await _update_redis_remaining_requests(config.redis_db, schedule.task, remaining_requests)
-        next_schedule_time = time.time() + schedule.interval
-
-        updated_schedule = TaskScheduleInfo(
-            task=schedule.task,
-            total_requests=schedule.total_requests,
-            interval=schedule.interval,
-            next_schedule_time=next_schedule_time,
-            remaining_requests=remaining_requests,
-        )
-
-        if updated_schedule.remaining_requests > 0:
-            heapq.heappush(task_schedules, updated_schedule)
+    for _ in range(batch_size):
+        task_raw = await redis_client.lpop(rcst.CONTROL_NODE_QUEUE_KEY)  # type: ignore
+        if task_raw:
+            try:
+                task_data = json.loads(task_raw)
+                tasks.append(task_data)
+            except Exception as e:
+                logger.error(f"Failed to parse task from Redis queue: {str(e)}")
         else:
-            logger.info(f"No more requests remaining for task '{updated_schedule.task}'")
-
-        if (time.time() - start_time) > scoring_period_time:
             break
 
-    logger.info("All scheduled synthetic queries have been queued. Waiting for 10 seconds before finishing...")
-    await asyncio.sleep(10)
+    return tasks
+
+
+async def _enhance_task(task_data: Dict[str, Any]) -> Dict[str, Any]:
+    try:
+        logger.info(f"Processing task {task_data['id']} of type {task_data['task_type']}...")
+
+        # Generate synthetic payload according to task type
+        if task_data["task_type"] == "chat":
+            synthetic_payload = await generate_chat_synthetic(model=task_data["model"])
+            task_data["synthetic_payload"] = synthetic_payload.dict()
+        elif task_data["task_type"] == "text-to-image":
+            synthetic_payload = await generate_text_to_image_synthetic(model=task_data["model"])
+            task_data["synthetic_payload"] = synthetic_payload.dict()
+        else:
+            raise ValueError(f"Unknown task type {task_data['task_type']}")
+
+        # Mark task as enhanced and add the timestamp
+        task_data["status"] = "enhanced"
+        task_data["enhanced_at"] = time.time()
+
+        return task_data
+
+    except Exception as e:
+        logger.error(f"Failed to enhance task {task_data.get('id', 'unknown')}: {str(e)}")
+        return task_data
+
+
+async def _push_to_query_node(redis_client: Redis, task_data: Dict[str, Any]):
+    try:
+        await redis_client.rpush(rcst.QUERY_QUEUE_KEY, json.dumps(task_data))  # type: ignore
+        logger.info(f"Task {task_data['id']} has been successfully enhanced and queued for the Query Node!")
+
+    except Exception as e:
+        logger.error(f"Failed to queue enhanced task {task_data.get('id', 'unknown')} to Query Node: {str(e)}")
+
+
+async def warmup_function(config: Config):
+    logger.info("Loading shared resources for warmup.")
+
+    warmup_tasks = [
+        {"id": "warmup-chat-task", "task_type": "chat", "model": "default-model"},
+        {"id": "warmup-text-to-image-task", "task_type": "text-to-image", "model": "default-model"},
+        {"id": "warmup-image-to-image-task", "task_type": "image-to-image", "model": "default-model"},
+    ]
+
+    for task_data in warmup_tasks:
+        try:
+            logger.info(f"Warming up by enhancing task {task_data['id']}...")
+
+            enhanced_task = await _enhance_task(task_data)
+
+            await _push_to_query_node(config.redis_db, enhanced_task)
+
+            logger.info(f"Warmup task {task_data['id']} has been successfully enhanced and queued for the Query Node.")
+
+        except Exception as e:
+            logger.error(f"Error during warmup processing for task {task_data['id']}: {e}")
+
+    logger.info("Warmup completed. Entering the main control loop.")
+
+
+async def schedule_synthetics_until_done(config: Config):
+    redis_client = config.redis_db
+
+    while True:
+        tasks = await _fetch_tasks_in_chunks(redis_client, rcst.CONTROL_TASK_CHUNK_SIZE)
+
+        if not tasks:
+            logger.info("No more tasks to fetch, exiting the scheduling loop.")
+            break
+
+        logger.info(f"Fetched {len(tasks)} tasks from Redis.")
+
+        enhanced_tasks = await asyncio.gather(*[_enhance_task(task) for task in tasks])
+
+        await asyncio.gather(*[_push_to_query_node(redis_client, task) for task in enhanced_tasks])
+
+        logger.info(f"Batch of {len(tasks)} tasks has been enhanced and passed to the Query Node.")

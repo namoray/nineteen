@@ -71,6 +71,8 @@ async def main(config: Config) -> None:
     time_to_sleep_if_no_contenders = 20
     contenders = await get_nodes_and_contenders(config)
 
+    await warmup_function(config=config)
+
     if not contenders:
         logger.info(
             f"No contenders available. Skipping synthetic scheduling and sleeping for {time_to_sleep_if_no_contenders} seconds."
