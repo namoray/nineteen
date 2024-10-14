@@ -36,7 +36,7 @@ def _get_metric_bonuses(metric_scores: dict[str, float]) -> dict[str, float]:
     return {hotkey: SPEED_BONUS_MAX * (0.5 - rank / (len(metric_scores) - 1)) for hotkey, rank in ranked_scores.items()}
 
 
-async def _get_reward_datas(psql_db: PSQLDB, task: str, netuid: int) -> dict[str, list[RewardData]]:
+async def _get_reward_datas(psql_db: PSQLDB, task: str, netuid: int) -> list[RewardData]:
     # Flow is:
     # Get all possible hotkeys
     # Get reward data for this task - as much as possible
@@ -149,7 +149,7 @@ def _normalize_scores_for_task(effective_volumes: dict[str, float]) -> dict[str,
 
 
 def _apply_non_linear_transformation(scores: dict[str, float]) -> dict[str, float]:
-    return {hotkey: score**2 for hotkey, score in scores.items()}
+    return {hotkey: score**3 for hotkey, score in scores.items()}
 
 
 async def _calculate_normalised_scores_for_task(psql_db: PSQLDB, task: str, contenders: list[Contender], netuid: int) -> dict[str, float]:
