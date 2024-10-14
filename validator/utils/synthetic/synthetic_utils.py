@@ -119,8 +119,12 @@ async def get_random_image_b64(cache: diskcache.Cache) -> str:
         if random.random() < 0.01:
             cache.delete(key)
         return image_b64
+    
+    possible_dims = [256, 512, 768, 1024]
 
-    random_picsum_image = await _get_random_picsum_image(1024, 1024)
+    random_picsum_image = await _get_random_picsum_image(
+        random.choice(possible_dims), random.choice(possible_dims)
+    )
     cache.add(key=str(uuid.uuid4()), value=random_picsum_image)
     return random_picsum_image
 

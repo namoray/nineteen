@@ -17,6 +17,8 @@ from functools import lru_cache
 from fiber.logging_utils import get_logger
 from validator.utils.synthetic import synthetic_utils as sutils
 import binascii
+import aiohttp
+from io import BytesIO
 
 logger = get_logger(__name__)
 
@@ -70,7 +72,32 @@ def _load_postie_to_pil(image_path: str) -> Image.Image | None:
     return pil_image
 
 
-def get_randomly_edited_face_picture_for_avatar() -> str | None:
+async def _get_random_artificial_face_image(x_dim: int, y_dim: int) -> str:
+    """
+    Generate a random image with the specified dimensions, by calling unsplash api.
+
+    Args:
+        x_dim (int): The width of the image.
+        y_dim (int): The height of the image.
+
+    Returns:
+        str: The base64 encoded representation of the generated image.
+    """
+    async with aiohttp.ClientSession() as session:
+        url = "https://thispersondoesnotexist.com/"
+        async with session.get(url) as resp:
+            data = await resp.read()
+
+    img = Image.open(BytesIO(data))
+    img_resized = img.resize((x_dim, y_dim), Image.Resampling.LANCZOS)
+
+    buffered = BytesIO()
+    img_resized.save(buffered, format="JPEG")
+    img_b64 = base64.b64encode(buffered.getvalue()).decode()
+
+    return img_b64
+
+async def get_randomly_edited_face_picture_for_avatar() -> str | None:
     """
     For avatar we need a face image.
 
@@ -80,11 +107,22 @@ def get_randomly_edited_face_picture_for_avatar() -> str | None:
 
     Hence, we can use a single picture and just edit it to generate 2**(1024*1024) unique images
     """
+    # Postie? more like ghostie
+    # try:
+    #     my_boy_postie = _load_postie_to_pil("assets/postie.png")
+    # except FileNotFoundError:
+    #     my_boy_postie = _load_postie_to_pil("validator/control_node/assets/postie.png")
+    # return _alter_my_boy_postie(my_boy_postie)
+
+    dim_range = [400, 512, 600, 768]
+
     try:
-        my_boy_postie = _load_postie_to_pil("assets/postie.png")
-    except FileNotFoundError:
-        my_boy_postie = _load_postie_to_pil("validator/control_node/assets/postie.png")
-    return _alter_my_boy_postie(my_boy_postie)
+        return await _get_random_artificial_face_image(
+            random.choice(dim_range), random.choice(dim_range)
+        )
+    except Exception as e:
+        logger.error(f"Error getting random artifical face image: {e}")
+        return None
 
 
 def _alter_my_boy_postie(my_boy_postie: Image.Image | None) -> str | None:
@@ -223,10 +261,14 @@ async def generate_image_to_image_synthetic(
     )
 
 
-async def generate_inpaint_synthetic() -> payload_models.InpaintPayload:
+async def generate_inpaint_synthetic(
+    max_prompt_words: int = 20,
+    cfg_scale_range: tuple[float, float] = (1.0, 5.0),
+    steps_range: tuple[int, int] = (10, 20)
+) -> payload_models.InpaintPayload:
     cache = image_cache_factory()
-    prompt = await _get_markov_sentence(max_words=20)
-    negative_prompt = await _get_markov_sentence(max_words=20)
+    prompt = await _get_markov_sentence(max_words=max_prompt_words)
+    negative_prompt = await _get_markov_sentence(max_words=max_prompt_words)
     seed = random.randint(1, scst.MAX_SEED)
 
     init_image = await sutils.get_random_image_b64(cache)
@@ -235,26 +277,29 @@ async def generate_inpaint_synthetic() -> payload_models.InpaintPayload:
     return payload_models.InpaintPayload(
         prompt=prompt,
         negative_prompt=negative_prompt,
-        cfg_scale=2.0,
+        cfg_scale=random.uniform(cfg_scale_range[0], cfg_scale_range[1]),
         seed=seed,
         height=1016,
         width=1016,
-        steps=8,
+        steps=random.randint(steps_range[0], steps_range[1]),
         init_image=init_image,
         mask_image=mask_image,
     )
 
 
-async def generate_avatar_synthetic() -> payload_models.AvatarPayload:
-    prompt = await _get_markov_sentence(max_words=20)
-    negative_prompt = await _get_markov_sentence(max_words=20)
+async def generate_avatar_synthetic(
+    max_prompt_words: int = 20,
+    steps_range: tuple[int, int] = (10, 20)
+) -> payload_models.AvatarPayload:
+    prompt = await _get_markov_sentence(max_words=max_prompt_words)
+    negative_prompt = await _get_markov_sentence(max_words=max_prompt_words)
     seed = random.randint(1, scst.MAX_SEED)
 
     init_image = None
     max_retries = 10
     retries = 0
     while init_image is None and retries < max_retries:
-        init_image = get_randomly_edited_face_picture_for_avatar()
+        init_image = await get_randomly_edited_face_picture_for_avatar()
         if init_image is None:
             logger.warning("Init image is None, regenerating")
             retries += 1
@@ -270,7 +315,7 @@ async def generate_avatar_synthetic() -> payload_models.AvatarPayload:
         height=1280,
         width=1280,
         seed=seed,
-        steps=8,
+        steps=random.randint(steps_range[0], steps_range[1]),
         init_image=init_image,
     )
 
