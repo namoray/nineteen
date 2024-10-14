@@ -123,27 +123,31 @@ def alter_image(
     return new_image
 
 
-async def generate_chat_synthetic(model: str) -> payload_models.ChatPayload:
-    user_content = await _get_markov_sentence(max_words=140)
+async def generate_chat_synthetic(model: str, 
+        max_input_words: int = 140, 
+        max_output_tokens: int = 1024, 
+        max_temperature: float = 1.0
+    ) -> payload_models.ChatPayload:
+    user_content = await _get_markov_sentence(max_words=max_input_words)
     messages = [utility_models.Message(content=user_content, role=utility_models.Role.user)]
 
     if random.random() < 0.1:
         messages.append(
             utility_models.Message(
-                content=await _get_markov_sentence(max_words=140),
+                content=await _get_markov_sentence(max_words=max_input_words),
                 role=utility_models.Role.assistant,
             )
         )
         messages.append(
             utility_models.Message(
-                content=await _get_markov_sentence(max_words=140),
+                content=await _get_markov_sentence(max_words=max_input_words),
                 role=utility_models.Role.user,
             )
         )
     return payload_models.ChatPayload(
         messages=messages,
-        temperature=round(random.random(), 1),
-        max_tokens=1024,
+        temperature=round(random.random() * max_temperature, 1),
+        max_tokens=max_output_tokens,
         seed=random.randint(1, scst.MAX_SEED),
         model=model,
         top_p=1,
@@ -152,17 +156,22 @@ async def generate_chat_synthetic(model: str) -> payload_models.ChatPayload:
 
 async def generate_text_to_image_synthetic(
     model: str,
+    max_prompt_words: int = 20,
+    height_range: tuple[int, int] = (512, 1024),
+    width_range: tuple[int, int] = (512, 1024),
+    cfg_scale_range: tuple[float, float] = (1.0, 5.0),
+    steps_range: tuple[int, int] = (10, 20),
 ) -> payload_models.TextToImagePayload:
-    prompt = await _get_markov_sentence(max_words=20)
-    negative_prompt = await _get_markov_sentence(max_words=20)
+    prompt = await _get_markov_sentence(max_words=max_prompt_words)
+    negative_prompt = await _get_markov_sentence(max_words=max_prompt_words)
     # TODO: Fix to be our allowed seeds for the relay mining solution
     seed = random.randint(1, scst.MAX_SEED)
 
     # NOTE: Needs to be in task config perhaps to make more robust?
-    height = 1024
-    width = 1024
-    cfg_scale = 3.0
-    steps = 8
+    height = random.randint(height_range[0], height_range[1])
+    width = random.randint(width_range[0], width_range[1])
+    cfg_scale = random.uniform(cfg_scale_range[0], cfg_scale_range[1])
+    steps = random.randint(steps_range[0], steps_range[1])
 
     return payload_models.TextToImagePayload(
         prompt=prompt,
@@ -178,19 +187,24 @@ async def generate_text_to_image_synthetic(
 
 async def generate_image_to_image_synthetic(
     model: str,
+    max_prompt_words: int = 20,
+    height_range: tuple[int, int] = (512, 1024),
+    width_range: tuple[int, int] = (512, 1024),
+    cfg_scale_range: tuple[float, float] = (1.0, 5.0),
+    steps_range: tuple[int, int] = (10, 20)
 ) -> payload_models.ImageToImagePayload:
     cache = image_cache_factory()
 
-    prompt = await _get_markov_sentence(max_words=20)
-    negative_prompt = await _get_markov_sentence(max_words=20)
+    prompt = await _get_markov_sentence(max_words=max_prompt_words)
+    negative_prompt = await _get_markov_sentence(max_words=max_prompt_words)
     # TODO: Fix to be our allowed seeds for the relay mining solution
     seed = random.randint(1, scst.MAX_SEED)
 
     # NOTE: Needs to be in task config perhaps to make more robust?
-    height = 1024
-    width = 1024
-    cfg_scale = 2.0
-    steps = 8
+    height = random.randint(height_range[0], height_range[1])
+    width = random.randint(width_range[0], width_range[1])
+    cfg_scale = random.uniform(cfg_scale_range[0], cfg_scale_range[1])
+    steps = random.randint(steps_range[0], steps_range[1])
     image_strength = 0.5
 
     init_image = await sutils.get_random_image_b64(cache)
