@@ -28,7 +28,7 @@ def chat_to_payload(chat_request: ChatRequest) -> payload_models.ChatPayload:
         messages=chat_request.messages,
         temperature=chat_request.temperature,
         max_tokens=chat_request.max_tokens,
-        model=chat_request.model,
+        model=chat_request.model.replace("_", "-"),
         top_p=chat_request.top_p,
         stream=True,
         logprobs=chat_request.logprobs,
