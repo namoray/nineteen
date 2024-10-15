@@ -39,7 +39,13 @@ def task_configs_factory() -> dict[str, cmodels.FullTaskConfig]:
                 task=CHAT_LLAMA_3_2_3B,
             ),
             synthetic_generation_config=cmodels.SyntheticGenerationConfig(
-                func="generate_chat_synthetic", kwargs={"model": CHAT_LLAMA_3_2_3B}
+                func="generate_chat_synthetic", 
+                kwargs={
+                    "model": CHAT_LLAMA_3_2_3B,
+                    "max_input_words": 140,
+                    "max_output_tokens": 1024,
+                    "max_temperature": 1.0
+                }
             ),
             endpoint=cmodels.Endpoints.chat_completions.value,
             volume_to_requests_conversion=300,
@@ -66,7 +72,13 @@ def task_configs_factory() -> dict[str, cmodels.FullTaskConfig]:
                 task=CHAT_LLAMA_3_1_70B,
             ),
             synthetic_generation_config=cmodels.SyntheticGenerationConfig(
-                func="generate_chat_synthetic", kwargs={"model": CHAT_LLAMA_3_1_70B}
+                func="generate_chat_synthetic", 
+                kwargs={
+                    "model": CHAT_LLAMA_3_1_70B,
+                    "max_input_words": 140,
+                    "max_output_tokens": 1024,
+                    "max_temperature": 1.0
+                }
             ),
             endpoint=cmodels.Endpoints.chat_completions.value,
             volume_to_requests_conversion=300,
@@ -93,7 +105,13 @@ def task_configs_factory() -> dict[str, cmodels.FullTaskConfig]:
                 task=CHAT_LLAMA_3_1_8B,
             ),
             synthetic_generation_config=cmodels.SyntheticGenerationConfig(
-                func="generate_chat_synthetic", kwargs={"model": CHAT_LLAMA_3_1_8B}
+                func="generate_chat_synthetic", 
+                kwargs={
+                    "model": CHAT_LLAMA_3_1_8B,
+                    "max_input_words": 140,
+                    "max_output_tokens": 1024,
+                    "max_temperature": 1.0
+                }
             ),
             endpoint=cmodels.Endpoints.chat_completions.value,
             volume_to_requests_conversion=300,
@@ -115,7 +133,14 @@ def task_configs_factory() -> dict[str, cmodels.FullTaskConfig]:
             ),
             synthetic_generation_config=cmodels.SyntheticGenerationConfig(
                 func="generate_text_to_image_synthetic",
-                kwargs={"model": PROTEUS_TEXT_TO_IMAGE},
+                kwargs={
+                    "model": PROTEUS_TEXT_TO_IMAGE,
+                    "max_prompt_words" : 20,
+                    "height_range" : (512, 1024),
+                    "width_range" : (512, 1024),
+                    "cfg_scale_range" : (1.0, 5.0),
+                    "steps_range" : (10, 20)
+                },
             ),
             endpoint=cmodels.Endpoints.text_to_image.value,
             volume_to_requests_conversion=10,
@@ -138,7 +163,14 @@ def task_configs_factory() -> dict[str, cmodels.FullTaskConfig]:
             ),
             synthetic_generation_config=cmodels.SyntheticGenerationConfig(
                 func="generate_image_to_image_synthetic",
-                kwargs={"model": PROTEUS_IMAGE_TO_IMAGE},
+                kwargs={
+                    "model": PROTEUS_IMAGE_TO_IMAGE,
+                    "max_prompt_words" : 20,
+                    "height_range" : (512, 1024),
+                    "width_range" : (512, 1024),
+                    "cfg_scale_range" : (1.0, 5.0),
+                    "steps_range" : (10, 20)
+                },
             ),
             endpoint=cmodels.Endpoints.image_to_image.value,
             volume_to_requests_conversion=10,
@@ -161,7 +193,14 @@ def task_configs_factory() -> dict[str, cmodels.FullTaskConfig]:
             ),
             synthetic_generation_config=cmodels.SyntheticGenerationConfig(
                 func="generate_text_to_image_synthetic",
-                kwargs={"model": FLUX_SCHNELL_TEXT_TO_IMAGE},
+                kwargs={
+                    "model": FLUX_SCHNELL_TEXT_TO_IMAGE,
+                    "max_prompt_words" : 20,
+                    "height_range" : (512, 1024),
+                    "width_range" : (512, 1024),
+                    "cfg_scale_range" : (1.0, 5.0),
+                    "steps_range" : (10, 20)
+                },
             ),
             endpoint=cmodels.Endpoints.text_to_image.value,
             volume_to_requests_conversion=10,
@@ -184,7 +223,14 @@ def task_configs_factory() -> dict[str, cmodels.FullTaskConfig]:
             ),
             synthetic_generation_config=cmodels.SyntheticGenerationConfig(
                 func="generate_image_to_image_synthetic",
-                kwargs={"model": FLUX_SCHNELL_IMAGE_TO_IMAGE},
+                kwargs={
+                    "model": FLUX_SCHNELL_IMAGE_TO_IMAGE,
+                    "max_prompt_words" : 20,
+                    "height_range" : (512, 1024),
+                    "width_range" : (512, 1024),
+                    "cfg_scale_range" : (1.0, 5.0),
+                    "steps_range" : (10, 20)
+                },
             ),
             endpoint=cmodels.Endpoints.image_to_image.value,
             volume_to_requests_conversion=10,
@@ -207,7 +253,10 @@ def task_configs_factory() -> dict[str, cmodels.FullTaskConfig]:
             ),
             synthetic_generation_config=cmodels.SyntheticGenerationConfig(
                 func="generate_avatar_synthetic",
-                kwargs={},
+                kwargs={
+                    "max_prompt_words" : 20,
+                    "steps_range" : (10, 20)
+                },
             ),
             endpoint=cmodels.Endpoints.avatar.value,
             volume_to_requests_conversion=10,
@@ -230,7 +279,14 @@ def task_configs_factory() -> dict[str, cmodels.FullTaskConfig]:
             ),
             synthetic_generation_config=cmodels.SyntheticGenerationConfig(
                 func="generate_text_to_image_synthetic",
-                kwargs={"model": DREAMSHAPER_TEXT_TO_IMAGE},
+                kwargs={
+                    "model": DREAMSHAPER_TEXT_TO_IMAGE,
+                    "max_prompt_words" : 20,
+                    "height_range" : (512, 1024),
+                    "width_range" : (512, 1024),
+                    "cfg_scale_range" : (1.0, 5.0),
+                    "steps_range" : (10, 20)
+                },
             ),
             endpoint=cmodels.Endpoints.text_to_image.value,
             volume_to_requests_conversion=10,
@@ -253,7 +309,14 @@ def task_configs_factory() -> dict[str, cmodels.FullTaskConfig]:
             ),
             synthetic_generation_config=cmodels.SyntheticGenerationConfig(
                 func="generate_image_to_image_synthetic",
-                kwargs={"model": DREAMSHAPER_IMAGE_TO_IMAGE},
+                kwargs={
+                    "model": DREAMSHAPER_IMAGE_TO_IMAGE,
+                    "max_prompt_words" : 20,
+                    "height_range" : (512, 1024),
+                    "width_range" : (512, 1024),
+                    "cfg_scale_range" : (1.0, 5.0),
+                    "steps_range" : (10, 20)
+                },
             ),
             endpoint=cmodels.Endpoints.image_to_image.value,
             volume_to_requests_conversion=10,

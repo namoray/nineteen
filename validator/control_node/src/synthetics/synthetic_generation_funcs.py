@@ -115,10 +115,11 @@ async def get_randomly_edited_face_picture_for_avatar() -> str | None:
     # return _alter_my_boy_postie(my_boy_postie)
 
     dim_range = [400, 512, 600, 768]
+    dim = random.choice(dim_range)
 
     try:
         return await _get_random_artificial_face_image(
-            random.choice(dim_range), random.choice(dim_range)
+            dim, dim
         )
     except Exception as e:
         logger.error(f"Error getting random artifical face image: {e}")
