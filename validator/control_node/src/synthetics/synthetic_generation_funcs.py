@@ -74,14 +74,14 @@ def _load_postie_to_pil(image_path: str) -> Image.Image | None:
 
 async def _get_random_artificial_face_image(x_dim: int, y_dim: int) -> str:
     """
-    Generate a random image with the specified dimensions, by calling unsplash api.
+    Generate a random image with the specified dimensions, by calling thispersondoesnotexist api.
 
     Args:
         x_dim (int): The width of the image.
         y_dim (int): The height of the image.
 
     Returns:
-        str: The base64 encoded representation of the generated image.
+        img_b64: The base64 encoded representation of the generated image.
     """
     async with aiohttp.ClientSession() as session:
         url = "https://thispersondoesnotexist.com/"
@@ -107,23 +107,25 @@ async def get_randomly_edited_face_picture_for_avatar() -> str | None:
 
     Hence, we can use a single picture and just edit it to generate 2**(1024*1024) unique images
     """
-    # Postie? more like ghostie
-    # try:
-    #     my_boy_postie = _load_postie_to_pil("assets/postie.png")
-    # except FileNotFoundError:
-    #     my_boy_postie = _load_postie_to_pil("validator/control_node/assets/postie.png")
-    # return _alter_my_boy_postie(my_boy_postie)
-
-    dim_range = [400, 512, 600, 768]
-    dim = random.choice(dim_range)
 
     try:
-        return await _get_random_artificial_face_image(
-            dim, dim
-        )
+        dim_range = [400, 512, 600, 768]
+        dim = random.choice(dim_range)
+
+        try:
+            return await _get_random_artificial_face_image(
+                dim, dim
+            )
+        except Exception as e:
+            logger.error(f"Error getting random artifical face image: {e} ; postie to the rescue!")
     except Exception as e:
-        logger.error(f"Error getting random artifical face image: {e}")
-        return None
+        try:
+            my_boy_postie = _load_postie_to_pil("assets/postie.png")
+        except FileNotFoundError:
+            my_boy_postie = _load_postie_to_pil("validator/control_node/assets/postie.png")
+        return _alter_my_boy_postie(my_boy_postie)
+
+
 
 
 def _alter_my_boy_postie(my_boy_postie: Image.Image | None) -> str | None:
