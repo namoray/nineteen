@@ -138,8 +138,8 @@ def task_configs_factory() -> dict[str, cmodels.FullTaskConfig]:
                     "max_prompt_words" : 20,
                     "height_range" : (512, 1024),
                     "width_range" : (512, 1024),
-                    "cfg_scale_range" : (1.0, 5.0),
-                    "steps_range" : (10, 20)
+                    "cfg_scale_range" : (1.5, 3.0),
+                    "steps_range" : (5, 10)
                 },
             ),
             endpoint=cmodels.Endpoints.text_to_image.value,
@@ -168,8 +168,8 @@ def task_configs_factory() -> dict[str, cmodels.FullTaskConfig]:
                     "max_prompt_words" : 20,
                     "height_range" : (512, 1024),
                     "width_range" : (512, 1024),
-                    "cfg_scale_range" : (1.0, 5.0),
-                    "steps_range" : (10, 20)
+                    "cfg_scale_range" : (1.5, 3.0),
+                    "steps_range" : (5, 10)
                 },
             ),
             endpoint=cmodels.Endpoints.image_to_image.value,
@@ -199,7 +199,7 @@ def task_configs_factory() -> dict[str, cmodels.FullTaskConfig]:
                     "height_range" : (512, 1024),
                     "width_range" : (512, 1024),
                     "cfg_scale_range" : (1.0, 5.0),
-                    "steps_range" : (10, 20)
+                    "steps_range" : (5, 10)
                 },
             ),
             endpoint=cmodels.Endpoints.text_to_image.value,
@@ -229,7 +229,7 @@ def task_configs_factory() -> dict[str, cmodels.FullTaskConfig]:
                     "height_range" : (512, 1024),
                     "width_range" : (512, 1024),
                     "cfg_scale_range" : (1.0, 5.0),
-                    "steps_range" : (10, 20)
+                    "steps_range" : (5, 10)
                 },
             ),
             endpoint=cmodels.Endpoints.image_to_image.value,
@@ -284,8 +284,8 @@ def task_configs_factory() -> dict[str, cmodels.FullTaskConfig]:
                     "max_prompt_words" : 20,
                     "height_range" : (512, 1024),
                     "width_range" : (512, 1024),
-                    "cfg_scale_range" : (1.0, 5.0),
-                    "steps_range" : (10, 20)
+                    "cfg_scale_range" : (1.5, 3.0),
+                    "steps_range" : (5, 10)
                 },
             ),
             endpoint=cmodels.Endpoints.text_to_image.value,
@@ -314,8 +314,8 @@ def task_configs_factory() -> dict[str, cmodels.FullTaskConfig]:
                     "max_prompt_words" : 20,
                     "height_range" : (512, 1024),
                     "width_range" : (512, 1024),
-                    "cfg_scale_range" : (1.0, 5.0),
-                    "steps_range" : (10, 20)
+                    "cfg_scale_range" : (1.5, 3.0),
+                    "steps_range" : (5, 10)
                 },
             ),
             endpoint=cmodels.Endpoints.image_to_image.value,
