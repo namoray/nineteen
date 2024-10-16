@@ -35,7 +35,7 @@ async def _get_weights_to_set(config: Config) -> tuple[list[int], list[float]] |
         return None
     else:
         logger.info(f"Found {len(contenders)} contenders to get weights for")
-    node_ids, node_weights = await calculations.calculate_scores_for_settings_weights(config.psql_db, contenders, config.netuid)
+    node_ids, node_weights = await calculations.calculate_scores_for_settings_weights(config, contenders)
 
     return node_ids, node_weights
 
