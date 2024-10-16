@@ -197,11 +197,11 @@ async def generate_chat_synthetic(model: str,
 
 async def generate_text_to_image_synthetic(
     model: str,
-    max_prompt_words: int = 20,
-    height_range: tuple[int, int] = (512, 1024),
-    width_range: tuple[int, int] = (512, 1024),
-    cfg_scale_range: tuple[float, float] = (1.0, 5.0),
-    steps_range: tuple[int, int] = (10, 20),
+    max_prompt_words: int,
+    height_range: tuple[int, int],
+    width_range: tuple[int, int],
+    cfg_scale_range: tuple[float, float],
+    steps_range: tuple[int, int],
 ) -> payload_models.TextToImagePayload:
     prompt = await _get_markov_sentence(max_words=max_prompt_words)
     negative_prompt = await _get_markov_sentence(max_words=max_prompt_words)
@@ -228,11 +228,11 @@ async def generate_text_to_image_synthetic(
 
 async def generate_image_to_image_synthetic(
     model: str,
-    max_prompt_words: int = 20,
-    height_range: tuple[int, int] = (512, 1024),
-    width_range: tuple[int, int] = (512, 1024),
-    cfg_scale_range: tuple[float, float] = (1.0, 5.0),
-    steps_range: tuple[int, int] = (10, 20)
+    max_prompt_words: int,
+    height_range: tuple[int, int],
+    width_range: tuple[int, int],
+    cfg_scale_range: tuple[float, float],
+    steps_range: tuple[int, int]
 ) -> payload_models.ImageToImagePayload:
     cache = image_cache_factory()
 
@@ -248,7 +248,7 @@ async def generate_image_to_image_synthetic(
     steps = random.randint(steps_range[0], steps_range[1])
     image_strength = 0.5
 
-    init_image = await sutils.get_random_image_b64(cache)
+    init_image = await sutils.get_random_image_b64(cache, height, width)
 
     return payload_models.ImageToImagePayload(
         prompt=prompt,
@@ -274,7 +274,7 @@ async def generate_inpaint_synthetic(
     negative_prompt = await _get_markov_sentence(max_words=max_prompt_words)
     seed = random.randint(1, scst.MAX_SEED)
 
-    init_image = await sutils.get_random_image_b64(cache)
+    init_image = await sutils.get_random_image_b64(cache, 1016, 1016)
     mask_image = sutils.generate_mask_with_circle(init_image)
 
     return payload_models.InpaintPayload(
