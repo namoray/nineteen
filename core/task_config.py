@@ -137,7 +137,7 @@ def task_configs_factory() -> dict[str, cmodels.FullTaskConfig]:
                     "model": PROTEUS_TEXT_TO_IMAGE,
                     "max_prompt_words" : 20,
                     "height_range" : (400, 1600),
-                    "width_range" : (512, 1024),
+                    "width_range" : (400, 1600),
                     "cfg_scale_range" : (1.5, 3.0),
                     "steps_range" : (5, 10)
                 },
@@ -167,7 +167,7 @@ def task_configs_factory() -> dict[str, cmodels.FullTaskConfig]:
                     "model": PROTEUS_IMAGE_TO_IMAGE,
                     "max_prompt_words" : 20,
                     "height_range" : (400, 1600),
-                    "width_range" : (512, 1024),
+                    "width_range" : (400, 1600),
                     "cfg_scale_range" : (1.5, 3.0),
                     "steps_range" : (5, 10)
                 },
@@ -197,7 +197,7 @@ def task_configs_factory() -> dict[str, cmodels.FullTaskConfig]:
                     "model": FLUX_SCHNELL_TEXT_TO_IMAGE,
                     "max_prompt_words" : 20,
                     "height_range" : (400, 1600),
-                    "width_range" : (512, 1024),
+                    "width_range" : (400, 1600),
                     "cfg_scale_range" : (1.0, 5.0),
                     "steps_range" : (2, 7)
                 },
@@ -227,7 +227,7 @@ def task_configs_factory() -> dict[str, cmodels.FullTaskConfig]:
                     "model": FLUX_SCHNELL_IMAGE_TO_IMAGE,
                     "max_prompt_words" : 20,
                     "height_range" : (400, 1600),
-                    "width_range" : (512, 1024),
+                    "width_range" : (400, 1600),
                     "cfg_scale_range" : (1.0, 5.0),
                     "steps_range" : (2, 7)
                 },
@@ -283,7 +283,7 @@ def task_configs_factory() -> dict[str, cmodels.FullTaskConfig]:
                     "model": DREAMSHAPER_TEXT_TO_IMAGE,
                     "max_prompt_words" : 20,
                     "height_range" : (400, 1600),
-                    "width_range" : (512, 1024),
+                    "width_range" : (400, 1600),
                     "cfg_scale_range" : (1.5, 3.0),
                     "steps_range" : (5, 10)
                 },
@@ -313,7 +313,7 @@ def task_configs_factory() -> dict[str, cmodels.FullTaskConfig]:
                     "model": DREAMSHAPER_IMAGE_TO_IMAGE,
                     "max_prompt_words" : 20,
                     "height_range" : (400, 1600),
-                    "width_range" : (512, 1024),
+                    "width_range" : (400, 1600),
                     "cfg_scale_range" : (1.5, 3.0),
                     "steps_range" : (5, 10)
                 },
