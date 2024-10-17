@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from fiber.logging_utils import get_logger
 from fiber import Keypair
 from core import constants as ccst
-
+from datetime import datetime
 from validator.models import RewardData
 
 logger = get_logger(__name__)
@@ -19,6 +19,8 @@ class DataTypeToPost(enum.Enum):
     MINER_CAPACITIES = 3
     VALIDATOR_INFO = 4
     MINER_TYPES = 5
+    MINER_WEIGHTS = 6
+    CONTENDER_WEIGHTS_INFO = 7
 
 
 
@@ -28,6 +30,8 @@ data_type_to_url = {
     DataTypeToPost.MINER_CAPACITIES: ccst.BASE_NINETEEN_API_URL + "v1/store/miner_capacities",
     DataTypeToPost.VALIDATOR_INFO: ccst.BASE_NINETEEN_API_URL + "v1/store/validator_info",
     DataTypeToPost.MINER_TYPES: ccst.BASE_NINETEEN_API_URL + "v1/store/miner_types",
+    DataTypeToPost.MINER_WEIGHTS: ccst.BASE_NINETEEN_API_URL + "v1/store/miner_weights",
+    DataTypeToPost.CONTENDER_WEIGHTS_INFO: ccst.BASE_NINETEEN_API_URL + "v1/store/contender_weights_info",
 }
 
 # Turn off if you don't wanna post your validator info to nineteen.ai
@@ -92,6 +96,33 @@ class MinerCapacitiesPostObject(BaseModel):
     task: str
     volume: float
     validator_hotkey: str
+
+class MinerWeightsPostObject(BaseModel):
+    version_key: int
+    netuid: int
+    validator_hotkey: str
+    created_at: datetime
+    miner_hotkey: str
+    node_weight: float
+
+class ContenderWeightsInfoPostObject(BaseModel):
+    version_key: int
+    netuid: int
+    validator_hotkey: str
+    created_at: datetime
+    miner_hotkey: str
+    task: str
+
+    average_quality_score: float
+    metric_bonus: float
+    combined_quality_score: float
+
+    period_score_multiplier: float
+    normalised_period_score: float
+
+    contender_capacity: float
+    
+    normalised_net_score: float
 
 
 class ContenderPayload(BaseModel):
