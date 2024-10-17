@@ -211,7 +211,7 @@ async def generate_text_to_image_synthetic(
     # NOTE: Needs to be in task config perhaps to make more robust?
     height = random.randint(height_range[0], height_range[1])
     width = random.randint(width_range[0], width_range[1])
-    cfg_scale = random.uniform(cfg_scale_range[0], cfg_scale_range[1])
+    cfg_scale = round(random.uniform(cfg_scale_range[0], cfg_scale_range[1]), 1)
     steps = random.randint(steps_range[0], steps_range[1])
 
     return payload_models.TextToImagePayload(
@@ -244,7 +244,7 @@ async def generate_image_to_image_synthetic(
     # NOTE: Needs to be in task config perhaps to make more robust?
     height = random.randint(height_range[0], height_range[1])
     width = random.randint(width_range[0], width_range[1])
-    cfg_scale = random.uniform(cfg_scale_range[0], cfg_scale_range[1])
+    cfg_scale = round(random.uniform(cfg_scale_range[0], cfg_scale_range[1]), 1)
     steps = random.randint(steps_range[0], steps_range[1])
     image_strength = 0.5
 
@@ -280,7 +280,7 @@ async def generate_inpaint_synthetic(
     return payload_models.InpaintPayload(
         prompt=prompt,
         negative_prompt=negative_prompt,
-        cfg_scale=random.uniform(cfg_scale_range[0], cfg_scale_range[1]),
+        cfg_scale=round(random.uniform(cfg_scale_range[0], cfg_scale_range[1]), 1),
         seed=seed,
         height=1016,
         width=1016,
