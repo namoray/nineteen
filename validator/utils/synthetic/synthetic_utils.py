@@ -109,7 +109,7 @@ async def _get_random_picsum_image(x_dim: int, y_dim: int) -> str:
     return img_b64
 
 
-async def get_random_image_b64(cache: diskcache.Cache) -> str:
+async def get_random_image_b64(cache: diskcache.Cache, height: int, width: int) -> str:
     for key in cache.iterkeys():
         image_b64: str | None = cache.get(key, None)  # type: ignore
         if image_b64 is None:
@@ -120,7 +120,9 @@ async def get_random_image_b64(cache: diskcache.Cache) -> str:
             cache.delete(key)
         return image_b64
 
-    random_picsum_image = await _get_random_picsum_image(1024, 1024)
+    random_picsum_image = await _get_random_picsum_image(
+        height, width
+    )
     cache.add(key=str(uuid.uuid4()), value=random_picsum_image)
     return random_picsum_image
 
