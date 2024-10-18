@@ -60,3 +60,6 @@ This solution enhances the selection process of miners for both organic and synt
 - **Exploration of New Miners**: New and less-assessed miners gain opportunities to participate, especially in synthetic queries.
 - **Balanced Evaluation**: Weighted scoring ensures that performance in organic queries has a greater impact on miners' overall scores.
 - **System Efficiency**: Optimized database queries enhance performance and scalability.
+
+
+PD: "seasoning" :) 
