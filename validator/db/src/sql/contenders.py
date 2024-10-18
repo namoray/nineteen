@@ -1,12 +1,35 @@
 from fiber.logging_utils import get_logger
+from typing import Any
 
 from asyncpg import Connection
 from validator.db.src.database import PSQLDB
+from validator.utils.generic import generic_constants as gcst
 from validator.models import Contender, PeriodScore, calculate_period_score
 from validator.utils.database import database_constants as dcst
 
 logger = get_logger(__name__)
 
+PERIOD_SCORE_WEIGHT = 0.6
+TOTAL_REQUESTS_MADE_WEIGHT = 0.3
+REQUESTS_429_WEIGHT = 0.1
+
+def __get_ranking_criterion_for_query(query_type: str) -> str:
+    """
+    Get the ranking criterion for contenders.
+    
+    :param query_type: The type of query (synthetic or organic)
+    :return: The ranking criterion for contenders
+    """
+    if query_type == gcst.SYNTHETIC:
+        return f"ORDER BY c.{dcst.TOTAL_REQUESTS_MADE} ASC"
+    else:
+        return f"""
+        ORDER BY 
+            COALESCE(c.{dcst.PERIOD_SCORE} / NULLIF(SUM(c.{dcst.PERIOD_SCORE}) OVER (), 0), 0) * {PERIOD_SCORE_WEIGHT} +
+            COALESCE(c.{dcst.TOTAL_REQUESTS_MADE}::float / NULLIF(SUM(c.{dcst.TOTAL_REQUESTS_MADE}) OVER (), 0), 0) * {TOTAL_REQUESTS_MADE_WEIGHT} -
+            COALESCE((c.{dcst.REQUESTS_429} + c.{dcst.REQUESTS_500})::float / NULLIF(SUM(c.{dcst.REQUESTS_429} + c.{dcst.REQUESTS_500}) OVER (), 0), 0) * {REQUESTS_429_WEIGHT}
+        DESC NULLS LAST
+        """
 
 async def insert_contenders(connection: Connection, contenders: list[Contender], validator_hotkey: str) -> None:
     logger.debug(f"Inserting {len(contenders)} contender records")
@@ -98,36 +121,23 @@ async def migrate_contenders_to_contender_history(connection: Connection) -> Non
     await connection.execute(f"DELETE FROM {dcst.CONTENDERS_TABLE}")
 
 
-async def get_contenders_for_task(connection: Connection, task: str, top_x: int = 5) -> list[Contender]:
-    rows = await connection.fetch(
-        f"""
-        WITH ranked_contenders AS (
-            SELECT 
-                c.{dcst.CONTENDER_ID}, c.{dcst.NODE_HOTKEY}, c.{dcst.NODE_ID}, c.{dcst.TASK},
-                c.{dcst.RAW_CAPACITY}, c.{dcst.CAPACITY_TO_SCORE}, c.{dcst.CONSUMED_CAPACITY},
-                c.{dcst.TOTAL_REQUESTS_MADE}, c.{dcst.REQUESTS_429}, c.{dcst.REQUESTS_500}, 
-                c.{dcst.CAPACITY}, c.{dcst.PERIOD_SCORE}, c.{dcst.NETUID},
-                ROW_NUMBER() OVER (
-                    ORDER BY c.{dcst.TOTAL_REQUESTS_MADE} ASC
-                ) AS rank
-            FROM {dcst.CONTENDERS_TABLE} c
-            JOIN {dcst.NODES_TABLE} n ON c.{dcst.NODE_ID} = n.{dcst.NODE_ID} AND c.{dcst.NETUID} = n.{dcst.NETUID}
-            WHERE c.{dcst.TASK} = $1 
-            AND c.{dcst.CAPACITY} > 0 
-            AND n.{dcst.SYMMETRIC_KEY_UUID} IS NOT NULL
-        )
-        SELECT *
-        FROM ranked_contenders
-        WHERE rank <= $2
-        ORDER BY rank
-        """,
-        task,
-        top_x,
-    )
+async def get_contenders_for_task(connection: Connection, task: str, query_type: str = gcst.ORGANIC, top_x: int = 5) -> list[Contender]:
+    """
+    Retrieve the top contenders for a specific task.
+    
+    :param connection: Database connection object
+    :param task: The task to filter contenders by
+    :param query_type: The type of query to filter contenders by (default: gcst.ORGANIC)
+    :param top_x: The number of top contenders to retrieve (default: 5)
+    :return: List of Contender objects
+    """
+    contenders: list[Contender] = []
+    offset = 0
+    num_retries = 0
+    batch_size = top_x
 
-    # If not enough rows are returned, run another query to get more contenders
-    if not rows or len(rows) < top_x:
-        additional_rows = await connection.fetch(
+    while len(contenders) < top_x and num_retries <= 1:  # We can easily increase the number of retries if needed
+        rows: list[dict[str, Any]] = await connection.fetch(
             f"""
             SELECT 
                 c.{dcst.CONTENDER_ID}, c.{dcst.NODE_HOTKEY}, c.{dcst.NODE_ID}, c.{dcst.TASK},
@@ -139,17 +149,24 @@ async def get_contenders_for_task(connection: Connection, task: str, top_x: int 
             WHERE c.{dcst.TASK} = $1 
             AND c.{dcst.CAPACITY} > 0 
             AND n.{dcst.SYMMETRIC_KEY_UUID} IS NOT NULL
-            ORDER BY c.{dcst.TOTAL_REQUESTS_MADE} ASC
+            {__get_ranking_criterion_for_query(query_type)}
             LIMIT $2
             OFFSET $3
             """,
             task,
-            top_x - len(rows) if rows else top_x,
-            len(rows) if rows else 0,
+            batch_size,
+            offset
         )
-        rows = rows + additional_rows if rows else additional_rows
 
-    return [Contender(**row) for row in rows]
+        contenders.extend([Contender(**row) for row in rows])
+        offset += batch_size
+
+        if not rows or len(contenders) >= top_x or len(rows) < batch_size:
+            break
+
+        num_retries += 1
+
+    return contenders[:top_x]
 
 
 async def update_contender_capacities(psql_db: PSQLDB, contender: Contender, capacitity_consumed: float) -> None:
