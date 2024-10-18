@@ -169,7 +169,7 @@ def _apply_non_linear_transformation(scores: dict[str, float]) -> dict[str, floa
 
 
 async def _normalise_effective_volumes_for_task(effective_volumes: dict[str, float]) -> dict[str, float]:
-    
+
     normalised_effective_volumes_before_non_linear = _normalise_volumes_for_task(effective_volumes)
     # logger.info(f"Normalised effective volumes before non-linear transformation: {normalised_effective_volumes_before_non_linear}\n")
     effective_volumes_after_non_linear_transformation = _apply_non_linear_transformation(normalised_effective_volumes_before_non_linear)
@@ -180,12 +180,12 @@ async def calculate_scores_for_settings_weights(
     config_main: Config,
     contenders: list[Contender]
 ) -> tuple[list[int], list[float]]:
-    psql_db = config_main.psql_db 
+    psql_db = config_main.psql_db
     netuid = config_main.netuid
     ss58_address = None
     while ss58_address is None:
         ss58_address = await get_vali_ss58_address(psql_db, netuid)
-    
+
     contender_weights_info_objects: list[ContenderWeightsInfoPostObject] = []
     miner_weights_objects: list[MinerWeightsPostObject] = []
 
@@ -201,14 +201,14 @@ async def calculate_scores_for_settings_weights(
 
         combined_quality_scores, average_quality_scores, metric_bonuses = await _process_quality_scores(psql_db, task, netuid)
         effective_volumes, normalised_period_scores, period_score_multipliers = await _calculate_effective_volumes_for_task(psql_db, contenders, task, combined_quality_scores)
-    
+
         normalised_scores_for_task = await _normalise_effective_volumes_for_task(effective_volumes)
 
         for hotkey, score in normalised_scores_for_task.items():
             total_hotkey_scores[hotkey] = total_hotkey_scores.get(hotkey, 0) + score * task_weight
-            
+
             contender = next((c for c in contenders if c.node_hotkey == hotkey and c.task == task), None)
-            
+
             if contender:
                 scores_info_object = ContenderWeightsInfoPostObject(
                     version_key = ccst.VERSION_KEY,
@@ -249,7 +249,7 @@ async def calculate_scores_for_settings_weights(
 
     await _post_scoring_stats_to_local_db(config_main, contender_weights_info_objects, miner_weights_objects)
     await _post_scoring_stats_to_nineteen(config_main, contender_weights_info_objects, miner_weights_objects)
-    
+
     scoring_stats_to_delete_locally = datetime.now() - timedelta(days=7)
     async with await config_main.psql_db.connection() as connection:
         await delete_weights_info_older_than(connection, scoring_stats_to_delete_locally)
@@ -263,7 +263,7 @@ async def _post_scoring_stats_to_local_db(config: Config, contender_weights_info
             connection=conn,
             scoring_stats=contender_weights_info_list
         )
-        
+
         await insert_weights(
             connection=conn,
             miner_weights=miner_weights_list
@@ -305,7 +305,7 @@ async def calculate_scores_for_settings_weights_debug(
 
         # Calculate normalised scores and gather detailed information
         normalised_scores_for_task = await _normalise_effective_volumes_for_task(psql_db, task, contenders, netuid)
-        combined_quality_scores = await _calculate_combined_quality_score(psql_db, task, netuid)
+        combined_quality_scores = await _calculate_combined_quality_score(psql_db, task, netuid)  # noqa F821
         period_scores = {
             contender.node_hotkey: await _calculate_normalised_period_score(psql_db, task, contender.node_hotkey)
             for contender in contenders

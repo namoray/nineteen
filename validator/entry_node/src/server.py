@@ -23,7 +23,7 @@ def factory_app(debug: bool = False) -> FastAPI:
 
     app = FastAPI(lifespan=lifespan, debug=debug)
 
-    
+
     async def scalar_html():
         return get_scalar_api_reference(
             openapi_url=app.openapi_url,  # type: ignore
@@ -42,10 +42,10 @@ app.include_router(generic_router)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], 
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"], 
-    allow_headers=["*"], 
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 if os.getenv("ENV") != "prod":
@@ -54,8 +54,6 @@ if os.getenv("ENV") != "prod":
 
 
 if __name__ == "__main__":
-    import uvicorn
-
     port = os.getenv("ORGANIC_SERVER_PORT")
     if port is None:
         logger.error("ORGANIC_SERVER_PORT is not set")
