@@ -36,4 +36,3 @@ services:
     depends_on:
       - postgresql
     container_name: 0_adminer
-

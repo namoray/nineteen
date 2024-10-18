@@ -33,7 +33,7 @@ def custom_task_configs_factory():
             orchestrator_server_config=cmodels.OrchestratorServerConfig(
                 server_needed=cmodels.ServerType.LLM,
                 load_model_config={
-                    "model": "hugging-quants/Meta-Llama-3.1-405B-Instruct-GPTQ-INT4",  # This should exist on hugging face else it wont work
+                    "model": "hugging-quants/Meta-Llama-3.1-405B-Instruct-GPTQ-INT4",  # This should exist on hugging face else it won't work
                     "half_precision": True,
                     "tokenizer": "llama-tokenizer-fix",  # This should be the tokenizer you like. Usually the base tokenizer, except for Llama's
                     "num_gpus": 4,
@@ -62,7 +62,7 @@ def custom_task_configs_factory():
             orchestrator_server_config=cmodels.OrchestratorServerConfig(
                 server_needed=cmodels.ServerType.IMAGE,
                 load_model_config={
-                    "model_repo": "cagliostrolab/animagine-xl-3.1",  # This repo should exist on hugging face else it wont work
+                    "model_repo": "cagliostrolab/animagine-xl-3.1",  # This repo should exist on hugging face else it won't work
                     "safetensors_filename": "animagine-xl-3.1.safetensors",  # This safetensors model file should exist within the HF repo on the top level
                 },
                 checking_function="check_image_result",

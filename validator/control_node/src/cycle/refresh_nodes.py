@@ -53,7 +53,7 @@ async def is_recent_update(connection, netuid: int) -> bool:
 
 
 async def fetch_nodes_from_substrate(config: Config) -> list[Node]:
-    # NOTE: Will this cause issues if this method closes the conenction
+    # NOTE: Will this cause issues if this method closes the connection
     # on substrate interface, but we use the same substrate interface object elsewhere?
     return await asyncio.to_thread(fetch_nodes.get_nodes_for_netuid, config.substrate, config.netuid)
 
@@ -88,7 +88,7 @@ async def _handshake(config: Config, node: Node, async_client: httpx.AsyncClient
         if isinstance(e, (httpx.HTTPStatusError, httpx.RequestError, httpx.ConnectError)):
             if hasattr(e, "response"):
                 logger.debug(f"Response content: {e.response.text}")
-        
+
         return node_copy
 
     fernet = Fernet(symmetric_key)

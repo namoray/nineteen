@@ -121,7 +121,7 @@ class ContenderWeightsInfoPostObject(BaseModel):
     normalised_period_score: float
 
     contender_capacity: float
-    
+
     normalised_net_score: float
 
 

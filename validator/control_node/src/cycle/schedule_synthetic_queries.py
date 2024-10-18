@@ -172,7 +172,7 @@ async def schedule_synthetics_until_done(config: Config):
         if i % 100 == 0:
             # Print full stats of all tasks
             schedules_left = [heapq.heappop(task_schedules) for _ in range(len(task_schedules))]
-            
+
             task_info = []
             for schedule in schedules_left:
                 task_info.append(
