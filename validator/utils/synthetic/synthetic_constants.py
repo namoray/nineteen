@@ -5,3 +5,4 @@ TEMPERATURE = "temperature"
 TEXT_PROMPTS = "text_prompts"
 
 SYNTHETIC_DATA_EXPIRATION_TIME = 3  # 3 seconds
+SYNTHETIC_QUALITY_SCORE_WEIGHT = 0.3  # 30% - to be fine-tuned
