@@ -126,9 +126,11 @@ async def get_contenders_for_task(
     # Determine the ORDER BY clause based on the query type
     order_by = (
         # For synthetic queries, we want to assess miners with fewer requests made
+        # in order to promote exploration of new miners
         f"ORDER BY c.{dcst.TOTAL_REQUESTS_MADE} ASC"
         if query_type == gcst.SYNTHETIC
         # For organic queries, we want the best performers
+        # in order to provide the user with the best possible response
         else f"ORDER BY c.{dcst.PERIOD_SCORE} DESC NULLS LAST"
     )
 
@@ -154,8 +156,8 @@ async def get_contenders_for_task(
             ON c.{dcst.NODE_ID} = n.{dcst.NODE_ID}
             AND c.{dcst.NETUID} = n.{dcst.NETUID}
         WHERE c.{dcst.TASK} = $1
-            AND c.{dcst.CAPACITY} > 0  -- Ensure miner has capacity
-            AND n.{dcst.SYMMETRIC_KEY_UUID} IS NOT NULL  -- Ensure necessary keys are available
+            AND c.{dcst.CAPACITY} > 0  -- ensure miner has capacity
+            AND n.{dcst.SYMMETRIC_KEY_UUID} IS NOT NULL  -- ensure necessary keys are available
         {order_by}
         LIMIT $2
         """,
@@ -173,16 +175,8 @@ async def get_contenders_for_task(
             else ""
         )
 
-        # Determine the secondary ORDER BY clause
-        secondary_order_by = (
-            # For organic queries, include miners without scores if needed
-            f"ORDER BY c.{dcst.PERIOD_SCORE} IS NULL ASC, c.{dcst.PERIOD_SCORE} DESC"
-            if query_type == gcst.ORGANIC
-            # For synthetic queries, continue to prioritize least assessed miners
-            else f"ORDER BY c.{dcst.TOTAL_REQUESTS_MADE} ASC"
-        )
-
-        # Secondary query to fetch additional contenders
+        # Secondary query to fetch additional contenders, prioritizing new miners
+        # in order to promote exploration of new miners with less requests made
         secondary_rows: list[dict[str, Any]] = await connection.fetch(
             f"""
             SELECT
@@ -206,8 +200,8 @@ async def get_contenders_for_task(
             WHERE c.{dcst.TASK} = $1
                 AND c.{dcst.CAPACITY} > 0
                 AND n.{dcst.SYMMETRIC_KEY_UUID} IS NOT NULL
-                {not_in_clause}  -- Exclude already selected contenders
-            {secondary_order_by}
+                {not_in_clause}  -- exclude already selected contenders (top performers)
+            ORDER BY c.{dcst.TOTAL_REQUESTS_MADE} ASC -- promote exploration of new miners
             LIMIT $2
             """,
             task,
