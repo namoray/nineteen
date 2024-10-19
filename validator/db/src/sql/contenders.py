@@ -1,14 +1,18 @@
+from datetime import datetime, timezone
 from typing import Any
 
 from asyncpg import Connection
 from fiber.logging_utils import get_logger
 
+from core import constants as ccst
 from validator.db.src.database import PSQLDB
 from validator.models import Contender, PeriodScore, calculate_period_score
 from validator.utils.database import database_constants as dcst
 from validator.utils.generic import generic_constants as gcst
 
 logger = get_logger(__name__)
+
+HISTORICAL_PERIOD_SCORE_TIME_DECAYING_FACTOR = 0.5  # to be fine-tuned
 
 
 async def insert_contenders(
@@ -110,9 +114,11 @@ async def get_contenders_for_task(
     Fetch a list of contenders for a given task, ordered based on the query type.
 
     For organic queries:
-        - Prioritize contenders with the highest PERIOD_SCORE (best performance).
+        - Prioritize contenders with the highest time-decayed PERIOD_SCORE (best recent performance).
     For synthetic queries:
         - Prioritize contenders with the least TOTAL_REQUESTS_MADE (need more assessment).
+
+    If there are not enough contenders, fill the gaps by selecting miners with the least TOTAL_REQUESTS_MADE.
 
     Parameters:
         connection (Connection): The database connection.
@@ -123,24 +129,17 @@ async def get_contenders_for_task(
     Returns:
         List[Contender]: A list of Contender objects.
     """
-    # Determine the ORDER BY clause based on the query type
-    order_by = (
-        # For synthetic queries, we want to assess miners with fewer requests made
-        # in order to promote exploration of new miners
-        f"ORDER BY c.{dcst.TOTAL_REQUESTS_MADE} ASC"
-        if query_type == gcst.SYNTHETIC
-        # For organic queries, we want the best performers
-        # in order to provide the user with the best possible response
-        else f"ORDER BY c.{dcst.PERIOD_SCORE} DESC NULLS LAST"
-    )
 
-    # Initial query to fetch contenders based on the determined order
-    rows: list[dict[str, Any]] = await connection.fetch(
-        f"""
+    # Get current UTC timestamp
+    now = datetime.now(timezone.utc)
+
+    # Common SQL fragments
+    base_select = f"""
         SELECT
             c.{dcst.CONTENDER_ID},
             c.{dcst.NODE_HOTKEY},
             c.{dcst.NODE_ID},
+            c.{dcst.NETUID},
             c.{dcst.TASK},
             c.{dcst.RAW_CAPACITY},
             c.{dcst.CAPACITY_TO_SCORE},
@@ -149,66 +148,103 @@ async def get_contenders_for_task(
             c.{dcst.REQUESTS_429},
             c.{dcst.REQUESTS_500},
             c.{dcst.CAPACITY},
-            c.{dcst.PERIOD_SCORE},
-            c.{dcst.NETUID}
+            c.{dcst.PERIOD_SCORE}
+    """
+
+    base_from = f"""
         FROM {dcst.CONTENDERS_TABLE} c
         JOIN {dcst.NODES_TABLE} n
             ON c.{dcst.NODE_ID} = n.{dcst.NODE_ID}
             AND c.{dcst.NETUID} = n.{dcst.NETUID}
         WHERE c.{dcst.TASK} = $1
-            AND c.{dcst.CAPACITY} > 0  -- ensure miner has capacity
-            AND n.{dcst.SYMMETRIC_KEY_UUID} IS NOT NULL  -- ensure necessary keys are available
-        {order_by}
-        LIMIT $2
-        """,
-        task,
-        top_x,
-    )
+            AND c.{dcst.CAPACITY} > 0
+            AND n.{dcst.SYMMETRIC_KEY_UUID} IS NOT NULL
+    """
 
-    # Check if we have enough contenders
+    # Determine the ORDER BY clause based on the query type
+    match query_type:
+        case gcst.SYNTHETIC:
+            # For synthetic queries, prioritize miners with least TOTAL_REQUESTS_MADE
+            order_by = f"ORDER BY c.{dcst.TOTAL_REQUESTS_MADE} ASC"
+            select_query = f"""
+                {base_select}
+                {base_from}
+                {order_by}
+                LIMIT $2
+            """
+            rows: list[dict[str, Any]] = await connection.fetch(
+                select_query,
+                task,
+                top_x,
+            )
+
+        case gcst.ORGANIC:
+            # For organic queries, calculate time-decayed PERIOD_SCORE in SQL
+            decay_factor = HISTORICAL_PERIOD_SCORE_TIME_DECAYING_FACTOR  # e.g., 0.5
+            scoring_period_time = ccst.SCORING_PERIOD_TIME  # Ensure this is in seconds
+
+            # For organic queries, order by the decayed score
+            order_by = "ORDER BY ds.decayed_score DESC NULLS LAST"
+
+            # SQL query to calculate decayed score
+            select_query = f"""
+                WITH recent_scores AS (
+                    SELECT
+                        ch.{dcst.NODE_HOTKEY},
+                        ch.{dcst.PERIOD_SCORE},
+                        EXTRACT(EPOCH FROM ($3 - ch.{dcst.CREATED_AT})) AS time_diff
+                    FROM {dcst.CONTENDERS_HISTORY_TABLE} ch
+                    WHERE ch.{dcst.TASK} = $1
+                ),
+                decayed_scores AS (
+                    SELECT
+                        rs.{dcst.NODE_HOTKEY},
+                        SUM(rs.{dcst.PERIOD_SCORE} * POWER({decay_factor}, rs.time_diff / {scoring_period_time})) AS decayed_score
+                    FROM recent_scores rs
+                    GROUP BY rs.{dcst.NODE_HOTKEY}
+                )
+                {base_select},
+                ds.decayed_score
+                {base_from}
+                LEFT JOIN decayed_scores ds
+                    ON c.{dcst.NODE_HOTKEY} = ds.{dcst.NODE_HOTKEY}
+                {order_by}
+                LIMIT $2
+            """
+
+            rows: list[dict[str, Any]] = await connection.fetch(
+                select_query,
+                task,
+                top_x,
+                now,
+            )
+        case _:
+            raise ValueError(f"Invalid query type: {query_type}")
+
+    # If not enough contenders are found, perform secondary selection
     if not rows or len(rows) < top_x:
         # Prepare a list of already selected contender IDs to avoid duplicates
-        selected_contender_ids = [str(row[dcst.CONTENDER_ID]) for row in rows]
-        not_in_clause = (
-            f"AND c.{dcst.CONTENDER_ID} NOT IN ({','.join(selected_contender_ids)})"
-            if selected_contender_ids
-            else ""
-        )
+        selected_contender_ids = [row[dcst.CONTENDER_ID] for row in rows]
 
-        # Secondary query to fetch additional contenders, prioritizing new miners
-        # in order to promote exploration of new miners with less requests made
-        secondary_rows: list[dict[str, Any]] = await connection.fetch(
-            f"""
-            SELECT
-                c.{dcst.CONTENDER_ID},
-                c.{dcst.NODE_HOTKEY},
-                c.{dcst.NODE_ID},
-                c.{dcst.TASK},
-                c.{dcst.RAW_CAPACITY},
-                c.{dcst.CAPACITY_TO_SCORE},
-                c.{dcst.CONSUMED_CAPACITY},
-                c.{dcst.TOTAL_REQUESTS_MADE},
-                c.{dcst.REQUESTS_429},
-                c.{dcst.REQUESTS_500},
-                c.{dcst.CAPACITY},
-                c.{dcst.PERIOD_SCORE},
-                c.{dcst.NETUID}
-            FROM {dcst.CONTENDERS_TABLE} c
-            JOIN {dcst.NODES_TABLE} n
-                ON c.{dcst.NODE_ID} = n.{dcst.NODE_ID}
-                AND c.{dcst.NETUID} = n.{dcst.NETUID}
-            WHERE c.{dcst.TASK} = $1
-                AND c.{dcst.CAPACITY} > 0
-                AND n.{dcst.SYMMETRIC_KEY_UUID} IS NOT NULL
-                {not_in_clause}  -- exclude already selected contenders (top performers)
-            ORDER BY c.{dcst.TOTAL_REQUESTS_MADE} ASC -- promote exploration of new miners
+        # Use parameterized query with ALL operator
+        not_in_clause = f"AND c.{dcst.CONTENDER_ID} != ALL($3::text[])"
+
+        secondary_order_by = f"ORDER BY c.{dcst.TOTAL_REQUESTS_MADE} ASC"
+        secondary_select_query = f"""
+            {base_select}
+            {base_from}
+            {not_in_clause}
+            {secondary_order_by}
             LIMIT $2
-            """,
+        """
+
+        secondary_rows: list[dict[str, Any]] = await connection.fetch(
+            secondary_select_query,
             task,
-            top_x - len(rows) if rows else top_x,  # Only add the needed additional rows
+            top_x - len(rows),
+            selected_contender_ids,
         )
 
-        # Combine initial and secondary results
         rows.extend(secondary_rows)
 
     # Convert the result rows into Contender objects
