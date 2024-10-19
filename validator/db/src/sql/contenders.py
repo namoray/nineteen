@@ -10,22 +10,58 @@ logger = get_logger(__name__)
 
 NET_SCORE_WEIGHT = 0.5 # Can be fine-tuned
 
-async def _get_top_hotkeys_for_task(connection: Connection, task: str, top_x: int = 10) -> list[str]:
-    top_contenders_with_scores = await connection.fetch(
-        f"""
-        SELECT {dcst.NODE_HOTKEY}
-        FROM {dcst.CONTENDERS_WEIGHTS_STATS_TABLE} cws
-        WHERE cws.{dcst.TASK} = $1
-        GROUP BY cws.{dcst.NODE_HOTKEY}
-        ORDER BY AVG(cws.{dcst.COLUMN_NORMALISED_NET_SCORE} * {NET_SCORE_WEIGHT} + cws.{dcst.COLUMN_NORMALISED_PERIOD_SCORE} * (1 - {NET_SCORE_WEIGHT})) DESC
-        LIMIT $2
-        """,
-        task,
-        top_x
-    )
-    
-    top_hotkeys = [row[dcst.NODE_HOTKEY] for row in top_contenders_with_scores]
-    return top_hotkeys
+async def _build_query_to_fetch_contenders(query_type: str = gcst.SYNTHETIC) -> str:
+    """
+    Builds the SQL query for fetching contenders based on the query type.
+
+    Args:
+        task (str): The task to filter contenders.
+        query_type (str): The type of query (e.g., synthetic or regular).
+        top_x (int): The number of top contenders to fetch.
+
+    Returns:
+        str: The SQL query as a string.
+    """
+    if query_type == gcst.SYNTHETIC:
+        return f"""
+            SELECT 
+                c.{dcst.CONTENDER_ID}, c.{dcst.NODE_HOTKEY}, c.{dcst.NODE_ID}, c.{dcst.TASK},
+                c.{dcst.RAW_CAPACITY}, c.{dcst.CAPACITY_TO_SCORE}, c.{dcst.CONSUMED_CAPACITY},
+                c.{dcst.TOTAL_REQUESTS_MADE}, c.{dcst.REQUESTS_429}, c.{dcst.REQUESTS_500}, 
+                c.{dcst.CAPACITY}, c.{dcst.PERIOD_SCORE}, c.{dcst.NETUID}
+            FROM {dcst.CONTENDERS_TABLE} c
+            JOIN {dcst.NODES_TABLE} n ON c.{dcst.NODE_ID} = n.{dcst.NODE_ID} AND c.{dcst.NETUID} = n.{dcst.NETUID}
+            WHERE c.{dcst.TASK} = $1 
+            AND c.{dcst.CAPACITY} > 0 
+            AND n.{dcst.SYMMETRIC_KEY_UUID} IS NOT NULL
+            ORDER BY c.{dcst.TOTAL_REQUESTS_MADE} ASC
+            LIMIT $2
+        """
+    else:
+        return f"""
+            WITH ranked_hotkeys AS (
+                SELECT 
+                    cws.{dcst.NODE_HOTKEY}, 
+                    AVG(cws.{dcst.COLUMN_NORMALISED_NET_SCORE} * {NET_SCORE_WEIGHT} + 
+                        cws.{dcst.COLUMN_NORMALISED_PERIOD_SCORE} * (1 - {NET_SCORE_WEIGHT})) AS average_score
+                FROM {dcst.CONTENDERS_WEIGHTS_STATS_TABLE} cws
+                WHERE cws.{dcst.TASK} = $1
+                GROUP BY cws.{dcst.NODE_HOTKEY}
+            )
+            SELECT 
+                c.{dcst.CONTENDER_ID}, c.{dcst.NODE_HOTKEY}, c.{dcst.NODE_ID}, c.{dcst.TASK},
+                c.{dcst.RAW_CAPACITY}, c.{dcst.CAPACITY_TO_SCORE}, c.{dcst.CONSUMED_CAPACITY},
+                c.{dcst.TOTAL_REQUESTS_MADE}, c.{dcst.REQUESTS_429}, c.{dcst.REQUESTS_500}, 
+                c.{dcst.CAPACITY}, c.{dcst.PERIOD_SCORE}, c.{dcst.NETUID}
+            FROM {dcst.CONTENDERS_TABLE} c
+            JOIN {dcst.NODES_TABLE} n ON c.{dcst.NODE_ID} = n.{dcst.NODE_ID} AND c.{dcst.NETUID} = n.{dcst.NETUID}
+            JOIN ranked_hotkeys rh ON c.{dcst.NODE_HOTKEY} = rh.{dcst.NODE_HOTKEY}
+            WHERE c.{dcst.TASK} = $1 
+            AND c.{dcst.CAPACITY} > 0 
+            AND n.{dcst.SYMMETRIC_KEY_UUID} IS NOT NULL
+            ORDER BY rh.average_score DESC
+            LIMIT $2
+        """
 
 async def insert_contenders(connection: Connection, contenders: list[Contender], validator_hotkey: str) -> None:
     logger.debug(f"Inserting {len(contenders)} contender records")
@@ -118,32 +154,17 @@ async def migrate_contenders_to_contender_history(connection: Connection) -> Non
 
 
 async def get_contenders_for_task(connection: Connection, task: str, query_type: str, top_x: int = 5) -> list[Contender]:
-    if query_type == gcst.SYNTHETIC:
-        filter_clause = f"ORDER BY c.{dcst.TOTAL_REQUESTS_MADE} ASC"
-    else:
-        # Fetch twice as many hotkeys as we need, to avoid making another query
-        top_hotkeys = await _get_top_hotkeys_for_task(connection, task, 2 * top_x)
-        filter_clause = f"AND c.{dcst.NODE_HOTKEY} IN ({', '.join(top_hotkeys)}) " if top_hotkeys else ""
-        filter_clause += f"ORDER BY c.{dcst.TOTAL_REQUESTS_MADE} ASC"
-
+    query = await _build_query_to_fetch_contenders(query_type)
     rows = await connection.fetch(
-        f"""
-        SELECT 
-            c.{dcst.CONTENDER_ID}, c.{dcst.NODE_HOTKEY}, c.{dcst.NODE_ID}, c.{dcst.TASK},
-            c.{dcst.RAW_CAPACITY}, c.{dcst.CAPACITY_TO_SCORE}, c.{dcst.CONSUMED_CAPACITY},
-            c.{dcst.TOTAL_REQUESTS_MADE}, c.{dcst.REQUESTS_429}, c.{dcst.REQUESTS_500}, 
-            c.{dcst.CAPACITY}, c.{dcst.PERIOD_SCORE}, c.{dcst.NETUID}
-        FROM {dcst.CONTENDERS_TABLE} c
-        JOIN {dcst.NODES_TABLE} n ON c.{dcst.NODE_ID} = n.{dcst.NODE_ID} AND c.{dcst.NETUID} = n.{dcst.NETUID}
-        WHERE c.{dcst.TASK} = $1 
-        AND c.{dcst.CAPACITY} > 0 
-        AND n.{dcst.SYMMETRIC_KEY_UUID} IS NOT NULL
-        {filter_clause}
-        LIMIT $2
-        """,
+        query,
         task,
         top_x,
     )
+
+    # Fallback to synthetic query if no contenders are found
+    if not rows:
+        synthetic_query = await _build_query_to_fetch_contenders()
+        rows = await connection.fetch(synthetic_query, task, top_x)
 
     return [Contender(**row) for row in rows]
 
@@ -308,3 +329,4 @@ async def get_and_decrement_synthetic_request_count(connection: Connection, cont
         return result[dcst.SYNTHETIC_REQUESTS_STILL_TO_MAKE]
     else:
         return None
+
