@@ -123,7 +123,7 @@ async def get_contenders_for_task(connection: Connection, task: str, query_type:
     else:
         # Fetch twice as many hotkeys as we need, to avoid making another query
         top_hotkeys = await _get_top_hotkeys_for_task(connection, task, 2 * top_x)
-        filter_clause = f"AND c.{dcst.NODE_HOTKEY} IN ({', '.join(top_hotkeys)})" if top_hotkeys else ""
+        filter_clause = f"AND c.{dcst.NODE_HOTKEY} IN ({', '.join(top_hotkeys)}) " if top_hotkeys else ""
         filter_clause += f"ORDER BY c.{dcst.TOTAL_REQUESTS_MADE} ASC"
 
     rows = await connection.fetch(
