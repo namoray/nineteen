@@ -15,6 +15,7 @@ from validator.models import Contender, PeriodScore
 from validator.models import RewardData
 from datetime import datetime, timezone, timedelta
 from fiber.logging_utils import get_logger
+import numpy as np
 
 
 logger = get_logger(__name__)
@@ -91,7 +92,7 @@ async def _calculate_normalised_period_score(psql_db: PSQLDB, task: str, node_ho
     period_scores = await _get_period_scores(psql_db, task, node_hotkey)
     all_period_scores = [ps for ps in period_scores if ps.period_score is not None]
     # Requires an abundance of data before handing out top scores
-    period_score_multiplier = 1 if len(all_period_scores) > 8 else 0.25
+    period_score_multiplier = max(0.25, min(1, len(all_period_scores) / 8))
     normalised_period_scores = _normalise_period_scores(all_period_scores)
     return normalised_period_scores, period_score_multiplier
 
@@ -115,7 +116,7 @@ def _normalise_period_scores(period_scores: list[PeriodScore]) -> float:
             total_weight += combined_weight
 
     # Requires an abundance of data before handing out top scores
-    period_score_multiplier = 1 if len(period_scores) > 8 else 0.25
+    period_score_multiplier = max(0.25, min(1, len(all_period_scores) / 8))
 
     if total_weight == 0:
         return 0
@@ -133,9 +134,22 @@ async def _process_quality_scores(psql_db: PSQLDB, task: str, netuid: int) -> tu
     average_weighted_quality_scores = {
         node_hotkey: sum(score**1.5 for score in scores) / len(scores) for node_hotkey, scores in quality_scores.items()
     }
+    # To measure the stability of the quality scores across the periods, the higher the more unstable
+    coefficient_of_variation = {
+        node_hotkey: (np.std(scores) / np.mean(scores)) if np.mean(scores) != 0 else 0
+        for node_hotkey, scores in quality_scores.items()
+    }
+    # Apply exponential decay to CV to constrict the range to (0, 1]
+    # the higher the more stable
+    cv_weights = {
+        node_hotkey: np.exp(-cv) for node_hotkey, cv in coefficient_of_variation.items()
+    }
+
     metric_bonuses = await _calculate_metric_bonuses(metrics)
+
+    # Combine quality scores with metric bonuses and CV weights
     combined_quality_scores = {
-        node_hotkey: average_weighted_quality_scores[node_hotkey] * (1 + metric_bonuses[node_hotkey]) for node_hotkey in metrics
+        node_hotkey: average_weighted_quality_scores[node_hotkey] * (1 + metric_bonuses[node_hotkey]) * (1 + cv_weights[node_hotkey]) for node_hotkey in metrics
     }
     return combined_quality_scores, average_weighted_quality_scores, metric_bonuses
 
