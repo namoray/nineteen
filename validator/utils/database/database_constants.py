@@ -14,6 +14,9 @@ TABLE_TASKS = "tasks"
 TABLE_REWARD_DATA = "reward_data"
 TABLE_UID_RECORDS = "uid_records"
 
+TABLE_TASK_SIMILARITY = "task_similarity"
+
+
 DELAY_BETWEEN_SYNTHETIC_REQUESTS = "delay_between_synthetic_requests"
 SYNTHETIC_REQUESTS_STILL_TO_MAKE = "synthetic_requests_still_to_make"
 
@@ -156,3 +159,8 @@ COLUMN_PERIOD_SCORE_MULTIPLIER = "period_score_multiplier"
 COLUMN_NORMALISED_PERIOD_SCORE = "normalised_period_score"
 COLUMN_CONTENDER_CAPACITY = "contender_capacity"
 COLUMN_NORMALISED_NET_SCORE = "normalised_net_score"
+
+TASK_SIMILARITY = "similarity"
+LEFT_TASK = "left_task"
+RIGHT_TASK = "right_task"
+SIMILARITY_ID = "id"

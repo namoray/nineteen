@@ -98,57 +98,51 @@ async def migrate_contenders_to_contender_history(connection: Connection) -> Non
     await connection.execute(f"DELETE FROM {dcst.CONTENDERS_TABLE}")
 
 
-async def get_contenders_for_task(connection: Connection, task: str, top_x: int = 5) -> list[Contender]:
+async def get_contenders_for_task(connection: Connection, task: str, top_x: int = 5, dropoff_interval_seconds: int = 3600) -> list[Contender]:
+    dropoff_amount = 2.0
+    history_weight = 50
+    cutoff_interval = '1 day'
+    
     rows = await connection.fetch(
         f"""
-        WITH ranked_contenders AS (
-            SELECT 
-                c.{dcst.CONTENDER_ID}, c.{dcst.NODE_HOTKEY}, c.{dcst.NODE_ID}, c.{dcst.TASK},
-                c.{dcst.RAW_CAPACITY}, c.{dcst.CAPACITY_TO_SCORE}, c.{dcst.CONSUMED_CAPACITY},
-                c.{dcst.TOTAL_REQUESTS_MADE}, c.{dcst.REQUESTS_429}, c.{dcst.REQUESTS_500}, 
-                c.{dcst.CAPACITY}, c.{dcst.PERIOD_SCORE}, c.{dcst.NETUID},
-                ROW_NUMBER() OVER (
-                    ORDER BY c.{dcst.TOTAL_REQUESTS_MADE} ASC
-                ) AS rank
-            FROM {dcst.CONTENDERS_TABLE} c
-            JOIN {dcst.NODES_TABLE} n ON c.{dcst.NODE_ID} = n.{dcst.NODE_ID} AND c.{dcst.NETUID} = n.{dcst.NETUID}
-            WHERE c.{dcst.TASK} = $1 
-            AND c.{dcst.CAPACITY} > 0 
-            AND n.{dcst.SYMMETRIC_KEY_UUID} IS NOT NULL
+        WITH isolated_ranking_metric AS (
+            SELECT SUM(COALESCE(ch.{dcst.PERIOD_SCORE}, 0) * POWER($3, extract(epoch from NOW() - COALESCE(ch.expired_at, NOW()))::float / $4)) as metric, 
+            c.{dcst.CONTENDER_ID},
+            c.{dcst.NODE_ID},
+            c.{dcst.TASK}
+            FROM {dcst.CONTENDERS_TABLE} c 
+            LEFT OUTER JOIN {dcst.CONTENDERS_HISTORY_TABLE} ch on c.{dcst.CONTENDER_ID} = ch.{dcst.CONTENDER_ID}
+            AND ch.{dcst.EXPIRED_AT} > NOW() - interval '{cutoff_interval}'
+            GROUP by c.{dcst.CONTENDER_ID}, c.{dcst.NODE_ID}, c.{dcst.TASK}
+        ),
+        global_ranking_metric as (
+				select l.metric + SUM(coalesce(r.metric, 0) * coalesce(ts.{dcst.TASK_SIMILARITY}, 0)) as metric, l.{dcst.CONTENDER_ID}
+				from isolated_ranking_metric l
+				left join {dcst.TABLE_TASK_SIMILARITY} ts on ts.{dcst.LEFT_TASK} = l.task
+				left join isolated_ranking_metric r on r.{dcst.TASK} = ts.{dcst.RIGHT_TASK} and r.{dcst.NODE_ID} = l.{dcst.NODE_ID}
+				group by l.{dcst.CONTENDER_ID}, l.metric
         )
-        SELECT *
-        FROM ranked_contenders
-        WHERE rank <= $2
-        ORDER BY rank
+        SELECT  
+            c.{dcst.CONTENDER_ID}, c.{dcst.NODE_HOTKEY}, c.{dcst.NODE_ID}, c.{dcst.TASK},
+            c.{dcst.RAW_CAPACITY}, c.{dcst.CAPACITY_TO_SCORE}, c.{dcst.CONSUMED_CAPACITY},
+            c.{dcst.TOTAL_REQUESTS_MADE}, c.{dcst.REQUESTS_429}, c.{dcst.REQUESTS_500}, 
+            c.{dcst.CAPACITY}, c.{dcst.PERIOD_SCORE}, c.{dcst.NETUID},
+            c.{dcst.TOTAL_REQUESTS_MADE} - $5 * COALESCE(grm.metric, 0) as final_rank
+        FROM {dcst.CONTENDERS_TABLE} c
+        JOIN {dcst.NODES_TABLE} n ON c.{dcst.NODE_ID} = n.{dcst.NODE_ID} AND c.{dcst.NETUID} = n.{dcst.NETUID}
+        LEFT JOIN global_ranking_metric grm ON c.{dcst.CONTENDER_ID} = grm.{dcst.CONTENDER_ID}
+        WHERE c.{dcst.TASK} = $1 
+        AND c.{dcst.CAPACITY} > 0 
+        AND n.{dcst.SYMMETRIC_KEY_UUID} IS NOT NULL
+        ORDER BY final_rank
+        LIMIT $2
         """,
         task,
         top_x,
+        dropoff_amount,
+        -dropoff_interval_seconds,
+        history_weight,
     )
-
-    # If not enough rows are returned, run another query to get more contenders
-    if not rows or len(rows) < top_x:
-        additional_rows = await connection.fetch(
-            f"""
-            SELECT 
-                c.{dcst.CONTENDER_ID}, c.{dcst.NODE_HOTKEY}, c.{dcst.NODE_ID}, c.{dcst.TASK},
-                c.{dcst.RAW_CAPACITY}, c.{dcst.CAPACITY_TO_SCORE}, c.{dcst.CONSUMED_CAPACITY},
-                c.{dcst.TOTAL_REQUESTS_MADE}, c.{dcst.REQUESTS_429}, c.{dcst.REQUESTS_500}, 
-                c.{dcst.CAPACITY}, c.{dcst.PERIOD_SCORE}, c.{dcst.NETUID}
-            FROM {dcst.CONTENDERS_TABLE} c
-            JOIN {dcst.NODES_TABLE} n ON c.{dcst.NODE_ID} = n.{dcst.NODE_ID} AND c.{dcst.NETUID} = n.{dcst.NETUID}
-            WHERE c.{dcst.TASK} = $1 
-            AND c.{dcst.CAPACITY} > 0 
-            AND n.{dcst.SYMMETRIC_KEY_UUID} IS NOT NULL
-            ORDER BY c.{dcst.TOTAL_REQUESTS_MADE} ASC
-            LIMIT $2
-            OFFSET $3
-            """,
-            task,
-            top_x - len(rows) if rows else top_x,
-            len(rows) if rows else 0,
-        )
-        rows = rows + additional_rows if rows else additional_rows
-
     return [Contender(**row) for row in rows]
 
 

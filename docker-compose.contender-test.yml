@@ -1,0 +1,69 @@
+services:
+  test_node:
+    build:
+      context: .
+      dockerfile: dockerfiles/test_node.dockerfile
+    depends_on:
+      dbmate:
+        condition: service_completed_successfully
+    networks:
+      - postgres_network
+    entrypoint: [ "python", "-u", "/app/validator/query_node/tests/test_contenders.py" ]
+    volumes:
+      - ${HOME}/.bittensor/wallets:/root/.bittensor/wallets
+    env_file:
+      - .vali.env
+    container_name: test_node
+    deploy:
+      restart_policy:
+        condition: on-failure
+  postgresql:
+    image: postgres:latest
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - postgres_network
+    container_name: 0_postgresql
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_HOST: ${POSTGRES_HOST}
+
+  dbmate:
+    image: amacneil/dbmate
+    volumes:
+      - ./validator/db:/db
+    command: up
+    depends_on:
+      postgresql:
+        condition: service_healthy
+    networks:
+      - postgres_network
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgresql:5432/${POSTGRES_DB}?sslmode=disable
+    container_name: 0_dbmate_nineteen
+
+  redis:
+    image: redis/redis-stack:latest
+    networks:
+      - redis_network
+    container_name: 0_redis
+    deploy:
+      restart_policy:
+        condition: on-failure
+
+networks:
+  postgres_network:
+    driver: bridge
+  redis_network:
+    driver: bridge
+
+volumes:
+  postgres_data:

@@ -29,6 +29,7 @@ class Contender(BaseModel):
     requests_429: int = Field(0, description="HTTP 429 requests")
     requests_500: int = Field(0, description="HTTP 500 requests")
     period_score: Optional[float] = Field(None, description="Period score")
+    final_rank: Optional[float] = Field(None, description="The final rank produced during contender selection")
 
     @property
     def id(self) -> str:
