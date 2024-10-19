@@ -15,9 +15,7 @@ async def _build_query_to_fetch_contenders(query_type: str = gcst.SYNTHETIC) -> 
     Builds the SQL query for fetching contenders based on the query type.
 
     Args:
-        task (str): The task to filter contenders.
-        query_type (str): The type of query (e.g., synthetic or regular).
-        top_x (int): The number of top contenders to fetch.
+        query_type (str): The type of query (e.g., synthetic or organic). Defaults to synthetic.
 
     Returns:
         str: The SQL query as a string.
@@ -62,6 +60,7 @@ async def _build_query_to_fetch_contenders(query_type: str = gcst.SYNTHETIC) -> 
             ORDER BY rh.average_score DESC
             LIMIT $2
         """
+
 
 async def insert_contenders(connection: Connection, contenders: list[Contender], validator_hotkey: str) -> None:
     logger.debug(f"Inserting {len(contenders)} contender records")
