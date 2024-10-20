@@ -7,8 +7,8 @@ from asyncpg import Connection
 from validator.db.src.sql.contenders import get_contenders_for_selection
 from validator.models import Contender, ContenderSelectionInfo
 
-WEIGHT_QUALITY_SCORE=2.0
-WEIGHT_PERIOD_SCORE=2.0
+WEIGHT_QUALITY_SCORE=1.0
+WEIGHT_PERIOD_SCORE=0.7
 SOFTMAX_TEMPERATURE=2.0
 
 
