@@ -296,38 +296,3 @@ async def get_and_decrement_synthetic_request_count(connection: Connection, cont
         return result[dcst.SYNTHETIC_REQUESTS_STILL_TO_MAKE]
     else:
         return None
-
-if __name__ == "__main__":
-    print(
-        f"""
-            WITH contenders AS (
-                SELECT 
-                    c.{dcst.CONTENDER_ID}, c.{dcst.NODE_HOTKEY}, c.{dcst.NODE_ID}, c.{dcst.TASK},
-                    c.{dcst.RAW_CAPACITY}, c.{dcst.CAPACITY_TO_SCORE}, c.{dcst.CONSUMED_CAPACITY},
-                    c.{dcst.TOTAL_REQUESTS_MADE}, c.{dcst.REQUESTS_429}, c.{dcst.REQUESTS_500}, 
-                    c.{dcst.CAPACITY}, c.{dcst.PERIOD_SCORE}, c.{dcst.NETUID}, c.{dcst.VALIDATOR_HOTKEY}
-                FROM {dcst.CONTENDERS_TABLE} c
-                JOIN {dcst.NODES_TABLE} n ON c.{dcst.NODE_ID} = n.{dcst.NODE_ID} AND c.{dcst.NETUID} = n.{dcst.NETUID}
-                WHERE c.{dcst.TASK} = $1 
-                AND c.{dcst.CAPACITY} > 0 
-                AND n.{dcst.SYMMETRIC_KEY_UUID} IS NOT NULL
-            ),
-            contenders_weights_stats AS (
-                SELECT {dcst.NETUID}, {dcst.TASK}, {dcst.NODE_HOTKEY}, {dcst.VALIDATOR_HOTKEY}, {dcst.COLUMN_COMBINED_QUALITY_SCORE},
-                ROW_NUMBER() OVER (
-                            PARTITION BY {dcst.NETUID}, {dcst.TASK}, {dcst.NODE_HOTKEY}, {dcst.VALIDATOR_HOTKEY}
-                            ORDER BY {dcst.CREATED_AT} DESC
-                            ) AS rank
-                FROM {dcst.CONTENDERS_WEIGHTS_STATS_TABLE}
-            ),
-            last_contender_weights_stats AS (
-                SELECT * FROM contenders_weights_stats WHERE rank = 1
-            )
-            SELECT c.*, s.{dcst.COLUMN_COMBINED_QUALITY_SCORE}
-            FROM contenders c
-            LEFT JOIN last_contender_weights_stats s
-            -- be as explict as possible with the join conditions
-            ON c.{dcst.NETUID} = s.{dcst.NETUID} AND c.{dcst.TASK} = s.{dcst.TASK} 
-            AND c.{dcst.NODE_HOTKEY} = s.{dcst.NODE_HOTKEY} AND c.{dcst.VALIDATOR_HOTKEY} = s.{dcst.VALIDATOR_HOTKEY}
-            """
-    )
