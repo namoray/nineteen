@@ -55,7 +55,7 @@ async def _build_query_to_fetch_contenders(query_type: str = gcst.SYNTHETIC) -> 
             AND c.{dcst.CAPACITY} > 0 
             AND n.{dcst.SYMMETRIC_KEY_UUID} IS NOT NULL
             AND rh.average_net_score > 0
-            ORDER BY rh.average_net_score DESC
+            ORDER BY rh.average_net_score DESC, c.{dcst.TOTAL_REQUESTS_MADE} ASC
             LIMIT $2
         """
 
