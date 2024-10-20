@@ -8,8 +8,8 @@ from validator.db.src.sql.contenders import get_contenders_for_selection
 from validator.models import Contender, ContenderSelectionInfo
 
 WEIGHT_QUALITY_SCORE=2.0
-WEIGHT_PERIOD_SCORE=1.0
-SOFTMAX_TEMPERATURE=1.5
+WEIGHT_PERIOD_SCORE=2.0
+SOFTMAX_TEMPERATURE=2.0
 
 
 def weighted_random_sample_without_replacement(contenders: list[ContenderSelectionInfo], probabilities: list[float], k: int) -> list[ContenderSelectionInfo]:

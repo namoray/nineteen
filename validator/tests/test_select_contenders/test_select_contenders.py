@@ -39,14 +39,28 @@ async def test_select_contenders(mock_get_contenders_for_selection):
 
     result = await select_contenders(mock_connection, mock_task, top_x=2)
 
-    print("result", result)
-    # Assertions
     assert len(result) == 2
-
     # order is not guaranteed
     # sort before asserting equality
     assert sorted(result, key=lambda x: x.period_score) == [mock_contenders[0].to_contender_model(), mock_contenders[2].to_contender_model()]
 
+
+@pytest.mark.asyncio
+@patch('validator.query_node.src.select_contenders.WEIGHT_QUALITY_SCORE', 3.0)
+@patch('validator.query_node.src.select_contenders.WEIGHT_PERIOD_SCORE', 2.0)
+@patch('validator.query_node.src.select_contenders.SOFTMAX_TEMPERATURE', 2.0)
+@patch('validator.query_node.src.select_contenders.get_contenders_for_selection', new_callable=AsyncMock)
+async def test_select_contenders(mock_get_contenders_for_selection):
+    # Mock data
+    mock_connection = AsyncMock()
+    mock_task = "test_task"
+    mock_contenders = []
+
+    mock_get_contenders_for_selection.return_value = deepcopy(mock_contenders)
+
+    result = await select_contenders(mock_connection, mock_task, top_x=2)
+
+    assert len(result) == 0
 
 
 def test_random_choice():
