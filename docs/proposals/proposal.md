@@ -64,6 +64,3 @@ Proposed delivery: 13th June 1 PM UTC
 - SN23: Declared volumes of requests for one task
 
 **With a special thanks to ban44ntje, Tenet, Sirouk, amongst other awesome SN19 miners, for their continued input**
-
-
-

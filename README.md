@@ -26,7 +26,7 @@ Miners all run open source models on any hardware they choose. They're incentivi
 They're incentivised over a range of tasks, independently of each other. Miners have the option of choosing which tasks they want to run, and the volume they want to run for each. The more volume they have, the more rewards they get!
 
 ## Decentralised Validators
-Validators operate as decentralised access points to the network. In a one-click fashion, Validators can offer up their miner access to the world, with a clear path to monetisation. 
+Validators operate as decentralised access points to the network. In a one-click fashion, Validators can offer up their miner access to the world, with a clear path to monetisation.
 
 They check and score the miners through 'Checking servers' that they run themselves on their own hardware. No centralisation to be found here.
 
@@ -46,7 +46,7 @@ All organic requests can be scored, and checked for the upmost quality. Not only
 The subnet is split into `tasks`. These `tasks` are things like:
 - Llama3.1 70B text generation [1]
 - Stable Diffusion text to image generation [2]
-  
+
 Each of these independent tasks have a weighting associated with them (say [1]: 60%, [2]: 40%, for example ). Note they sum to 100%!
 
 First, miners configure their servers and associate a specific capacity or volume for the task. Validators then fetch the capacities that each miner can handle for that particular task. Every 60 minutes (this interval is configurable), validators perform several critical steps for each miner.

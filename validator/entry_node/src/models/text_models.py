@@ -25,5 +25,5 @@ llm_models = [
         "context_length": 8192,
         "architecture": {"modality": "text->text", "tokenizer": "Llama3", "instruct_type": "llama3"},
         "pricing": {"prompt": "0.00000001", "completion": "0.000000001", "image": "0", "request": "0"},
-    }
+    },
 ]
