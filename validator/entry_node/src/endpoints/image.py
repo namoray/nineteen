@@ -14,7 +14,6 @@ from validator.utils.redis import redis_constants as rcst
 from validator.utils.generic import generic_constants as gcst
 from validator.entry_node.src.models import request_models
 import asyncio
-
 from redis.asyncio.client import PubSub
 
 from validator.utils.generic.generic_dataclasses import GenericResponse
@@ -57,25 +56,52 @@ async def _collect_single_result(pubsub: PubSub, job_id: str) -> GenericResponse
     return GenericResponse(**result)
 
 
-async def make_non_stream_organic_query(
-    redis_db: Redis, payload: dict[str, Any], task: str, timeout: float
-) -> GenericResponse | None:
-    job_id = uuid.uuid4().hex
-    organic_message = _construct_organic_message(payload=payload, job_id=job_id, task=task)  # NOTE: tis grim
-
-    pubsub = redis_db.pubsub()
+async def _confirm_job_submission(pubsub: PubSub, redis_db: Redis, job_id: str, organic_message: str) -> bool:
     await pubsub.subscribe(f"{gcst.ACKNLOWEDGED}:{job_id}")
-    await redis_db.lpush(rcst.QUERY_QUEUE_KEY, organic_message)  # type: ignore
-
+    await redis_db.lpush(rcst.QUERY_QUEUE_KEY, organic_message)
     try:
-        await asyncio.wait_for(_wait_for_acknowledgement(pubsub, job_id), timeout=1)
+        return await asyncio.wait_for(_wait_for_acknowledgement(pubsub, job_id), timeout=1)
+    except asyncio.TimeoutError:
+        return False
 
+
+async def _collect_results(pubsub: PubSub, job_id: str, task: str, timeout: float) -> GenericResponse | None:
+    try:
         await pubsub.subscribe(f"{rcst.JOB_RESULTS}:{job_id}")
         return await asyncio.wait_for(_collect_single_result(pubsub, job_id), timeout=timeout)
 
     except asyncio.TimeoutError:
-        logger.error(f"No confirmation received for job {job_id} within timeout period. Task: {task}")
-        raise HTTPException(status_code=500, detail=f"Unable to proccess task: {task}, please try again later.")
+        logger.error(f"No result for job {job_id} within timeout period of {timeout} seconds. Task: {task}")
+        raise None
+
+
+async def make_non_stream_organic_query(
+    redis_db: Redis, payload: dict[str, Any], task: str, timeout: float
+) -> GenericResponse | None:
+    job_id = uuid.uuid4().hex
+    organic_message = _construct_organic_message(payload=payload, job_id=job_id, task=task)
+
+    pubsub = redis_db.pubsub()
+    attempts_to_confirm = 0
+    while attempts_to_confirm < gcst.MAX_ATTEMPTS_TO_CONFIRM_JOB_SUBMISSION:
+        if await _confirm_job_submission(pubsub, redis_db, job_id, organic_message):
+            break
+        attempts_to_confirm += 1
+    if attempts_to_confirm == gcst.MAX_ATTEMPTS_TO_CONFIRM_JOB_SUBMISSION:
+        logger.error(
+            f"❌ Failed to confirm job submission for job {job_id} within {gcst.MAX_ATTEMPTS_TO_CONFIRM_JOB_SUBMISSION} attempts. Task: {task}"
+        )
+        raise HTTPException(status_code=500, detail="Unable to process request - please try again!")
+        # Here you should increment some prometheus counter for failed job submissions
+
+    attempts_to_collect = 0
+    while attempts_to_collect < gcst.MAX_ATTEMPTS_TO_COLLECT_RESULT:
+        result = await _collect_results(pubsub, job_id, task, timeout)
+        if result is not None:
+            return result
+        attempts_to_collect += 1
+    logger.error(f"❌ No result for job {job_id} within {gcst.MAX_ATTEMPTS_TO_COLLECT_RESULT} attempts. Task: {task}")
+    raise HTTPException(status_code=500, detail="Unable to process request - please try again!")
 
 
 async def process_image_request(
