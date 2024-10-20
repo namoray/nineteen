@@ -39,9 +39,9 @@ async def _build_query_to_fetch_contenders(query_type: str = gcst.SYNTHETIC) -> 
         return f"""
             WITH ranked_hotkeys AS (
                 SELECT 
-                    cws.{dcst.NODE_HOTKEY}, 
-                    AVG(cws.{dcst.COLUMN_NORMALISED_NET_SCORE} * {NET_SCORE_WEIGHT} + 
-                        cws.{dcst.COLUMN_NORMALISED_PERIOD_SCORE} * (1 - {NET_SCORE_WEIGHT})) AS average_score
+                    cws.{dcst.NODE_HOTKEY},
+                    AVG(cws.{dcst.COLUMN_NORMALISED_NET_SCORE}) AS average_net_score,
+                    AVG(cws.{dcst.COLUMN_NORMALISED_PERIOD_SCORE}) AS average_period_score
                 FROM {dcst.CONTENDERS_WEIGHTS_STATS_TABLE} cws
                 WHERE cws.{dcst.TASK} = $1
                 GROUP BY cws.{dcst.NODE_HOTKEY}
@@ -57,7 +57,9 @@ async def _build_query_to_fetch_contenders(query_type: str = gcst.SYNTHETIC) -> 
             WHERE c.{dcst.TASK} = $1 
             AND c.{dcst.CAPACITY} > 0 
             AND n.{dcst.SYMMETRIC_KEY_UUID} IS NOT NULL
-            ORDER BY rh.average_score DESC
+            AND rh.average_net_score > 0
+            AND rh.average_period_score > 0
+            ORDER BY ({NET_SCORE_WEIGHT} * rh.average_net_score + (1 - {NET_SCORE_WEIGHT}) * rh.average_period_score) DESC
             LIMIT $2
         """
 
