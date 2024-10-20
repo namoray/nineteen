@@ -8,8 +8,6 @@ from validator.utils.generic import generic_constants as gcst
 
 logger = get_logger(__name__)
 
-NET_SCORE_WEIGHT = 0.5 # Can be fine-tuned
-
 async def _build_query_to_fetch_contenders(query_type: str = gcst.SYNTHETIC) -> str:
     """
     Builds the SQL query for fetching contenders based on the query type.
@@ -40,8 +38,7 @@ async def _build_query_to_fetch_contenders(query_type: str = gcst.SYNTHETIC) -> 
             WITH ranked_hotkeys AS (
                 SELECT 
                     cws.{dcst.NODE_HOTKEY},
-                    AVG(cws.{dcst.COLUMN_NORMALISED_NET_SCORE}) AS average_net_score,
-                    AVG(cws.{dcst.COLUMN_NORMALISED_PERIOD_SCORE}) AS average_period_score
+                    AVG(cws.{dcst.COLUMN_NORMALISED_NET_SCORE}) AS average_net_score
                 FROM {dcst.CONTENDERS_WEIGHTS_STATS_TABLE} cws
                 WHERE cws.{dcst.TASK} = $1
                 GROUP BY cws.{dcst.NODE_HOTKEY}
@@ -58,8 +55,7 @@ async def _build_query_to_fetch_contenders(query_type: str = gcst.SYNTHETIC) -> 
             AND c.{dcst.CAPACITY} > 0 
             AND n.{dcst.SYMMETRIC_KEY_UUID} IS NOT NULL
             AND rh.average_net_score > 0
-            AND rh.average_period_score > 0
-            ORDER BY ({NET_SCORE_WEIGHT} * rh.average_net_score + (1 - {NET_SCORE_WEIGHT}) * rh.average_period_score) DESC
+            ORDER BY rh.average_net_score DESC
             LIMIT $2
         """
 
