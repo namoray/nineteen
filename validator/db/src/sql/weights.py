@@ -96,3 +96,33 @@ async def delete_miner_weights_older_than(connection: Connection, timestamp: dat
         """,
         timestamp
     )
+
+async def get_latest_scoring_stats_for_contenders(
+        connection: Connection, task: str, contenders: list[Contender]
+) -> list[ContenderWeightsInfoPostObject]:
+    rows = await connection.fetch(
+        f"""
+        SELECT
+            {dcst.VERSION_KEY},
+            {dcst.NETUID},
+            {dcst.VALIDATOR_HOTKEY},
+            {dcst.CREATED_AT},
+            {dcst.COLUMN_MINER_HOTKEY},
+            {dcst.COLUMN_TASK},
+            {dcst.COLUMN_AVERAGE_QUALITY_SCORE},
+            {dcst.COLUMN_METRIC_BONUS},
+            {dcst.COLUMN_COMBINED_QUALITY_SCORE},
+            {dcst.COLUMN_PERIOD_SCORE_MULTIPLIER},
+            {dcst.COLUMN_NORMALISED_PERIOD_SCORE},
+            {dcst.COLUMN_CONTENDER_CAPACITY},
+            {dcst.COLUMN_NORMALISED_NET_SCORE}
+        FROM {dcst.CONTENDERS_WEIGHTS_STATS_TABLE}
+        WHERE {dcst.CREATED_AT} = (SELECT MAX({dcst.CREATED_AT}) FROM {dcst.CONTENDERS_WEIGHTS_STATS_TABLE})
+        AND {dcst.COLUMN_TASK} = $1
+        AND {dcst.COLUMN_MINER_HOTKEY} in $2
+        """,
+        task,
+        [contender.node_hotkey for contender in contenders],
+    )
+
+    return [ContenderWeightsInfoPostObject(**row) for row in rows]
