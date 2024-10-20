@@ -23,7 +23,6 @@ class DataTypeToPost(enum.Enum):
     CONTENDER_WEIGHTS_INFO = 7
 
 
-
 data_type_to_url = {
     DataTypeToPost.REWARD_DATA: ccst.BASE_NINETEEN_API_URL + "v1/store/reward_data",
     DataTypeToPost.UID_RECORD: ccst.BASE_NINETEEN_API_URL + "v1/store/uid_records",
@@ -69,7 +68,9 @@ async def post_to_nineteen_ai(
                 data=json.dumps(data_to_post),
                 headers=headers,
             )
-            logger.info(f"Resp status code from {ccst.BASE_NINETEEN_API_URL}: {resp.status_code} for post type {data_type_to_post}")
+            logger.info(
+                f"Resp status code from {ccst.BASE_NINETEEN_API_URL}: {resp.status_code} for post type {data_type_to_post}"
+            )
             resp.raise_for_status()
             return resp
         except Exception as e:
@@ -80,6 +81,7 @@ class MinerTypesPostBody(BaseModel):
     validator_hotkey: str
     miner_hotkey: str
     miner_type: str
+
 
 class RewardDataPostBody(RewardData):
     testnet: bool
@@ -97,6 +99,7 @@ class MinerCapacitiesPostObject(BaseModel):
     volume: float
     validator_hotkey: str
 
+
 class MinerWeightsPostObject(BaseModel):
     version_key: int
     netuid: int
@@ -104,6 +107,7 @@ class MinerWeightsPostObject(BaseModel):
     created_at: datetime
     miner_hotkey: str
     node_weight: float
+
 
 class ContenderWeightsInfoPostObject(BaseModel):
     version_key: int
@@ -121,7 +125,7 @@ class ContenderWeightsInfoPostObject(BaseModel):
     normalised_period_score: float
 
     contender_capacity: float
-    
+
     normalised_net_score: float
 
 

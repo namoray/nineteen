@@ -75,7 +75,7 @@ async def make_non_stream_organic_query(
 
     except asyncio.TimeoutError:
         logger.error(f"No confirmation received for job {job_id} within timeout period. Task: {task}")
-        raise HTTPException(status_code=500, detail=f"Unable to proccess task: {task}, please try again later.")
+        raise HTTPException(status_code=500, detail=f"Unable to process task: {task}, please try again later.")
 
 
 async def process_image_request(

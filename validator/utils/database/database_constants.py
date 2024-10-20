@@ -29,7 +29,6 @@ COST = "cost"
 CREATED_AT = "created_at"
 
 
-
 # Hotkey info table
 HOTKEY = "hotkey"
 NODE_IP = "NODE_ip"

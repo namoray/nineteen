@@ -88,12 +88,12 @@ if ! command -v python &> /dev/null; then
     apt install -y python3.10 python3.10-venv python3.10-distutils
     update-alternatives --install /usr/bin/python python /usr/bin/python3.10 1
     update-alternatives --set python /usr/bin/python3.10
-    
+
     # Install pip for Python 3.10
     curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
     python get-pip.py
     rm get-pip.py
-    
+
     echo_ "Python 3.10 installed successfully"
 else
     echo_ "Python is already installed"

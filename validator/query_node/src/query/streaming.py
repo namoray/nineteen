@@ -105,7 +105,7 @@ async def consume_generator(
         await utils.adjust_contender_from_result(config, query_result, contender, synthetic_query, payload=payload)
         return False
 
-    text_jsons, status_code, first_message =  [], 200, True
+    text_jsons, status_code, first_message = [], 200, True
     try:
         async for text in async_chain(first_chunk, generator):
             if isinstance(text, bytes):
@@ -175,7 +175,9 @@ async def consume_generator(
             await config.redis_db.expire(rcst.QUERY_RESULTS_KEY + ":" + job_id, 10)
 
     character_count = sum([len(text_json["choices"][0]["delta"]["content"]) for text_json in text_jsons])
-    logger.debug(f"Success: {success}; Node: {node.node_id}; Task: {task}; response_time: {response_time}; first_message: {first_message}; character_count: {character_count}")
+    logger.debug(
+        f"Success: {success}; Node: {node.node_id}; Task: {task}; response_time: {response_time}; first_message: {first_message}; character_count: {character_count}"
+    )
     logger.info(f"Success: {success}")
     return success
 

@@ -8,7 +8,6 @@ from fastapi import HTTPException
 
 
 async def verify_api_key_rate_limit(config: Config = Depends(get_config), api_key: str = Depends(get_api_key)):
-
     # NOTE: abit dangerous but very useful
     if not config.prod:
         if api_key == "test":

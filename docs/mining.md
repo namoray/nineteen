@@ -12,7 +12,7 @@ Welcome to S19 Mining 🔥
 
 
 # Overview
-A miner consists of serveral parts, fitting into two categories:
+A miner consists of several parts, fitting into two categories:
 
 - Proxy
 - Workers
@@ -41,7 +41,7 @@ NO_LAUNCH=1 sudo -E ./bootstrap.sh
 source $HOME/.bashrc
 pip uninstall bittensor  # I would recommend uninstalling this so you can use fiber, but you may need it to clone keys as of now?
 pip install git+https://github.com/rayonlabs/fiber.git@1.0.0  # This is the only requirement for mining machines as of now!
-``` 
+```
 
 ### Get hot and coldkeys onto your machine
 Securely move them onto your machine as usual. Either with the btcli or with a secure method of your choosing.

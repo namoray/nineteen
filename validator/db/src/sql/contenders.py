@@ -102,18 +102,18 @@ async def get_contenders_for_task(connection: Connection, task: str, top_x: int 
     rows = await connection.fetch(
         f"""
         WITH ranked_contenders AS (
-            SELECT 
+            SELECT
                 c.{dcst.CONTENDER_ID}, c.{dcst.NODE_HOTKEY}, c.{dcst.NODE_ID}, c.{dcst.TASK},
                 c.{dcst.RAW_CAPACITY}, c.{dcst.CAPACITY_TO_SCORE}, c.{dcst.CONSUMED_CAPACITY},
-                c.{dcst.TOTAL_REQUESTS_MADE}, c.{dcst.REQUESTS_429}, c.{dcst.REQUESTS_500}, 
+                c.{dcst.TOTAL_REQUESTS_MADE}, c.{dcst.REQUESTS_429}, c.{dcst.REQUESTS_500},
                 c.{dcst.CAPACITY}, c.{dcst.PERIOD_SCORE}, c.{dcst.NETUID},
                 ROW_NUMBER() OVER (
                     ORDER BY c.{dcst.TOTAL_REQUESTS_MADE} ASC
                 ) AS rank
             FROM {dcst.CONTENDERS_TABLE} c
             JOIN {dcst.NODES_TABLE} n ON c.{dcst.NODE_ID} = n.{dcst.NODE_ID} AND c.{dcst.NETUID} = n.{dcst.NETUID}
-            WHERE c.{dcst.TASK} = $1 
-            AND c.{dcst.CAPACITY} > 0 
+            WHERE c.{dcst.TASK} = $1
+            AND c.{dcst.CAPACITY} > 0
             AND n.{dcst.SYMMETRIC_KEY_UUID} IS NOT NULL
         )
         SELECT *
@@ -129,15 +129,15 @@ async def get_contenders_for_task(connection: Connection, task: str, top_x: int 
     if not rows or len(rows) < top_x:
         additional_rows = await connection.fetch(
             f"""
-            SELECT 
+            SELECT
                 c.{dcst.CONTENDER_ID}, c.{dcst.NODE_HOTKEY}, c.{dcst.NODE_ID}, c.{dcst.TASK},
                 c.{dcst.RAW_CAPACITY}, c.{dcst.CAPACITY_TO_SCORE}, c.{dcst.CONSUMED_CAPACITY},
-                c.{dcst.TOTAL_REQUESTS_MADE}, c.{dcst.REQUESTS_429}, c.{dcst.REQUESTS_500}, 
+                c.{dcst.TOTAL_REQUESTS_MADE}, c.{dcst.REQUESTS_429}, c.{dcst.REQUESTS_500},
                 c.{dcst.CAPACITY}, c.{dcst.PERIOD_SCORE}, c.{dcst.NETUID}
             FROM {dcst.CONTENDERS_TABLE} c
             JOIN {dcst.NODES_TABLE} n ON c.{dcst.NODE_ID} = n.{dcst.NODE_ID} AND c.{dcst.NETUID} = n.{dcst.NETUID}
-            WHERE c.{dcst.TASK} = $1 
-            AND c.{dcst.CAPACITY} > 0 
+            WHERE c.{dcst.TASK} = $1
+            AND c.{dcst.CAPACITY} > 0
             AND n.{dcst.SYMMETRIC_KEY_UUID} IS NOT NULL
             ORDER BY c.{dcst.TOTAL_REQUESTS_MADE} ASC
             LIMIT $2
@@ -157,7 +157,7 @@ async def update_contender_capacities(psql_db: PSQLDB, contender: Contender, cap
         await connection.execute(
             f"""
             UPDATE {dcst.CONTENDERS_TABLE}
-            SET {dcst.CONSUMED_CAPACITY} = {dcst.CONSUMED_CAPACITY} + $1, 
+            SET {dcst.CONSUMED_CAPACITY} = {dcst.CONSUMED_CAPACITY} + $1,
                 {dcst.TOTAL_REQUESTS_MADE} = {dcst.TOTAL_REQUESTS_MADE} + 1
             WHERE {dcst.CONTENDER_ID} = $2
             """,
@@ -195,12 +195,12 @@ async def update_contender_500_count(psql_db: PSQLDB, contender: Contender) -> N
 async def fetch_contender(connection: Connection, contender_id: str) -> Contender | None:
     row = await connection.fetchrow(
         f"""
-        SELECT 
+        SELECT
             {dcst.CONTENDER_ID}, {dcst.NODE_HOTKEY}, {dcst.NODE_ID},{dcst.TASK},
             {dcst.CAPACITY}, {dcst.RAW_CAPACITY}, {dcst.CAPACITY_TO_SCORE},
-             {dcst.CONSUMED_CAPACITY}, {dcst.TOTAL_REQUESTS_MADE}, {dcst.REQUESTS_429}, {dcst.REQUESTS_500}, 
+             {dcst.CONSUMED_CAPACITY}, {dcst.TOTAL_REQUESTS_MADE}, {dcst.REQUESTS_429}, {dcst.REQUESTS_500},
             {dcst.PERIOD_SCORE}
-        FROM {dcst.CONTENDERS_TABLE} 
+        FROM {dcst.CONTENDERS_TABLE}
         WHERE {dcst.CONTENDER_ID} = $1
         """,
         contender_id,
@@ -212,10 +212,10 @@ async def fetch_contender(connection: Connection, contender_id: str) -> Contende
 
 async def fetch_all_contenders(connection: Connection, netuid: int | None = None) -> list[Contender]:
     base_query = f"""
-        SELECT 
-            {dcst.CONTENDER_ID}, {dcst.NODE_HOTKEY}, {dcst.NODE_ID}, {dcst.NETUID}, {dcst.TASK}, 
-            {dcst.RAW_CAPACITY}, {dcst.CAPACITY_TO_SCORE}, {dcst.CONSUMED_CAPACITY}, 
-            {dcst.TOTAL_REQUESTS_MADE}, {dcst.REQUESTS_429}, {dcst.REQUESTS_500}, 
+        SELECT
+            {dcst.CONTENDER_ID}, {dcst.NODE_HOTKEY}, {dcst.NODE_ID}, {dcst.NETUID}, {dcst.TASK},
+            {dcst.RAW_CAPACITY}, {dcst.CAPACITY_TO_SCORE}, {dcst.CONSUMED_CAPACITY},
+            {dcst.TOTAL_REQUESTS_MADE}, {dcst.REQUESTS_429}, {dcst.REQUESTS_500},
             {dcst.CAPACITY}, {dcst.PERIOD_SCORE}
         FROM {dcst.CONTENDERS_TABLE}
         """
@@ -249,7 +249,7 @@ async def fetch_hotkey_scores_for_task(connection: Connection, task: str, node_h
 async def update_contenders_period_scores(connection: Connection, netuid: int) -> None:
     rows = await connection.fetch(
         f"""
-        SELECT 
+        SELECT
             {dcst.CONTENDER_ID},
             {dcst.TOTAL_REQUESTS_MADE},
             {dcst.CAPACITY},
@@ -297,8 +297,8 @@ async def get_and_decrement_synthetic_request_count(connection: Connection, cont
     result = await connection.fetchrow(
         f"""
         UPDATE {dcst.CONTENDERS_TABLE}
-        SET {dcst.SYNTHETIC_REQUESTS_STILL_TO_MAKE} = 
-            CASE 
+        SET {dcst.SYNTHETIC_REQUESTS_STILL_TO_MAKE} =
+            CASE
                 WHEN {dcst.CONSUMED_CAPACITY} > {dcst.CAPACITY} THEN 0
                 ELSE GREATEST({dcst.SYNTHETIC_REQUESTS_STILL_TO_MAKE} - 1, 0)
             END
