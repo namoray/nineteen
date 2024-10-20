@@ -35,6 +35,24 @@ class Contender(BaseModel):
         contender_id = self.node_hotkey + "-" + self.task
         return contender_id
 
+class ContenderSelectionInfo(Contender):
+    last_combined_quality_score: Optional[float] = None
+
+    def to_contender_model(self) -> Contender:
+        return Contender(
+            node_hotkey=self.node_hotkey,
+            node_id=self.node_id,
+            netuid=self.netuid,
+            task=self.task,
+            raw_capacity=self.raw_capacity,
+            capacity=self.capacity,
+            capacity_to_score=self.capacity_to_score,
+            consumed_capacity=self.consumed_capacity,
+            total_requests_made=self.total_requests_made,
+            requests_429=self.requests_429,
+            requests_500=self.requests_500,
+            period_score=self.period_score,
+        )
 
 def calculate_period_score(
     total_requests_made: float, capacity: float, consumed_capacity: float, requests_429: float, requests_500: float
