@@ -1,19 +1,21 @@
 import json
 import time
-from redis.asyncio import Redis
-from core.models.payload_models import ImageResponse
-from validator.models import Contender
-from validator.query_node.src.query_config import Config
-from core import task_config as tcfg
-from validator.utils.generic import generic_utils as gutils
-from validator.utils.contender import contender_utils as putils
-from validator.utils.redis import redis_constants as rcst
+
 from fiber.logging_utils import get_logger
-from validator.utils.redis import redis_dataclasses as rdc
-from validator.query_node.src.query import nonstream, streaming
+from redis.asyncio import Redis
+
+from core import task_config as tcfg
+from core.models.payload_models import ImageResponse
 from validator.db.src.sql.contenders import get_contenders_for_task
 from validator.db.src.sql.nodes import get_node
+from validator.models import Contender
+from validator.query_node.src.query import nonstream, streaming
+from validator.query_node.src.query_config import Config
+from validator.utils.contender import contender_utils as putils
 from validator.utils.generic import generic_constants as gcst
+from validator.utils.generic import generic_utils as gutils
+from validator.utils.redis import redis_constants as rcst
+from validator.utils.redis import redis_dataclasses as rdc
 
 logger = get_logger(__name__)
 
@@ -27,17 +29,25 @@ async def _decrement_requests_remaining(redis_db: Redis, task: str):
 
 async def _acknowledge_job(redis_db: Redis, job_id: str):
     logger.debug(f"Acknowledging job id : {job_id}")
-    await redis_db.publish(f"{gcst.ACKNLOWEDGED}:{job_id}", json.dumps({gcst.ACKNLOWEDGED: True}))
+    await redis_db.publish(
+        f"{gcst.ACKNLOWEDGED}:{job_id}", json.dumps({gcst.ACKNLOWEDGED: True})
+    )
 
 
-async def _handle_stream_query(config: Config, message: rdc.QueryQueueMessage, contenders_to_query: list[Contender]) -> bool:
+async def _handle_stream_query(
+    config: Config, message: rdc.QueryQueueMessage, contenders_to_query: list[Contender]
+) -> bool:
     success = False
     for contender in contenders_to_query[:5]:
         node = await get_node(config.psql_db, contender.node_id, config.netuid)
         if node is None:
-            logger.error(f"Node {contender.node_id} not found in database for netuid {config.netuid}")
+            logger.error(
+                f"Node {contender.node_id} not found in database for netuid {config.netuid}"
+            )
             continue
-        logger.debug(f"Querying node {contender.node_id} for task {contender.task} with payload: {message.query_payload}")
+        logger.debug(
+            f"Querying node {contender.node_id} for task {contender.task} with payload: {message.query_payload}"
+        )
         start_time = time.time()
         generator = await streaming.query_node_stream(
             config=config, contender=contender, payload=message.query_payload, node=node
@@ -74,12 +84,16 @@ async def _handle_stream_query(config: Config, message: rdc.QueryQueueMessage, c
     return success
 
 
-async def _handle_nonstream_query(config: Config, message: rdc.QueryQueueMessage, contenders_to_query: list[Contender]) -> bool:
+async def _handle_nonstream_query(
+    config: Config, message: rdc.QueryQueueMessage, contenders_to_query: list[Contender]
+) -> bool:
     success = False
     for contender in contenders_to_query:
         node = await get_node(config.psql_db, contender.node_id, config.netuid)
         if node is None:
-            logger.error(f"Node {contender.node_id} not found in database for netuid {config.netuid}")
+            logger.error(
+                f"Node {contender.node_id} not found in database for netuid {config.netuid}"
+            )
             continue
         success = await nonstream.query_nonstream(
             config=config,
@@ -107,50 +121,84 @@ async def _handle_nonstream_query(config: Config, message: rdc.QueryQueueMessage
     return success
 
 
-async def _handle_error(config: Config, synthetic_query: bool, job_id: str, status_code: int, error_message: str) -> None:
+async def _handle_error(
+    config: Config,
+    synthetic_query: bool,
+    job_id: str,
+    status_code: int,
+    error_message: str,
+) -> None:
     if not synthetic_query:
         await config.redis_db.publish(
             f"{rcst.JOB_RESULTS}:{job_id}",
-            gutils.get_error_event(job_id=job_id, error_message=error_message, status_code=status_code),
+            gutils.get_error_event(
+                job_id=job_id, error_message=error_message, status_code=status_code
+            ),
         )
 
 
 async def process_task(config: Config, message: rdc.QueryQueueMessage):
-    task = message.task
+    """
+    Process a task by querying selected contenders and handling responses.
 
-    if message.query_type == gcst.ORGANIC:
-        logger.debug(f"Acknowledging job id : {message.job_id}")
+    Parameters:
+        config (Config): The configuration object containing database connections, etc.
+        message (rdc.QueryQueueMessage): The message containing task and query details.
+
+    Returns:
+        None
+    """
+    task = message.task
+    query_type = message.query_type  # 'organic' or 'synthetic'
+
+    # For organic queries, acknowledge the job and decrement remaining requests
+    if query_type == gcst.ORGANIC:
+        logger.debug(f"Acknowledging job id: {message.job_id}")
         await _acknowledge_job(config.redis_db, message.job_id)
-        logger.debug(f"Successfully acknowledged job id : {message.job_id} ✅")
+        logger.debug(f"Successfully acknowledged job id: {message.job_id} ✅")
         await _decrement_requests_remaining(config.redis_db, task)
     else:
-        message.query_payload = await putils.get_synthetic_payload(config.redis_db, task)
+        # For synthetic queries, generate a synthetic query payload
+        message.query_payload = await putils.get_synthetic_payload(
+            config.redis_db, task
+        )
 
+    # Retrieve the task configuration to ensure it is enabled
     task_config = tcfg.get_enabled_task_config(task)
     if task_config is None:
         logger.error(f"Can't find the task {task} in the query node!")
         await _handle_error(
             config=config,
-            synthetic_query=message.query_type == gcst.SYNTHETIC,
+            synthetic_query=query_type == gcst.SYNTHETIC,
             job_id=message.job_id,
             status_code=500,
             error_message=f"Can't find the task {task}, please try again later",
         )
         return
 
+    # Determine if the task involves streaming responses
     stream = task_config.is_stream
 
+    # Fetch the appropriate contenders for the task
     async with await config.psql_db.connection() as connection:
-        contenders_to_query = await get_contenders_for_task(connection, task)
+        contenders_to_query = await get_contenders_for_task(
+            connection,
+            task,
+            query_type=query_type,  # pass the query type to the contender selection
+        )
 
-    if contenders_to_query is None:
+    # Ensure we have contenders to query
+    if not contenders_to_query:
         raise ValueError("No contenders to query! :(")
 
+    # Proceed to query the selected contenders and handle their responses
     try:
         if stream:
             return await _handle_stream_query(config, message, contenders_to_query)
         else:
-            return await _handle_nonstream_query(config=config, message=message, contenders_to_query=contenders_to_query)
+            return await _handle_nonstream_query(
+                config=config, message=message, contenders_to_query=contenders_to_query
+            )
     except Exception as e:
         logger.error(f"Error processing task {task}: {e}")
         await _handle_error(

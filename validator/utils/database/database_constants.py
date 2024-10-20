@@ -29,14 +29,13 @@ COST = "cost"
 CREATED_AT = "created_at"
 
 
-
 # Hotkey info table
 HOTKEY = "hotkey"
 NODE_IP = "NODE_ip"
 UID = "uid"
 
 # NODE info table
-HOTKEY = "hotkey"
+# HOTKEY = "hotkey"
 COLDKEY = "coldkey"
 NODE_ID = "node_id"
 INCENTIVE = "incentive"
@@ -53,7 +52,7 @@ NETWORK = "network"
 SYMMETRIC_KEY = "symmetric_key"
 SYMMETRIC_KEY_UUID = "symmetric_key_uuid"
 OUR_VALIDATOR = "our_validator"
-CREATED_AT = "created_at"
+# CREATED_AT = "created_at"
 
 
 # NODE Info history table
@@ -80,7 +79,7 @@ EXPIRED_AT = "expired_at"
 # Contenders table
 CONTENDER_ID = "contender_id"
 NODE_HOTKEY = "node_hotkey"
-NODE_ID = "node_id"
+# NODE_ID = "node_id"
 TASK = "task"
 VALIDATOR_HOTKEY = "validator_hotkey"
 RAW_CAPACITY = "raw_capacity"
@@ -92,7 +91,7 @@ TOTAL_REQUESTS_MADE = "total_requests_made"
 REQUESTS_429 = "requests_429"
 REQUESTS_500 = "requests_500"
 PERIOD_SCORE = "period_score"
-CREATED_AT = "created_at"
+# CREATED_AT = "created_at"
 UPDATED_AT = "updated_at"
 
 # Contenders history table
@@ -115,7 +114,7 @@ UPDATED_AT = "updated_at"
 # PERIOD_SCORE = "period_score"
 # CREATED_AT = "created_at"
 # UPDATED_AT = "updated_at"
-EXPIRED_AT = "expired_at"
+# EXPIRED_AT = "expired_at"
 
 
 # Common column names
