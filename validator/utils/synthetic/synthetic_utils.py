@@ -97,7 +97,26 @@ async def _get_random_picsum_image(x_dim: int, y_dim: int) -> str:
     return img_b64
 
 
+async def _get_random_cached_image(redis_db: Redis, cache_key: str) -> str | None:
+    if await redis_db.scard(cache_key) > 0:
+        random_key = await redis_db.srandmember(cache_key)
+        return await redis_db.get(random_key)
+    return None
 
+async def _remove_random_cached_image(redis_db: Redis, cache_key: str) -> None:
+    if await redis_db.scard(cache_key) > 0:
+        random_key = await redis_db.srandmember(cache_key)
+        await redis_db.srem(cache_key, random_key)
+        await redis_db.delete(random_key)
+
+async def _add_image_to_cache(redis_db: Redis, cache_key: str, image_b64: str) -> None:
+    new_key = str(uuid.uuid4())
+    await redis_db.set(new_key, image_b64)
+    await redis_db.sadd(cache_key, new_key)
+
+async def _manage_cache_size(redis_db: Redis, cache_key: str, cache_size: int) -> None:
+    if await redis_db.scard(cache_key) >= cache_size:
+        await _remove_random_cached_image(redis_db, cache_key)
 
 async def get_random_image_b64(redis_db: Redis) -> str:
     cache_key = scst.IMAGE_CACHE_KEY
@@ -106,24 +125,16 @@ async def get_random_image_b64(redis_db: Redis) -> str:
     logger.debug(f"Starting get_random_image_b64. Cache key: {cache_key}, Cache size: {cache_size}")
 
     if random.random() < 0.01:
-        if await redis_db.scard(cache_key) > 0:
-            random_key = await redis_db.srandmember(cache_key)
-            await redis_db.srem(cache_key, random_key)
-            await redis_db.delete(random_key)
-    elif await redis_db.scard(cache_key) > 0:
-        random_key = await redis_db.srandmember(cache_key)
-        return await redis_db.get(random_key)
+        await _remove_random_cached_image(redis_db, cache_key)
+    else:
+        cached_image = await _get_random_cached_image(redis_db, cache_key)
+        if cached_image:
+            return cached_image
 
     # If cache is empty or we decided to get a new image
     random_picsum_image = await _get_random_picsum_image(1024, 1024)
-    if await redis_db.scard(cache_key) >= cache_size:
-        random_key = await redis_db.srandmember(cache_key)
-        await redis_db.srem(cache_key, random_key)
-        await redis_db.delete(random_key)
-
-    new_key = str(uuid.uuid4())
-    await redis_db.set(new_key, random_picsum_image)
-    await redis_db.sadd(cache_key, new_key)
+    await _manage_cache_size(redis_db, cache_key, cache_size)
+    await _add_image_to_cache(redis_db, cache_key, random_picsum_image)
     return random_picsum_image
 
 

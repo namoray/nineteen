@@ -1,7 +1,6 @@
 import asyncio
 import random
 import sys
-from typing import Union
 
 from core.models import utility_models
 from validator.utils.synthetic import synthetic_constants as scst
@@ -259,14 +258,14 @@ async def generate_avatar_synthetic(redis_db: Redis) -> payload_models.AvatarPay
     )
 
 
-async def generate_synthetic_data(task: str, redis_db: Redis) -> Union[
-    payload_models.ChatPayload,
-    payload_models.TextToImagePayload,
-    payload_models.ImageToImagePayload,
-    payload_models.InpaintPayload,
-    payload_models.AvatarPayload,
+async def generate_synthetic_data(task: str, redis_db: Redis) -> (
+    payload_models.ChatPayload |
+    payload_models.TextToImagePayload |
+    payload_models.ImageToImagePayload |
+    payload_models.InpaintPayload |
+    payload_models.AvatarPayload |
     None
-]:
+):
     """
     Gets task config and dynamically calls the synthetic generation function
     Not super clean, but it works
@@ -285,6 +284,6 @@ async def generate_synthetic_data(task: str, redis_db: Redis) -> Union[
 
     func = getattr(sys.modules[__name__], generative_function_name)
     kwargs = task_config.synthetic_generation_config.kwargs
-    kwargs['redis_db'] = redis_db  # Add redis_db to the kwargs
+    kwargs['redis_db'] = redis_db # synthetic generation funcs need redis_db injected
 
     return await func(**kwargs)
