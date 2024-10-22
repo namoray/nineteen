@@ -3,7 +3,6 @@ import time
 from asyncpg import Connection
 from redis.asyncio import Redis
 from core.models.payload_models import ImageResponse
-from validator.db.src.sql.weights import get_latest_scoring_stats_for_contenders
 from validator.models import Contender
 from validator.query_node.src.query_config import Config
 from core import task_config as tcfg
@@ -13,14 +12,13 @@ from validator.utils.redis import redis_constants as rcst
 from fiber.logging_utils import get_logger
 from validator.utils.redis import redis_dataclasses as rdc
 from validator.query_node.src.query import nonstream, streaming
-from validator.db.src.sql.contenders import get_contenders_for_task
+from validator.db.src.sql.contenders import get_contenders_for_task, get_contenders_for_task_prioritised
 from validator.db.src.sql.nodes import get_node
 from validator.utils.generic import generic_constants as gcst
 
 logger = get_logger(__name__)
 
 MAX_CONCURRENT_TASKS = 10
-CONTENDERS_PER_TASK = 5
 
 
 async def _decrement_requests_remaining(redis_db: Redis, task: str):
@@ -144,11 +142,10 @@ async def process_task(config: Config, message: rdc.QueryQueueMessage):
     stream = task_config.is_stream
 
     async with await config.psql_db.connection() as connection:
-        contenders_for_task = await get_contenders_for_task(connection, task, top_x=CONTENDERS_PER_TASK * 2)
         if message.query_type == gcst.ORGANIC:
-            contenders_to_query = await _prioritise_contenders_by_scoring_stats(connection, task, contenders_for_task)
+            contenders_to_query = await get_contenders_for_task_prioritised(connection, task)
         else:
-            contenders_to_query = contenders_for_task[:CONTENDERS_PER_TASK]
+            contenders_to_query = await get_contenders_for_task(connection, task)
 
     if contenders_to_query is None:
         raise ValueError("No contenders to query! :(")
@@ -167,30 +164,3 @@ async def process_task(config: Config, message: rdc.QueryQueueMessage):
             status_code=500,
             error_message=f"Error processing task {task}: {e}",
         )
-
-
-async def _prioritise_contenders_by_scoring_stats(
-        connection: Connection, task: str, contenders: list[Contender], top_x: int = CONTENDERS_PER_TASK
-)-> list[Contender]:
-    scoring_stats = await get_latest_scoring_stats_for_contenders(connection, task, contenders)
-    scoring_stats_by_contender = {ss.miner_hotkey: ss for ss in scoring_stats}
-    contenders_with_combined_scores = []
-
-    for contender in contenders:
-        contender_scoring_stats = scoring_stats_by_contender.get(contender.node_hotkey)
-        contender_scoring_stats_score = contender_scoring_stats.normalised_net_score if contender_scoring_stats else 0
-        combined_score = await _combine_current_score_with_scoring_stats(
-            contender.total_requests_made, contender_scoring_stats_score
-        )
-        contenders_with_combined_scores.append((contender, combined_score))
-
-    sorted_contenders_with_combined_scores = sorted(contenders_with_combined_scores, key=lambda tup: tup[1], reverse=True)
-
-    return [sc[0] for sc in sorted_contenders_with_combined_scores[:top_x]]
-
-
-async def _combine_current_score_with_scoring_stats(current_score: float, scoring_stats_score: float) -> float:
-    weight_current = 0.6
-    weight_stats = 0.4
-
-    return (current_score * weight_current + scoring_stats_score * weight_stats) / (weight_current + weight_stats)

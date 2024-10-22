@@ -152,6 +152,48 @@ async def get_contenders_for_task(connection: Connection, task: str, top_x: int 
     return [Contender(**row) for row in rows]
 
 
+async def get_contenders_for_task_prioritised(connection: Connection, task: str, top_x: int = 5) -> list[Contender]:
+    """Return list of contenders suitable for a task, prioritising those who
+    performed good in the last cycle, based on the normalised net score metric.
+
+    """
+    rows = await connection.fetch(
+        f"""
+        WITH latest_contenders_weights AS (
+            SELECT
+                {dcst.NETUID},
+                {dcst.CREATED_AT},
+                {dcst.COLUMN_MINER_HOTKEY},
+                {dcst.COLUMN_TASK},
+                {dcst.COLUMN_NORMALISED_NET_SCORE},
+                ROW_NUMBER() OVER (
+                    ORDER BY {dcst.COLUMN_NORMALISED_NET_SCORE} DSC
+                ) AS rank
+            FROM {dcst.CONTENDERS_WEIGHTS_STATS_TABLE}
+            WHERE {dcst.CREATED_AT} = (SELECT MAX({dcst.CREATED_AT}) FROM {dcst.CONTENDERS_WEIGHTS_STATS_TABLE})
+            AND {dcst.COLUMN_TASK} = $1
+            AND rank <= $2
+        )
+        SELECT c.*
+        FROM {dcst.CONTENDERS_TABLE} c
+        JOIN latest_contenders_weights w
+        ON c.{dcst.NODE_HOTKEY} = w.{dcst.COLUMN_MINER_HOTKEY}
+        AND c.{dcst.NETUID} = w.{dcst.NETUID}
+        AND c.{dcst.TASK} = w.{dcst.COLUMN_TASK}
+        ORDER BY w.rank
+        """,
+        task,
+        top_x,
+    )
+
+    # If not enough rows are returned, run another query to get contenders which are not prioritised
+    if len(rows) < top_x:
+        additional_rows = await get_contenders_for_task(connection, task, top_x - len(rows))
+        rows = rows + additional_rows
+
+    return [Contender(**row) for row in rows]
+
+
 async def update_contender_capacities(psql_db: PSQLDB, contender: Contender, capacitity_consumed: float) -> None:
     async with await psql_db.connection() as connection:
         await connection.execute(
