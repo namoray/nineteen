@@ -155,8 +155,12 @@ async def get_contenders_for_task(connection: Connection, task: str, top_x: int 
 async def get_contenders_for_task_prioritised(connection: Connection, task: str, top_x: int = 5) -> list[Contender]:
     """Return list of contenders suitable for a task, prioritising those who
     performed good in the last cycle, based on the normalised net score metric.
+    In order not to overwhelm good contenders quickly, prioritise only part of
+    the needed contenders and select the rest as usual.
 
     """
+    # Get the prioritised contenders
+    top_prioritised = (top_x // 2) + 1
     rows = await connection.fetch(
         f"""
         WITH latest_contenders_weights AS (
@@ -183,13 +187,13 @@ async def get_contenders_for_task_prioritised(connection: Connection, task: str,
         ORDER BY w.rank
         """,
         task,
-        top_x,
+        top_prioritised,
     )
 
-    # If not enough rows are returned, run another query to get contenders which are not prioritised
-    if len(rows) < top_x:
-        additional_rows = await get_contenders_for_task(connection, task, top_x - len(rows))
-        rows = rows + additional_rows
+    # Run another query to get the rest of the contenders
+    top_rest = top_x - len(rows)
+    additional_rows = await get_contenders_for_task(connection, task, top_rest)
+    rows = rows + additional_rows
 
     return [Contender(**row) for row in rows]
 
