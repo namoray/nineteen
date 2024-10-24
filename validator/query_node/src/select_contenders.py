@@ -68,16 +68,16 @@ async def select_contenders(connection: Connection, task: str, query_type: str, 
     # extract params
     last_quality_scores = [0.0 if contender.last_combined_quality_score is None else contender.last_combined_quality_score
                            for contender in contenders_for_selection]
-    current_period_scores = [0.0 if contender.period_score is None else contender.period_score
+    normalized_period_scores = [0.0 if contender.normalised_net_score is None else contender.normalised_net_score
                              for contender in contenders_for_selection]
 
-    # normalize scores
+    # normalize scores, same scale, from 0 to 1, assume there is enough data
     normalized_last_quality_scores = _normalize_scores_for_selection(last_quality_scores)
-    normalized_current_period_scores = _normalize_scores_for_selection(current_period_scores)
+    normalized_period_scores = _normalize_scores_for_selection(normalized_period_scores)
 
     composite_scores = [WEIGHT_QUALITY_SCORE * this_quality_score + WEIGHT_PERIOD_SCORE * this_period_score
                         for this_quality_score, this_period_score
-                        in zip(normalized_last_quality_scores, normalized_current_period_scores)]
+                        in zip(normalized_last_quality_scores, normalized_period_scores)]
     temperature = SOFTMAX_TEMPERATURE.get(query_type)
     probabilities = _softmax(composite_scores, temperature)
     final_selection = weighted_random_sample_without_replacement(contenders_for_selection, probabilities, top_x)

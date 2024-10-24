@@ -37,6 +37,7 @@ class Contender(BaseModel):
 
 class ContenderSelectionInfo(Contender):
     last_combined_quality_score: Optional[float] = None
+    normalised_net_score: Optional[float] = None
 
     def to_contender_model(self) -> Contender:
         return Contender(

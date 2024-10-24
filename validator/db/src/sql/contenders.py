@@ -114,7 +114,8 @@ async def get_contenders_for_selection(connection: Connection, task: str) -> lis
             AND n.{dcst.SYMMETRIC_KEY_UUID} IS NOT NULL
         ),
         contenders_weights_stats AS (
-            SELECT {dcst.NETUID}, {dcst.TASK}, {dcst.NODE_HOTKEY}, {dcst.VALIDATOR_HOTKEY}, {dcst.COLUMN_COMBINED_QUALITY_SCORE},
+            SELECT {dcst.NETUID}, {dcst.TASK}, {dcst.NODE_HOTKEY}, {dcst.VALIDATOR_HOTKEY}, 
+            {dcst.COLUMN_COMBINED_QUALITY_SCORE}, {dcst.COLUMN_NORMALISED_NET_SCORE}
             ROW_NUMBER() OVER (
                         PARTITION BY {dcst.NETUID}, {dcst.TASK}, {dcst.NODE_HOTKEY}, {dcst.VALIDATOR_HOTKEY}
                         ORDER BY {dcst.CREATED_AT} DESC
