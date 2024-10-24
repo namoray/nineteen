@@ -1,5 +1,6 @@
 import json
 import time
+from asyncpg import Connection
 from redis.asyncio import Redis
 from core.models.payload_models import ImageResponse
 from validator.models import Contender
@@ -11,7 +12,7 @@ from validator.utils.redis import redis_constants as rcst
 from fiber.logging_utils import get_logger
 from validator.utils.redis import redis_dataclasses as rdc
 from validator.query_node.src.query import nonstream, streaming
-from validator.db.src.sql.contenders import get_contenders_for_task
+from validator.db.src.sql.contenders import get_contenders_for_task, get_contenders_for_task_prioritised
 from validator.db.src.sql.nodes import get_node
 from validator.utils.generic import generic_constants as gcst
 
@@ -141,7 +142,10 @@ async def process_task(config: Config, message: rdc.QueryQueueMessage):
     stream = task_config.is_stream
 
     async with await config.psql_db.connection() as connection:
-        contenders_to_query = await get_contenders_for_task(connection, task)
+        if message.query_type == gcst.ORGANIC:
+            contenders_to_query = await get_contenders_for_task_prioritised(connection, task)
+        else:
+            contenders_to_query = await get_contenders_for_task(connection, task)
 
     if contenders_to_query is None:
         raise ValueError("No contenders to query! :(")
