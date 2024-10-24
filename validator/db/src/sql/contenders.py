@@ -125,7 +125,7 @@ async def get_contenders_for_selection(connection: Connection, task: str) -> lis
         last_contender_weights_stats AS (
             SELECT * FROM contenders_weights_stats WHERE rank = 1
         )
-        SELECT c.*, s.{dcst.COLUMN_COMBINED_QUALITY_SCORE}
+        SELECT c.*, s.{dcst.COLUMN_COMBINED_QUALITY_SCORE}, s.{dcst.COLUMN_NORMALISED_NET_SCORE}
         FROM contenders c
         LEFT JOIN last_contender_weights_stats s
         -- be as explict as possible with the join conditions
