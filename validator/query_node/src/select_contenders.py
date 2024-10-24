@@ -6,10 +6,16 @@ from asyncpg import Connection
 
 from validator.db.src.sql.contenders import get_contenders_for_selection
 from validator.models import Contender, ContenderSelectionInfo
+from validator.utils.generic import generic_constants as gcst
 
 WEIGHT_QUALITY_SCORE=1.0
 WEIGHT_PERIOD_SCORE=0.7
-SOFTMAX_TEMPERATURE=2.0
+
+SOFTMAX_TEMPERATURE= {
+    gcst.ORGANIC: 2.0,
+    gcst.SYNTHETIC: 1.0,
+    "default": 1.0
+}
 
 
 def weighted_random_sample_without_replacement(contenders: list[ContenderSelectionInfo], probabilities: list[float], k: int) -> list[ContenderSelectionInfo]:
@@ -31,7 +37,7 @@ def _softmax(scores: list[float], temperature: Optional[float] = None) -> list[f
     It also converts the scores to probabilities that sum to 1
     """
     if temperature is None:
-        temperature = SOFTMAX_TEMPERATURE
+        temperature = SOFTMAX_TEMPERATURE["default"]
 
     if scores is None or len(scores) == 0:
         return []
@@ -54,7 +60,7 @@ def _normalize_scores_for_selection(scores: list[float]) -> list[float]:
 
 
 ##########################################################
-async def select_contenders(connection: Connection, task: str, top_x: int = 5) -> list[Contender]:
+async def select_contenders(connection: Connection, task: str, query_type: str, top_x: int = 5) -> list[Contender]:
     contenders_for_selection = await get_contenders_for_selection(connection, task)
     if len(contenders_for_selection) <= 1:
         return [contender.to_contender_model() for contender in contenders_for_selection]
@@ -72,8 +78,8 @@ async def select_contenders(connection: Connection, task: str, top_x: int = 5) -
     composite_scores = [WEIGHT_QUALITY_SCORE * this_quality_score + WEIGHT_PERIOD_SCORE * this_period_score
                         for this_quality_score, this_period_score
                         in zip(normalized_last_quality_scores, normalized_current_period_scores)]
-
-    probabilities = _softmax(composite_scores)
+    temperature = SOFTMAX_TEMPERATURE.get(query_type)
+    probabilities = _softmax(composite_scores, temperature)
     final_selection = weighted_random_sample_without_replacement(contenders_for_selection, probabilities, top_x)
 
     return [selected_contender.to_contender_model() for selected_contender in final_selection]

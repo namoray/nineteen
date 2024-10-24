@@ -23,7 +23,6 @@ dummy_contender_data = {
 @pytest.mark.asyncio
 @patch('validator.query_node.src.select_contenders.WEIGHT_QUALITY_SCORE', 3.0)
 @patch('validator.query_node.src.select_contenders.WEIGHT_PERIOD_SCORE', 2.0)
-@patch('validator.query_node.src.select_contenders.SOFTMAX_TEMPERATURE', 2.0)
 @patch('validator.query_node.src.select_contenders.get_contenders_for_selection', new_callable=AsyncMock)
 async def test_select_contenders(mock_get_contenders_for_selection):
     # Mock data
@@ -37,7 +36,7 @@ async def test_select_contenders(mock_get_contenders_for_selection):
 
     mock_get_contenders_for_selection.return_value = deepcopy(mock_contenders)
 
-    result = await select_contenders(mock_connection, mock_task, top_x=2)
+    result = await select_contenders(mock_connection, mock_task, "default", top_x=2)
 
     assert len(result) == 2
     # order is not guaranteed
@@ -48,7 +47,6 @@ async def test_select_contenders(mock_get_contenders_for_selection):
 @pytest.mark.asyncio
 @patch('validator.query_node.src.select_contenders.WEIGHT_QUALITY_SCORE', 3.0)
 @patch('validator.query_node.src.select_contenders.WEIGHT_PERIOD_SCORE', 2.0)
-@patch('validator.query_node.src.select_contenders.SOFTMAX_TEMPERATURE', 2.0)
 @patch('validator.query_node.src.select_contenders.get_contenders_for_selection', new_callable=AsyncMock)
 async def test_select_contenders(mock_get_contenders_for_selection):
     # Mock data
@@ -58,7 +56,7 @@ async def test_select_contenders(mock_get_contenders_for_selection):
 
     mock_get_contenders_for_selection.return_value = deepcopy(mock_contenders)
 
-    result = await select_contenders(mock_connection, mock_task, top_x=2)
+    result = await select_contenders(mock_connection, mock_task, "default",top_x=2)
 
     assert len(result) == 0
 
