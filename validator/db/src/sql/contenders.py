@@ -2,7 +2,7 @@ from fiber.logging_utils import get_logger
 
 from asyncpg import Connection
 from validator.db.src.database import PSQLDB
-from validator.models import Contender, PeriodScore, calculate_period_score
+from validator.models import Contender, PeriodScore, calculate_period_score, ContenderSelectionInfo
 from validator.utils.database import database_constants as dcst
 
 logger = get_logger(__name__)
@@ -98,58 +98,43 @@ async def migrate_contenders_to_contender_history(connection: Connection) -> Non
     await connection.execute(f"DELETE FROM {dcst.CONTENDERS_TABLE}")
 
 
-async def get_contenders_for_task(connection: Connection, task: str, top_x: int = 5) -> list[Contender]:
+async def get_contenders_for_selection(connection: Connection, task: str) -> list[ContenderSelectionInfo]:
     rows = await connection.fetch(
         f"""
-        WITH ranked_contenders AS (
+        WITH contenders AS (
             SELECT 
                 c.{dcst.CONTENDER_ID}, c.{dcst.NODE_HOTKEY}, c.{dcst.NODE_ID}, c.{dcst.TASK},
                 c.{dcst.RAW_CAPACITY}, c.{dcst.CAPACITY_TO_SCORE}, c.{dcst.CONSUMED_CAPACITY},
                 c.{dcst.TOTAL_REQUESTS_MADE}, c.{dcst.REQUESTS_429}, c.{dcst.REQUESTS_500}, 
-                c.{dcst.CAPACITY}, c.{dcst.PERIOD_SCORE}, c.{dcst.NETUID},
-                ROW_NUMBER() OVER (
-                    ORDER BY c.{dcst.TOTAL_REQUESTS_MADE} ASC
-                ) AS rank
+                c.{dcst.CAPACITY}, c.{dcst.PERIOD_SCORE}, c.{dcst.NETUID}, c.{dcst.VALIDATOR_HOTKEY}
             FROM {dcst.CONTENDERS_TABLE} c
             JOIN {dcst.NODES_TABLE} n ON c.{dcst.NODE_ID} = n.{dcst.NODE_ID} AND c.{dcst.NETUID} = n.{dcst.NETUID}
             WHERE c.{dcst.TASK} = $1 
             AND c.{dcst.CAPACITY} > 0 
             AND n.{dcst.SYMMETRIC_KEY_UUID} IS NOT NULL
+        ),
+        contenders_weights_stats AS (
+            SELECT {dcst.NETUID}, {dcst.TASK}, {dcst.NODE_HOTKEY}, {dcst.VALIDATOR_HOTKEY}, 
+            {dcst.COLUMN_COMBINED_QUALITY_SCORE}, {dcst.COLUMN_NORMALISED_NET_SCORE}
+            ROW_NUMBER() OVER (
+                        PARTITION BY {dcst.NETUID}, {dcst.TASK}, {dcst.NODE_HOTKEY}, {dcst.VALIDATOR_HOTKEY}
+                        ORDER BY {dcst.CREATED_AT} DESC
+                        ) AS rank
+            FROM {dcst.CONTENDERS_WEIGHTS_STATS_TABLE}
+        ),
+        last_contender_weights_stats AS (
+            SELECT * FROM contenders_weights_stats WHERE rank = 1
         )
-        SELECT *
-        FROM ranked_contenders
-        WHERE rank <= $2
-        ORDER BY rank
+        SELECT c.*, s.{dcst.COLUMN_COMBINED_QUALITY_SCORE}, s.{dcst.COLUMN_NORMALISED_NET_SCORE}
+        FROM contenders c
+        LEFT JOIN last_contender_weights_stats s
+        -- be as explict as possible with the join conditions
+        ON c.{dcst.NETUID} = s.{dcst.NETUID} AND c.{dcst.TASK} = s.{dcst.TASK} 
+        AND c.{dcst.NODE_HOTKEY} = s.{dcst.NODE_HOTKEY} AND c.{dcst.VALIDATOR_HOTKEY} = s.{dcst.VALIDATOR_HOTKEY}
         """,
         task,
-        top_x,
     )
-
-    # If not enough rows are returned, run another query to get more contenders
-    if not rows or len(rows) < top_x:
-        additional_rows = await connection.fetch(
-            f"""
-            SELECT 
-                c.{dcst.CONTENDER_ID}, c.{dcst.NODE_HOTKEY}, c.{dcst.NODE_ID}, c.{dcst.TASK},
-                c.{dcst.RAW_CAPACITY}, c.{dcst.CAPACITY_TO_SCORE}, c.{dcst.CONSUMED_CAPACITY},
-                c.{dcst.TOTAL_REQUESTS_MADE}, c.{dcst.REQUESTS_429}, c.{dcst.REQUESTS_500}, 
-                c.{dcst.CAPACITY}, c.{dcst.PERIOD_SCORE}, c.{dcst.NETUID}
-            FROM {dcst.CONTENDERS_TABLE} c
-            JOIN {dcst.NODES_TABLE} n ON c.{dcst.NODE_ID} = n.{dcst.NODE_ID} AND c.{dcst.NETUID} = n.{dcst.NETUID}
-            WHERE c.{dcst.TASK} = $1 
-            AND c.{dcst.CAPACITY} > 0 
-            AND n.{dcst.SYMMETRIC_KEY_UUID} IS NOT NULL
-            ORDER BY c.{dcst.TOTAL_REQUESTS_MADE} ASC
-            LIMIT $2
-            OFFSET $3
-            """,
-            task,
-            top_x - len(rows) if rows else top_x,
-            len(rows) if rows else 0,
-        )
-        rows = rows + additional_rows if rows else additional_rows
-
-    return [Contender(**row) for row in rows]
+    return [ContenderSelectionInfo(**row) for row in rows]
 
 
 async def update_contender_capacities(psql_db: PSQLDB, contender: Contender, capacitity_consumed: float) -> None:
