@@ -9,10 +9,13 @@ logger = get_logger(__name__)
 
 async def models() -> list[dict[str, Any]]:
     models = tcfg.get_public_task_configs()
+    new_models = []
     for model in models:
-        model["model_name"] = model["task"]
-        del model["task"]
-    return models
+        new_model = {"model_name": model["task"]} 
+        new_model.update({k: v for k, v in model.items() if k != "task"})
+        new_models.append(new_model)
+    return new_models
+
 
 
 router = APIRouter()
