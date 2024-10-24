@@ -8,7 +8,11 @@ logger = get_logger(__name__)
 
 
 async def models() -> list[dict[str, Any]]:
-    return tcfg.get_public_task_configs()
+    models = tcfg.get_public_task_configs()
+    for model in models:
+        model["model_name"] = model["task"]
+        del model["task"]
+    return models
 
 
 router = APIRouter()
