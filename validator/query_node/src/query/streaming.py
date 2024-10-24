@@ -21,21 +21,6 @@ from validator.utils.query.query_utils import load_sse_jsons
 logger = get_logger(__name__)
 
 
-def _get_formatted_payload(content: str, first_message: bool, add_finish_reason: bool = False) -> str:
-    delta_payload = {"content": content}
-    if first_message:
-        delta_payload["role"] = "assistant"
-    choices_payload: dict[str, str | dict[str, str]] = {"delta": delta_payload}
-    if add_finish_reason:
-        choices_payload["finish_reason"] = "stop"
-    payload = {
-        "choices": [choices_payload],
-    }
-
-    dumped_payload = json.dumps(payload)
-    return dumped_payload
-
-
 async def _handle_event(
     config: Config,
     content: str | None,
@@ -133,22 +118,21 @@ async def consume_generator(
                         first_message = True  # NOTE: Janky, but so we mark it as a fail
                         break
 
-                    text_jsons.append(text_json)
-                    dumped_payload = json.dumps(text_json)
+                    if first_message:
+                        text_json["choices"][0]["delta"]["role"] = "assistant"
                     first_message = False
+
+                    text_jsons.append(text_json)
+
                     await _handle_event(
                         config,
-                        content=f"data: {dumped_payload}\n\n",
+                        content=f"data: {json.dumps(text_json)}\n\n",
                         synthetic_query=synthetic_query,
                         job_id=job_id,
                         status_code=200,
                     )
 
         if len(text_jsons) > 0:
-            last_payload = _get_formatted_payload("", False, add_finish_reason=True)
-            await _handle_event(
-                config, content=f"data: {last_payload}\n\n", synthetic_query=synthetic_query, job_id=job_id, status_code=200
-            )
             await _handle_event(
                 config, content="data: [DONE]\n\n", synthetic_query=synthetic_query, job_id=job_id, status_code=200
             )
